@@ -6,7 +6,7 @@ import numpy as np
 import os
 from scipy.io import savemat
 
-from MarkerBasedImputation.models import Wave_net
+from models import Wave_net
 # import tensorflow as tf
 from utils import create_run_folders
 import torch
