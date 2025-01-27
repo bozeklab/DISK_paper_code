@@ -1,0 +1,20 @@
+name: DANNCE_OptiPose
+
+output_folder: /projects/ag-bozek/france/results_behavior/optipose
+
+body_parts: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19']
+
+skeleton: [['0', '1'], ['0', '2'], ['1', '2'], ['1', '3'], ['3', '4'], ['4', '5'], ['3', '6'], ['4', '6'], ['4', '7'], ['6', '7'], ['5', '7'], ['5', '8'], ['5', '9'], ['3', '12'], ['12', '10'], ['11', '10'], ['3', '13'], ['13', '14'], ['14', '15'], ['9', '16'], ['16', '19'], ['8', '17'], ['17', '18']]
+
+OptiPose:
+  framerate: 60
+  reconstruction_algorithm: auto_subset
+  scale: 1000
+  skip: 0
+  threshold: 0.9
+
+Reconstruction:
+  framerate: 60
+
+train_file: '/projects/ag-bozek/france/results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new/for_optipose/_DANNCE_train_60_20000.csv'
+test_file: '/projects/ag-bozek/france/results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new/for_optipose/_DANNCE_val_60_20000_test.csv'

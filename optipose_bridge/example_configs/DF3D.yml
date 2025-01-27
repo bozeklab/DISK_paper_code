@@ -1,0 +1,20 @@
+name: DF3D_OptiPose
+
+output_folder: /projects/ag-bozek/france/results_behavior/optipose
+
+body_parts: [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37' ]
+
+skeleton: [ [ '0', '1' ], [ '1', '2' ], [ '2', '3' ], [ '3', '4' ], [ '5', '6' ], [ '6', '7' ], [ '7', '8' ], [ '8', '9' ], [ '10', '11' ], [ '11', '12' ], [ '12', '13' ], [ '13', '14' ], [ '16', '17' ], [ '17', '18' ], [ '19', '20' ], [ '20', '21' ], [ '21', '22' ], [ '22', '23' ], [ '24', '25' ], [ '25', '26' ], [ '26', '27' ], [ '27', '28' ], [ '29', '30' ], [ '30', '31' ], [ '31', '32' ], [ '32', '33' ], [ '35', '36' ], [ '36', '37' ] ]
+
+OptiPose:
+  framerate: 60
+  reconstruction_algorithm: auto_subset
+  scale: 1000
+  skip: 0
+  threshold: 0.9
+
+Reconstruction:
+  framerate: 60
+
+train_file: '/projects/ag-bozek/france/results_behavior/datasets/DF3D_keypoints_60stride5_new/for_optipose/_DF3D_train_60_20000.csv'
+test_file: '/projects/ag-bozek/france/results_behavior/datasets/DF3D_keypoints_60stride5_new/for_optipose/_DF3D_val_60_2000_test.csv'

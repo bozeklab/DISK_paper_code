@@ -1,0 +1,20 @@
+name: Fish_OptiPose
+
+output_folder: /projects/ag-bozek/france/results_behavior/optipose
+
+body_parts: ['0', '1', '2', '3', '4', '5']
+
+skeleton: [['0', '1'], ['1', '2'], ['3', '4'], ['4', '5']]
+
+OptiPose:
+  framerate: 60
+  reconstruction_algorithm: auto_subset
+  scale: 1000
+  skip: 0
+  threshold: 0.9
+
+Reconstruction:
+  framerate: 60
+
+train_file: '/projects/ag-bozek/france/results_behavior/datasets/Fish_v3_60stride120/for_optipose/_Fish_train_60_20000.csv'
+test_file: '/projects/ag-bozek/france/results_behavior/datasets/Fish_v3_60stride120/for_optipose/_Fish_val_60_2000_test.csv'
