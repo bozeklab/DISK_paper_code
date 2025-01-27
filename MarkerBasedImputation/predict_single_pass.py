@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib
 import json
 
-from MarkerBasedImputation.build_ensemble import EnsembleModel
+from build_ensemble import EnsembleModel
 from DISK.utils.utils import read_constant_file
 
 if os.uname().nodename == 'france-XPS':
