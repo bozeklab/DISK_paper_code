@@ -6,8 +6,21 @@ import numpy as np
 import os
 from scipy.io import savemat
 from scipy import stats
+from glob import glob
+import torch
+import pandas as pd
+import matplotlib
+import json
 
-from torch import load
+from MarkerBasedImputation.build_ensemble import EnsembleModel
+from DISK.utils.utils import read_constant_file
+
+if os.uname().nodename == 'france-XPS':
+    matplotlib.use('TkAgg')
+    basedir = '/home/france/Mounted_dir'
+else:
+    matplotlib.use('Agg')
+    basedir = '/projects/ag-bozek/france'
 
 def sigmoid(x, x_0, k):
     """Sigmoid function.
@@ -20,15 +33,29 @@ def sigmoid(x, x_0, k):
     """
     return 1 / (1 + np.exp(-k*(x-x_0)))
 
+def open_data_csv(filepath, dataset_path, stride=1):
+    """Load keypoints from DISK already processed .npz files."""
 
-def predict_markers(model, X, bad_frames, markers_to_fix=None,
-                    error_diff_thresh=.25, outlier_thresh=3,
-                    return_member_data=False):
+    dataset_constant_file = glob(os.path.join(dataset_path, 'constants.py'))[0]
+    dataset_constants = read_constant_file(dataset_constant_file)
+
+    df = pd.read_csv(filepath, sep='|')
+
+    input = np.vstack([np.array(eval(v))[np.newaxis] for v in df['input']])
+    input = input.reshape(input.shape[0], input.shape[1], -1)
+    ground_truth = np.vstack([np.array(eval(v))[np.newaxis] for v in df['label']])
+    ground_truth = ground_truth.reshape(input.shape[0], input.shape[1], -1)
+
+    return input, ground_truth, dataset_constants
+
+
+def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
+                    error_diff_thresh=.25, outlier_thresh=3, device=torch.device('cpu')):
     """Imputes the position of missing markers.
 
-    :param model: model to use for prediction
+    :param model: Ensemble model to use for prediction
     :param X: marker data (n_frames x n_markers)
-    :param bad_frames: loical matrix of shape == X.shape where 0 denotes a
+    :param bad_frames: local matrix of shape == X.shape where 0 denotes a
                        tracked frame and 1 denotes a dropped frame
     :param fix_errors: boolean vector of length n_markers. True if you wish to
                        override marker on frames further than error_diff_thresh
@@ -42,35 +69,34 @@ def predict_markers(model, X, bad_frames, markers_to_fix=None,
     :return: preds, bad_frames
     """
     # Get the input lengths and find the first instance of all good frames.
-    input_length = model.input.shape.as_list()[1]
-    bad_frames = np.repeat(bad_frames, 3, axis=1) > .5
-    startpoint = 0
+    input_length = dict_model["input_length"]
+    output_length = dict_model["output_length"]
+    # bad_frames = np.repeat(bad_frames, 3, axis=1) > .5
 
     # See whether you should fix errors
     fix_errors = np.any(markers_to_fix)
 
     # Reshape and get the starting seed.
-    X = X[None, ...]
-    X_start = X[:, startpoint:(startpoint+input_length), :]
-
+    # X = X[None, ...]
+    bad_frames_any = np.any(bad_frames, axis=2)
+    startpoint = np.argmax(bad_frames_any, axis=1)
+    startpoint = np.clip(startpoint - input_length - 1, a_min=-input_length-1, a_max=X.shape[1] - 1)
+    next_frame_id = startpoint + input_length + 1
+    mask = next_frame_id < X.shape[1] - output_length
     # Preallocate
-    preds = np.zeros((X.shape))
-    preds[:, startpoint:(startpoint+input_length), :] = X_start
-    pred = np.zeros((1, 1, X.shape[2]))
+    preds = np.copy(X)
+    pred = np.zeros((X.shape[0], output_length, X.shape[2]))
 
-    if return_member_data:
-        n_members = model.output_shape[1][1]
-        member_stds = np.zeros((1, X.shape[1], X.shape[2]))
-        member_pred = np.zeros((1, n_members, X.shape[2]))
+    if model.return_member_data:
+        member_stds = np.zeros((X.shape[0], X.shape[1], X.shape[2]))
+        member_pred = np.zeros((X.shape[0], model.n_models, X.shape[2]))
 
         # At each step, generate a prediction, replace the predictions of
         # markers you do not want to predict with the ground truth, and append
         # the resulting vector to the end of the next input chunk.
-        for i in range(startpoint, X.shape[1]-input_length-startpoint):
-            if np.mod(i, 10000) == 0:
-                print('Predicting frame: ', i, flush=True)
-            next_frame_id = (startpoint+input_length)+i
+        while np.max(startpoint[mask]) > -input_length-1:
 
+            X_start = np.vstack([x[np.array([max(0, t) for t in range(s, s + input_length)])][np.newaxis] for (x, s) in zip(preds[mask], startpoint[mask])])
             # If there is a marker prediction that is greater than the
             # difference threshold above, mark it as a bad frame.
             # These are likely just jumps or identity swaps from MoCap that
@@ -81,22 +107,34 @@ def predict_markers(model, X, bad_frames, markers_to_fix=None,
                 errors[~markers_to_fix] = False
                 bad_frames[next_frame_id, errors] = True
             if np.any(bad_frames[next_frame_id, :]):
-                pred, member_pred = model.predict(X_start)
+                pred, member_pred = model(torch.Tensor(X_start).to(device))
+                pred = pred.detach().cpu().numpy()
+                member_pred = member_pred.detach().cpu().numpy()
 
             # Detect anomalous predictions.
             outliers = np.squeeze(np.abs(pred) > outlier_thresh)
-            pred[:, 0, outliers] = X[:, next_frame_id, outliers]
+
+            pred[:, 0][outliers] = preds[mask, next_frame_id[mask]][outliers]
 
             # Only use the predictions for the bad markers. Take the
             # predictions and append to the end of X_start for future
             # prediction.
-            pred[:, 0, ~bad_frames[next_frame_id, :]] = \
-                X[:, next_frame_id, ~bad_frames[next_frame_id, :]]
-            member_pred[:, :, ~bad_frames[next_frame_id, :]] = float('nan')
+            pred[:, 0][~bad_frames[mask, next_frame_id[mask]]] = preds[mask, next_frame_id[mask]][~bad_frames[mask, next_frame_id[mask]]]
+            # print(pred[0, 0], X[mask][0, next_frame_id[mask][0]])
+            for i_member in range(0, model.n_models):
+                member_pred[:, i_member, 0][~bad_frames[mask, next_frame_id[mask]]] = float('nan')
             member_std = np.nanstd(member_pred, axis=1)
-            preds[:, next_frame_id, :] = np.squeeze(pred)
-            member_stds[0, next_frame_id, :] = np.squeeze(member_std)
-            X_start = np.concatenate((X_start[:, 1:, :], pred), axis=1)
+            preds[mask, next_frame_id[mask]] = np.squeeze(pred)
+            member_stds[0, next_frame_id[mask], :] = np.squeeze(member_std)
+
+            bad_frames = preds == -4668
+            bad_frames_any = np.any(bad_frames, axis=2)
+            print(np.sum(bad_frames_any), end =' ')
+            startpoint = np.argmax(bad_frames_any, axis=1)
+            startpoint = np.clip(startpoint - input_length - 1, -input_length-1, X.shape[1] - 1)
+            next_frame_id = startpoint + input_length + 1
+            mask = next_frame_id < X.shape[1] - output_length
+
         return np.squeeze(preds), bad_frames, member_stds
     else:
         # At each step, generate a prediction, replace the predictions of
@@ -133,10 +171,10 @@ def predict_markers(model, X, bad_frames, markers_to_fix=None,
         return np.squeeze(preds), bad_frames
 
 
-def predict_single_pass(model_path, data_path, pass_direction, *,
-                        save_path=None, stride=1, n_folds=10, fold_id=None,
+def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
+                        save_path=None, stride=1, n_folds=10, fold_id=0,
                         markers_to_fix=None, error_diff_thresh=.25,
-                        model=None):
+                        model=None, device=torch.device('cpu')):
     """Imputes the position of missing markers.
 
     :param model_path: Path to model to use for prediction.
@@ -159,117 +197,118 @@ def predict_single_pass(model_path, data_path, pass_direction, *,
     if not (pass_direction == 'forward') | (pass_direction == 'reverse'):
         raise ValueError('pass_direction must be forward or reverse')
 
-    # Check data extensions
-    filename, file_extension = os.path.splitext(data_path)
-    accepted_extensions = {'.h5', '.hdf5', '.mat'}
-    if file_extension not in accepted_extensions:
-        raise ValueError('Improper extension: hdf5 or \
-                         mat -v7.3 file required.')
-
-    # Load data
-    print('Loading data')
-    f = h5py.File(data_path, 'r')
-    if file_extension in {'.h5', '.hdf5'}:
-        markers = np.array(f['markers'][:]).T
-        marker_means = np.array(f['marker_means'][:]).T
-        marker_stds = np.array(f['marker_stds'][:]).T
-        bad_frames = np.array(f['bad_frames'][:]).T
-    else:
-        # Get the markers data from the struct
-        dset = 'markers_aligned_preproc'
-        marker_names = list(f[dset].keys())
-        n_frames_tot = f[dset][marker_names[0]][:].T.shape[0]
-        n_dims = f[dset][marker_names[0]][:].T.shape[1]
-
-        markers = np.zeros((n_frames_tot, len(marker_names)*n_dims))
-        for i in range(len(marker_names)):
-            marker = f[dset][marker_names[i]][:].T
-            for j in range(n_dims):
-                markers[:, i*n_dims + j] = marker[:, j]
-
-        # Z-score the marker data
-        marker_means = np.mean(markers, axis=0)
-        marker_means = marker_means[None, ...]
-        marker_stds = np.std(markers, axis=0)
-        marker_stds = marker_stds[None, ...]
-        print(marker_means)
-        print(marker_stds)
-        markers = stats.zscore(markers)
-
-        # Get the bad_frames data from the cell
-        dset = 'bad_frames_agg'
-        n_markers = f[dset][:].shape[0]
-        bad_frames = np.zeros((markers.shape[0], n_markers))
-        for i in range(n_markers):
-            reference = f[dset][i][0]
-            bad_frames[np.squeeze(f[reference][:]).astype('int32') - 1, i] = 1
-
-    # Get the start frame and number of frames after splitting the data up
-    markers = markers[::stride, :]
-    bad_frames = bad_frames[::stride, :]
-    n_frames = int(np.floor(markers.shape[0]/n_folds))
+    # # Check data extensions
+    # filename, file_extension = os.path.splitext(data_path)
+    # accepted_extensions = {'.h5', '.hdf5', '.mat'}
+    # if file_extension not in accepted_extensions:
+    #     raise ValueError('Improper extension: hdf5 or \
+    #                      mat -v7.3 file required.')
+    #
+    # # Load data
+    # print('Loading data')
+    # f = h5py.File(data_path, 'r')
+    # if file_extension in {'.h5', '.hdf5'}:
+    #     markers = np.array(f['markers'][:]).T
+    #     marker_means = np.array(f['marker_means'][:]).T
+    #     marker_stds = np.array(f['marker_stds'][:]).T
+    #     bad_frames = np.array(f['bad_frames'][:]).T
+    # else:
+    #     # Get the markers data from the struct
+    #     dset = 'markers_aligned_preproc'
+    #     marker_names = list(f[dset].keys())
+    #     n_frames_tot = f[dset][marker_names[0]][:].T.shape[0]
+    #     n_dims = f[dset][marker_names[0]][:].T.shape[1]
+    #
+    #     markers = np.zeros((n_frames_tot, len(marker_names)*n_dims))
+    #     for i in range(len(marker_names)):
+    #         marker = f[dset][marker_names[i]][:].T
+    #         for j in range(n_dims):
+    #             markers[:, i*n_dims + j] = marker[:, j]
+    #
+    #     # Z-score the marker data
+    #     marker_means = np.mean(markers, axis=0)
+    #     marker_means = marker_means[None, ...]
+    #     marker_stds = np.std(markers, axis=0)
+    #     marker_stds = marker_stds[None, ...]
+    #     print(marker_means)
+    #     print(marker_stds)
+    #     markers = stats.zscore(markers)
+    #
+    #     # Get the bad_frames data from the cell
+    #     dset = 'bad_frames_agg'
+    #     n_markers = f[dset][:].shape[0]
+    #     bad_frames = np.zeros((markers.shape[0], n_markers))
+    #     for i in range(n_markers):
+    #         reference = f[dset][i][0]
+    #         bad_frames[np.squeeze(f[reference][:]).astype('int32') - 1, i] = 1
+    #
+    # # Get the start frame and number of frames after splitting the data up
+    # markers = markers[::stride, :]
+    # bad_frames = bad_frames[::stride, :]
+    # n_frames = int(np.floor(markers.shape[0]/n_folds))
+    markers, ground_truth, dataset_constants = open_data_csv(filepath=data_file, dataset_path=dataset_path)
+    bad_frames = markers == -4668
     fold_id = int(fold_id)
-    start_frame = n_frames * int(fold_id)
+    start_frame = markers.shape[1] * int(fold_id)
 
-    # Also predict the remainder if on the last fold.
-    if fold_id == (n_folds-1):
-        markers = markers[start_frame:, :]
-        bad_frames = bad_frames[start_frame:, :]
-    else:
-        markers = markers[start_frame:(start_frame + n_frames), :]
-        bad_frames = bad_frames[start_frame:(start_frame + n_frames), :]
+    # # Also predict the remainder if on the last fold.
+    # if fold_id == (n_folds-1):
+    #     markers = markers[start_frame:, :]
+    #     bad_frames = bad_frames[start_frame:, :]
+    # else:
+    #     markers = markers[start_frame:(start_frame + n_frames), :]
+    #     bad_frames = bad_frames[start_frame:(start_frame + n_frames), :]
 
     # Load model
     if model is None:
         print('Loading model')
-        model = load(model_path)
+        with open(os.path.join(os.path.dirname(model_path), "training_info.json"), 'r') as fp:
+            dict_training = json.load(fp)
+        model = EnsembleModel(device=device, **dict_training)
+        model.load_state_dict(torch.load(model_path))
+        model.eval()
 
     # Check how many outputs the model has to handle it appropriately
-    n_outputs = len(model.output_shape)
-    if n_outputs == 2:
-        return_member_data = True
-    else:
-        return_member_data = False
+    n_outputs = model.output_shape
+    if n_outputs == 1:
         member_stds = [None]
 
-    # Set Markers to fix
-    if markers_to_fix is None:
-        markers_to_fix = np.zeros((markers.shape[1])) > 1
-        # TODO(Skeleton): Automate this by including the skeleton.
-        # Fix all arms, elbows, shoulders, shins, hips and legs.
-        markers_to_fix[30:] = True
-        # markers_to_fix[30:36] = True
-        # markers_to_fix[42:] = True
+    # # Set Markers to fix
+    # if markers_to_fix is None:
+    #     markers_to_fix = np.zeros((markers.shape[1])) > 1
+    #     # TODO(Skeleton): Automate this by including the skeleton.
+    #     # Fix all arms, elbows, shoulders, shins, hips and legs.
+    #     markers_to_fix[30:] = True
+    #     # markers_to_fix[30:36] = True
+    #     # markers_to_fix[42:] = True
 
     if pass_direction == 'reverse':
-        markers = markers[::-1, :]
-        bad_frames = bad_frames[::-1, :]
+        markers = markers[:, ::-1, :]
+        bad_frames = bad_frames[:, ::-1, :]
 
     print('Predicting %d frames starting at frame %d.'
-          % (markers.shape[0], start_frame))
+          % (markers.shape[1], start_frame))
 
     # If the model can return the member predictions, do so.
-    if return_member_data:
+    if model.return_member_data:
         print('Imputing markers: %s pass' % (pass_direction), flush=True)
         preds, bad_frames, member_stds = \
-            predict_markers(model, markers, bad_frames,
+            predict_markers(model, dict_training, markers, bad_frames,
                             markers_to_fix=markers_to_fix,
-                            error_diff_thresh=error_diff_thresh,
-                            return_member_data=return_member_data)
+                            error_diff_thresh=error_diff_thresh)
     else:
         # Forward predict
         print('Imputing markers: %s pass' % (pass_direction), flush=True)
         preds, bad_frames = \
-            predict_markers(model, markers, bad_frames,
+            predict_markers(model, dict_training, markers, bad_frames,
                             markers_to_fix=markers_to_fix,
-                            error_diff_thresh=error_diff_thresh,
-                            return_member_data=return_member_data)
+                            error_diff_thresh=error_diff_thresh)
 
     # Flip the data for the reverse cases to save in the correct direction.
     if pass_direction == 'reverse':
-        markers = markers[::-1, :]
-        preds = preds[::-1, :]
-        bad_frames = bad_frames[::-1, :]
+        markers = markers[:, ::-1, :]
+        preds = preds[:, ::-1, :]
+        bad_frames = bad_frames[:, ::-1, :]
         member_stds = member_stds[:, ::-1, :]
 
     # Save predictions to a matlab file.
@@ -279,13 +318,28 @@ def predict_single_pass(model_path, data_path, pass_direction, *,
             os.makedirs(save_path)
         save_path = os.path.join(save_path, file_name)
         print('Saving to %s' % (save_path))
-        savemat(save_path, {'preds': preds, 'markers': markers,
-                            'bad_frames': bad_frames,
-                            'member_stds': np.squeeze(member_stds),
-                            'n_folds': n_folds,
-                            'fold_id': fold_id,
-                            'pass_direction': pass_direction,
-                            'marker_means': marker_means,
-                            'marker_stds': marker_stds})
+        with open(save_path, "w") as fp:
+            json.dump({'preds': preds, 'markers': markers,
+                                'bad_frames': bad_frames,
+                                'member_stds': np.squeeze(member_stds),
+                                'n_folds': n_folds,
+                                'fold_id': fold_id,
+                                'pass_direction': pass_direction}, fp)
 
     return preds
+
+if __name__ == '__main__':
+    model_ensemble_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03/final_model.h5')
+    dataset_path = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
+    data_file = os.path.join(basedir, 'results_behavior/models/test_CLB_optipose_debug/test_for_optipose_repeat_0/test_repeat-0.csv')
+
+    impute_stride = 5
+    nfolds = 20
+    errordiff_th = 0.5
+
+    for i_fold in range(nfolds):
+        for pass_direction in ['reverse', 'forward']:
+            predict_single_pass(model_ensemble_path, data_file, dataset_path, pass_direction,
+                                save_path=None, stride=impute_stride, n_folds=nfolds, fold_id=i_fold,
+                                markers_to_fix=None, error_diff_thresh=errordiff_th,
+                                model=None)

@@ -3,7 +3,18 @@
 # import keras
 # import keras.losses
 import numpy as np
+from glob import glob
 import os
+import matplotlib
+
+from MarkerBasedImputation.models import Wave_net
+
+if os.uname().nodename == 'france-XPS':
+    matplotlib.use('TkAgg')
+    basedir = '/home/france/Mounted_dir'
+else:
+    matplotlib.use('Agg')
+    basedir = '/projects/ag-bozek/france'
 import matplotlib.pyplot as plt
 import torch
 from scipy.io import savemat
@@ -16,19 +27,52 @@ from torch import optim
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Dataset
 
+from DISK.utils.utils import read_constant_file
 
-def create_model(net_name, **kwargs):
-    """Initialize a network for training."""
-    # compile_model = dict(
-    #     wave_net=models.wave_net,
-    #     lstm_model=models.lstm_model,
-    #     wave_net_res_skip=models.wave_net_res_skip
-    #     ).get(net_name)
-    compile_model = models.wave_net
-    if compile_model is None:
-        return None
 
-    return compile_model(**kwargs)
+# def create_model(net_name, **kwargs):
+#     """Initialize a network for training."""
+#     # compile_model = dict(
+#     #     wave_net=models.wave_net,
+#     #     lstm_model=models.lstm_model,
+#     #     wave_net_res_skip=models.wave_net_res_skip
+#     #     ).get(net_name)
+#     compile_model = Wave_net
+#     if compile_model is None:
+#         return None
+#
+#     return compile_model(**kwargs)
+
+
+def _disk_loader(filepath, input_length=9, output_length=1, stride=1):
+    """Load keypoints from DISK already processed .npz files."""
+
+    dataset_constant_file = glob(os.path.join(os.path.dirname(filepath), 'constants.py'))[0]
+    dataset_constants = read_constant_file(dataset_constant_file)
+
+    data = np.load(filepath)
+
+    bodyparts = dataset_constants.KEYPOINTS
+    coords = data['X']
+    if 'time' in data:
+        time_ = (data['time'] * dataset_constants.FREQ).astype(int)
+        new_time = np.array([np.arange(np.max(time_) + 1) for _ in range(coords.shape[0])])
+        new_coords = np.zeros((coords.shape[0], np.max(time_) + 1, coords.shape[2]), dtype=coords.dtype) * np.nan
+        for i in range(len(time_)):
+            print(new_coords[i].shape, (time_[i][time_[i] >= 0]).dtype, (time_[i][time_[i] >= 0]).shape, coords[i].shape)
+            new_coords[i, time_[i][time_[i] >= 0]] = coords[i][time_[i] >= 0]
+    else:
+        new_coords = coords
+
+    ## reshape the data to match input_length, output_length
+    idx = np.arange(1)#0, new_coords.shape[1] - (input_length + output_length), stride)
+    input_coords = np.vstack([[v[i: i + input_length][np.newaxis] for i in idx] for v in new_coords])
+    input_coords = input_coords.reshape((input_coords.shape[0], input_length, len(bodyparts), -1))[..., :3].reshape((input_coords.shape[0], input_length, -1))
+    output_coords = np.vstack([[v[i + input_length: i + input_length + output_length][np.newaxis] for i in idx] for v in new_coords])
+    output_coords = output_coords.reshape((output_coords.shape[0], output_length, len(bodyparts), -1))[..., :3].reshape((output_coords.shape[0], output_length, -1))
+
+    return input_coords.astype(np.float32), output_coords.astype(np.float32), dataset_constants
+
 
 class CustomDataset(Dataset):
     def __init__(self, X, y):
@@ -36,13 +80,16 @@ class CustomDataset(Dataset):
         self.X = X
         self.y = y
 
-    def forward(self, item):
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, item):
         return self.X[item], self.y[item]
 
 
-def train(data_path, *, base_output_path="models", run_name=None,
+def train(train_file, val_file, *, base_output_path="models", run_name=None,
           data_name=None, net_name="wave_net", clean=False, input_length=9,
-          output_length=1,  n_markers=60, stride=1, train_fraction=.85,
+          output_length=1,  stride=1, train_fraction=.85,
           val_fraction=0.15, only_moving_frames=False, n_filters=512,
           filter_width=2, layers_per_level=3, n_dilations=None,
           latent_dim=750, epochs=50, batch_size=1000,
@@ -50,7 +97,7 @@ def train(data_path, *, base_output_path="models", run_name=None,
           val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
           reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
           reduce_lr_min_lr=1e-10, save_every_epoch=False,
-          device=''):
+          device=torch.device('cpu')):
     """Trains the network and saves the results to an output directory.
 
     :param data_path: Path to an HDF5 file with marker data.
@@ -93,59 +140,60 @@ def train(data_path, *, base_output_path="models", run_name=None,
     :param save_every_epoch: Save weights at every epoch. If False, saves only
                              initial, final and best weights.
     """
-    start_ts = time.time()
+    start_ts = time()
 
     # Set the n_dilations param
     if n_dilations is None:
-        n_dilations = np.int32(np.floor(np.log2(input_length)))
+        n_dilations = int(np.floor(np.log2(input_length)))
     else:
         n_dilations = int(n_dilations)
 
     # Load Data
     print('Loading Data')
-    # markers, marker_means, marker_stds, bad_frames, moving_frames = \
-    #     load_dataset(data_path)
-    markers, bad_frames = None, None
-    # moving_frames = np.squeeze(moving_frames > 0)
-    # if only_moving_frames:
-    #     markers = markers[moving_frames, :]
-    #     bad_frames = bad_frames[moving_frames, :]
-    # stride is like a downsampling by picking each n frames
-    markers = markers[::stride, :]
-    bad_frames = bad_frames[::stride, :]
+    # # markers, marker_means, marker_stds, bad_frames, moving_frames = \
+    # #     load_dataset(data_path)
+    # markers, bad_frames = None, None
+    # # moving_frames = np.squeeze(moving_frames > 0)
+    # # if only_moving_frames:
+    # #     markers = markers[moving_frames, :]
+    # #     bad_frames = bad_frames[moving_frames, :]
+    # # stride is like a downsampling by picking each n frames
+    # markers = markers[::stride, :]
+    # bad_frames = bad_frames[::stride, :]
+    #
+    # # Get Ids
+    # print('Getting indices')
+    # [input_ids, target_ids] = get_ids(bad_frames, input_length,
+    #                                   output_length, True, True)
+    #
+    # # Get the training, testing, and validation trajectories by indexing into
+    # # the marker arrays
+    # n_train = np.int32(np.round(input_ids.shape[0]*train_fraction))
+    # n_val = np.int32(np.round(input_ids.shape[0]*val_fraction))
+    # X = markers[input_ids[:n_train, :], :]
+    # Y = markers[target_ids[:n_train, :], :]
+    # val_X = markers[input_ids[n_train:(n_train+n_val), :], :]
+    # val_Y = markers[target_ids[n_train:(n_train+n_val), :], :]
 
-    # Get Ids
-    print('Getting indices')
-    [input_ids, target_ids] = get_ids(bad_frames, input_length,
-                                      output_length, True, True)
-
-    # Get the training, testing, and validation trajectories by indexing into
-    # the marker arrays
-    n_train = np.int32(np.round(input_ids.shape[0]*train_fraction))
-    n_val = np.int32(np.round(input_ids.shape[0]*val_fraction))
-    X = markers[input_ids[:n_train, :], :]
-    Y = markers[target_ids[:n_train, :], :]
-    val_X = markers[input_ids[n_train:(n_train+n_val), :], :]
-    val_Y = markers[target_ids[n_train:(n_train+n_val), :], :]
-
-    train_dataset = CustomDataset(X, Y)
-    val_dataset = CustomDataset(val_X, val_Y)
+    train_input, train_output, dataset_constants = _disk_loader(train_file, input_length=input_length, output_length=output_length)
+    val_input, val_output, _ = _disk_loader(val_file, input_length=input_length, output_length=output_length, stride=stride)
+    train_dataset = CustomDataset(train_input, train_output)
+    val_dataset = CustomDataset(val_input, val_output)
     train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
     val_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size)
 
     # Create network
     print('Compiling network')
     model = None
-    if isinstance(net_name, torch.Module):
+    if isinstance(net_name, torch.nn.Module):
         model = net_name
         net_name = model.name
     elif net_name == 'wave_net':
-        model = create_model(net_name,
-                             input_length=input_length,
-                             output_length=output_length, n_markers=n_markers,
+        model = Wave_net(input_length=input_length,
+                             output_length=output_length, n_markers=dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
                              n_filters=n_filters, filter_width=filter_width,
-                             layers_per_level=layers_per_level,
-                             n_dilations=n_dilations, print_summary=False)
+                             layers_per_level=layers_per_level, device=device,
+                             n_dilations=n_dilations, print_summary=False).to(device)
     # elif net_name == 'lstm_model':
     #     model = create_model(net_name, lossfunc=lossfunc, lr=lr,
     #                          input_length=input_length, n_markers=n_markers,
@@ -162,7 +210,7 @@ def train(data_path, *, base_output_path="models", run_name=None,
 
     # Build run name if needed
     if data_name is None:
-        data_name = os.path.splitext(os.path.basename(data_path))[0]
+        data_name = os.path.splitext(base_output_path)[0]
     if run_name is None:
         run_name = "%s-%s_epochs=%d_input_%d_output_%d" \
             % (data_name, net_name, epochs, input_length, output_length)
@@ -176,12 +224,14 @@ def train(data_path, *, base_output_path="models", run_name=None,
 
     # Save the training information in a mat file.
     print('Saving training info')
-    with open(os.path.join(run_path, "training_info"), "w") as fp:
-        json.dump({"data_path": data_path, "base_output_path": base_output_path,
+    with open(os.path.join(run_path, "training_info.json"), "w") as fp:
+        json.dump({"data_path": train_file, "base_output_path": base_output_path,
              "run_name": run_name, "data_name": data_name,
              "net_name": net_name, "clean": clean, "stride": stride,
              "input_length": input_length, "output_length": output_length,
-             "n_filters": n_filters, "n_markers": n_markers, "epochs": epochs,
+             "n_filters": n_filters,
+                   "n_markers": dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
+                   "epochs": epochs,
              "batch_size": batch_size, "train_fraction": train_fraction,
              "val_fraction": val_fraction,
              "only_moving_frames": only_moving_frames,
@@ -199,7 +249,7 @@ def train(data_path, *, base_output_path="models", run_name=None,
 
 
     # params you need to specify:
-    print_every = 10
+    print_every = 1
     if lossfunc == 'mean_squared_error':
         loss_function = torch.nn.MSELoss()
 
@@ -221,27 +271,25 @@ def train(data_path, *, base_output_path="models", run_name=None,
 
     batches = len(train_loader)
     val_batches = len(val_loader)
-
+    best_val_loss = np.inf
     # loop for every epoch (training + evaluation)
     for epoch in range(epochs):
         total_loss = 0
 
         # ----------------- TRAINING  --------------------
         model.train()
-        list_y_train, list_pred_train = [], []
+        list_y_train = []
 
         for i, data in enumerate(train_loader):
             model.zero_grad() # to make sure that all the grads are 0
             X = data[0].to(device)
             y = data[1].to(device)
-            outputs, hist = model(X) # forward
+            outputs = model(X) # forward
             if torch.isnan(X).any():
                 print(torch.where(torch.isnan(X)), outputs, y, flush=True)
             loss = loss_function(torch.clip(outputs, 1e-9, 1-1e-9), y)
 
             list_y_train.append(y.detach().cpu().numpy())
-            predicted_classes = np.argmax(outputs.detach().cpu().numpy(), axis=1)  # get class from network's prediction
-            list_pred_train.append(predicted_classes)
 
             loss.backward() # accumulates the gradient (by addition) for each parameter.
             optimizer.step() # performs a parameter update based on the current gradient
@@ -252,47 +300,43 @@ def train(data_path, *, base_output_path="models", run_name=None,
 
         # ----------------- VALIDATION  -----------------
 
-        if epoch > 0 and (epoch % print_every == 0 or epoch == epochs - 1):
+        if epoch >= 0 and (epoch % print_every == 0 or epoch == epochs - 1):
 
             # set model to evaluating (testing)
             model.eval()
             with torch.no_grad():
                 val_loss = 0
-                list_y, list_pred = [], []
+                list_y = []
                 val_outputs = []
-                list_hist = []
                 for i, data in enumerate(val_loader):
                     X = data[0].to(device)
                     y = data[1].to(device)
 
-                    outputs, hist = model(X) # this gets the prediction from the network
-                    list_hist.append(hist.detach().cpu().numpy())
+                    outputs = model(X) # this gets the prediction from the network
                     val_outputs.append(outputs.cpu().numpy())
-                    predicted_classes = np.argmax(outputs.cpu().numpy(), axis=1) # get class from network's prediction
 
                     val_loss += loss_function(torch.clip(outputs, 1e-9, 1-1e-9), y).item() # MODIFIED - added [][]
 
-                    if train_dataset.binary_bool:
-                        list_y.append(np.argmax(y.cpu().numpy(), axis=1))
-                    else:
-                        list_y.append(y.cpu().numpy())
-                    list_pred.append(predicted_classes)
+                    list_y.append(y.cpu().numpy())
             scheduler.step(val_loss)
 
             print(f"Epoch {epoch+1}/{epochs}, training loss: {total_loss/batches:.4f}, validation loss: {val_loss/val_batches:.4f}")
             losses.append(total_loss/batches) # for plotting learning curve
             val_losses.append(val_loss/val_batches) # for plotting learning curve
-            
+            if val_loss/val_batches < best_val_loss:
+                best_val_loss = val_loss/val_batches
+                torch.save(model.state_dict(), os.path.join(run_path, "best_model.h5"))
+
     fig, ax = plt.subplots(1, 1)
     x = np.arange(0, epochs, print_every)
     ax.plot(x, losses, label='train')
     ax.plot(x, val_losses, '--', label='val')
     ax.legend()
     ax.set_ylabel('Loss')
-    plt.savefig(os.path.join(MODELFOLDER, f'loss_curves.png'))
+    plt.savefig(os.path.join(run_path, f'loss_curves.png'))
     plt.close()
 
-    print(f"Training time: {time.time()-start_ts}s")
+    print(f"Training time: {time()-start_ts}s")
 
     # Save initial network
     # print('Saving initial network')
@@ -336,8 +380,11 @@ def train(data_path, *, base_output_path="models", run_name=None,
 
 
 if __name__ == '__main__':
-    BASEFOLDER = "/home/france/Mounted_dir/results_behavior/MarkerBasedImputation"
-    DATASETPATH = '/projects/ag-bozek/france/results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
+
+    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation")
+    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
+    train_file = os.path.join(DATASETPATH, 'train_dataset_w-0-nans.npz')
+    val_file = os.path.join(DATASETPATH, 'val_dataset_w-0-nans.npz')
     MODELFOLDER = os.path.join(BASEFOLDER, "models")
     PREDICTIONSPATH = os.path.join(BASEFOLDER, "predictions")
     MERGEDFILE = os.path.join(BASEFOLDER, "/fullDay_model_ensemble.h5")
@@ -354,14 +401,16 @@ if __name__ == '__main__':
 
     # $1 - -base - output - path =$2 - -epochs =$3 - -stride =$4
     # $DATASETPATH $MODELBASEOUTPUTPATH $EPOCHS $TRAINSTRIDE
+    device = torch.device('cuda:0')
 
-    train(DATASETNAME, base_output_path=MODELFOLDER, run_name=None,
-          data_name=None, net_name="wave_net", clean=False, input_length=9,
-          output_length=1, n_markers=60, stride=TRAINSTRIDE, train_fraction=.85,
-          val_fraction=0.15, only_moving_frames=False, n_filters=512,
-          filter_width=2, layers_per_level=3, n_dilations=None,
-          latent_dim=750, epochs=EPOCHS, batch_size=1000,
-          lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
-          val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
-          reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
-          reduce_lr_min_lr=1e-10, save_every_epoch=False, device=torch.device('cuda:0'))
+    for _ in range(NMODELS):
+        train(train_file, val_file, base_output_path=MODELFOLDER, run_name=None,
+              data_name=None, net_name="wave_net", clean=False, input_length=9,
+              output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
+              val_fraction=0.15, only_moving_frames=False, n_filters=512,
+              filter_width=2, layers_per_level=3, n_dilations=None,
+              latent_dim=750, epochs=EPOCHS, batch_size=1000,
+              lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
+              val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
+              reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
+              reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)

@@ -10,8 +10,8 @@ from torch.nn import Conv1d, Linear
 
 class Wave_net(torch.nn.Module):
     def __init__(self, input_length, output_length, n_markers, n_filters,
-             filter_width, layers_per_level, n_dilations,
-             print_summary=False):
+             filter_width, layers_per_level, n_dilations, device,
+             print_summary=False, **kwargs):
         """Build the base WaveNet model.
 
         :param lossfunc: Loss function
@@ -33,19 +33,23 @@ class Wave_net(torch.nn.Module):
         # Dilated causal convolutions
         dilation_rates = [2**i for i in range(n_dilations)]
         self.convs = []
+        n_in = n_markers
+        out_len_because_padding = int(input_length)
         for dilation_rate in dilation_rates:
             for i in range(layers_per_level):
-                self.convs.append(Conv1d(in_channels=n_markers, out_channels=n_filters, kernel_size=filter_width,
-                                         padding=dilation_rate * (filter_width - 1), dilation=dilation_rate))
+                self.convs.append(Conv1d(in_channels=n_in, out_channels=n_filters, kernel_size=filter_width,
+                                         padding=dilation_rate * (filter_width - 1), dilation=dilation_rate).to(device))
+                out_len_because_padding += dilation_rate * (filter_width - 1)
                 # filters=n_filters,
                 #                            kernel_size=filter_width,
                 #                            padding='causal',
                 #                            dilation_rate=dilation_rate,
                 #                            activation='relu'))
+                n_in = n_filters
 
         # Dense connections
-        self.linear1 = Linear(n_filters, 60)
-        self.linear2 = Linear(60, output_length)
+        self.linear_on_marker_dim = Linear(n_filters, n_markers)
+        self.linear_on_time_dimension = Linear(out_len_because_padding, output_length)
 
         # Build and compile the model
         # model = Model(history_seq, x)
@@ -54,13 +58,15 @@ class Wave_net(torch.nn.Module):
         #     model.summary()
 
     def forward(self, x):
+        x_ = torch.swapaxes(x, 1, 2) # shapes: (batch, len, markers) -> (batch, markers, len)
         for c in self.convs:
-            x = torch.relu(c(x))
-        x = self.linear1(x)
-        x = torch.permute(x, [2, 1])
-        x = self.linear2(x)
-        x = torch.permute(x, [2, 1])
-        return x
+            x_ = torch.relu(c(x_)) # after convs, shape (batch, filters, len + padding)
+        x_ = torch.permute(x_, [0, 2, 1]) # shape: (batch, filters, len + padding) -> (batch, len + padding, filters)
+        x_ = self.linear_on_marker_dim(x_) # shape: (batch, len + padding, markers)
+        x_ = torch.permute(x_, [0, 2, 1]) # shape: (batch, len + padding, markers) -> (batch, markers, len + padding)
+        x_ = self.linear_on_time_dimension(x_) # shape: (batch, markers, output_len = 1)
+        x_ = torch.permute(x_, [0, 2, 1]) # shape: (batch, markers, output_len = 1) -> (batch, output_len = 1, markers)
+        return x_
 
 #
 # def wave_net_res_skip(lossfunc, lr, input_length, n_filters, n_markers,

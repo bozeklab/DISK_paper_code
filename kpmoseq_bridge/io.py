@@ -1179,13 +1179,13 @@ def _disk_loader(filepath, name, dataset_constants):
     else:
         new_coords = coords
 
-    coords = coords.reshape((coords.shape[0], coords.shape[1], len(bodyparts), -1))[..., :3]
-    confs = (~np.isnan(coords[..., 0])).astype('float')
+    coords = new_coords.reshape((new_coords.shape[0], new_coords.shape[1], len(bodyparts), -1))[..., :3]
+    confs = (~np.isnan(new_coords[..., 0])).astype('float')
     
     coordinates = {}
     confidences = {}
     for i in range(len(coords)):
-        coordinates.update({f"{name}_track{i}": coords[i]})
+        coordinates.update({f"{name}_track{i}": new_coords[i]})
         confidences.update({f"{name}_track{i}": confs[i]})
     # else:
     #     coordinates = {f"{name}_track{i}": coords[i].T for i in range(coords.shape[0])}

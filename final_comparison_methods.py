@@ -13,21 +13,8 @@ import seaborn as sns
 
 
 basedir = '/home/france/Mounted_dir/results_behavior/'
+from DISK.utils.utils import read_constant_file
 
-
-def read_constant_file(constant_file):
-    """import constant file as a python file from its path"""
-    spec = importlib.util.spec_from_file_location("module.name", constant_file)
-    constants = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(constants)
-
-    try:
-        constants.NUM_FEATURES, constants.DIVIDER, constants.KEYPOINTS, constants.SEQ_LENGTH
-    except NameError:
-        print('constant file should have following keys: NUM_FEATURES, DIVIDER, KEYPOINTS, SEQ_LENGTH')
-    constants.N_KEYPOINTS = len(constants.KEYPOINTS)
-
-    return constants
 
 
 if __name__ == '__main__':
