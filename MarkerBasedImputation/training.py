@@ -28,7 +28,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Dataset
 
 from DISK.utils.utils import read_constant_file
-
+from preprocess_data import preprocess_data
 
 # def create_model(net_name, **kwargs):
 #     """Initialize a network for training."""
@@ -64,14 +64,20 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1):
     else:
         new_coords = coords
 
-    ## reshape the data to match input_length, output_length
-    idx = np.arange(1)#0, new_coords.shape[1] - (input_length + output_length), stride)
-    input_coords = np.vstack([[v[i: i + input_length][np.newaxis] for i in idx] for v in new_coords])
-    input_coords = input_coords.reshape((input_coords.shape[0], input_length, len(bodyparts), -1))[..., :3].reshape((input_coords.shape[0], input_length, -1))
-    output_coords = np.vstack([[v[i + input_length: i + input_length + output_length][np.newaxis] for i in idx] for v in new_coords])
-    output_coords = output_coords.reshape((output_coords.shape[0], output_length, len(bodyparts), -1))[..., :3].reshape((output_coords.shape[0], output_length, -1))
+    transformed_coords, rot_angle, mean_position = preprocess_data(new_coords, bodyparts,
+                                                                        middle_point=['right_hip', 'left_hip'],
+                                                                        front_point=['right_coord', 'left_coord'])
 
-    return input_coords.astype(np.float32), output_coords.astype(np.float32), dataset_constants
+    ## reshape the data to match input_length, output_length
+    idx = np.arange(0, new_coords.shape[1] - (input_length + output_length), stride)
+    input_coords = np.vstack([[v[i: i + input_length][np.newaxis] for i in idx] for v in transformed_coords])
+    input_coords = input_coords.reshape((input_coords.shape[0], input_length, len(bodyparts), -1))[..., :3].reshape((input_coords.shape[0], input_length, -1))
+    mean_pos_input = np.vstack([[v[i: i + input_length] for i in idx] for v in mean_position])
+    output_coords = np.vstack([[v[i + input_length: i + input_length + output_length][np.newaxis] for i in idx] for v in transformed_coords])
+    output_coords = output_coords.reshape((output_coords.shape[0], output_length, len(bodyparts), -1))[..., :3].reshape((output_coords.shape[0], output_length, -1))
+    mean_pos_output = np.vstack([[v[i + input_length: i + input_length + output_length] for i in idx] for v in mean_position])
+
+    return input_coords.astype(np.float32), output_coords.astype(np.float32), dataset_constants, rot_angle, mean_pos_input, mean_pos_output
 
 
 class CustomDataset(Dataset):
@@ -175,12 +181,13 @@ def train(train_file, val_file, *, base_output_path="models", run_name=None,
     # val_X = markers[input_ids[n_train:(n_train+n_val), :], :]
     # val_Y = markers[target_ids[n_train:(n_train+n_val), :], :]
 
-    train_input, train_output, dataset_constants = _disk_loader(train_file, input_length=input_length, output_length=output_length)
-    val_input, val_output, _ = _disk_loader(val_file, input_length=input_length, output_length=output_length, stride=stride)
+    train_input, train_output, dataset_constants, train_rot_angle, train_mean_position_input, train_mean_position_output = _disk_loader(train_file, input_length=input_length, output_length=output_length)
+    val_input, val_output, _, val_rot_angle, val_mean_position_input, val_mean_position_output = _disk_loader(val_file, input_length=input_length, output_length=output_length, stride=stride)
     train_dataset = CustomDataset(train_input, train_output)
     val_dataset = CustomDataset(val_input, val_output)
     train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
     val_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size)
+    print(f'Data loaded, number of train samples {len(train_dataset)}, number of val samples {len(val_dataset)}')
 
     # Create network
     print('Compiling network')
@@ -230,8 +237,8 @@ def train(train_file, val_file, *, base_output_path="models", run_name=None,
              "net_name": net_name, "clean": clean, "stride": stride,
              "input_length": input_length, "output_length": output_length,
              "n_filters": n_filters,
-                   "n_markers": dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
-                   "epochs": epochs,
+            "n_markers": dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
+            "epochs": epochs,
              "batch_size": batch_size, "train_fraction": train_fraction,
              "val_fraction": val_fraction,
              "only_moving_frames": only_moving_frames,

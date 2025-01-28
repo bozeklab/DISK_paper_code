@@ -24,7 +24,7 @@ else:
 
 
 def open_data_csv(filepath, dataset_path, stride=1):
-    """Load keypoints from DISK already processed .npz files."""
+    """Load data from csv file used for comparison."""
 
     dataset_constant_file = glob(os.path.join(dataset_path, 'constants.py'))[0]
     dataset_constants = read_constant_file(dataset_constant_file)
@@ -37,14 +37,14 @@ def open_data_csv(filepath, dataset_path, stride=1):
     ground_truth = ground_truth.reshape(input.shape[0], input.shape[1], -1)
 
     # Z-score the marker data
-    marker_means = np.mean(input, axis=1)
+    input_with_nans = np.copy(input)
+    input_with_nans[input == -4668] = np.nan
+    marker_means = np.nanmean(input_with_nans, axis=1)
     marker_means = marker_means[:, np.newaxis]
-    marker_stds = np.std(input, axis=1)
+    marker_stds = np.nanstd(input_with_nans, axis=1)
     marker_stds = marker_stds[:, np.newaxis]
-    print(marker_means[0])
-    print(marker_stds[0])
-    input = (input - marker_means) / (marker_stds + 1e-9)
-
+    input = (input_with_nans - marker_means) / (marker_stds + 1e-9)
+    input[np.isnan(input)] = -4668
 
     return input, ground_truth, dataset_constants, marker_means, marker_stds
 
@@ -87,88 +87,57 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
     preds = np.copy(X)
     pred = np.zeros((X.shape[0], output_length, X.shape[2]))
 
-    if model.return_member_data:
-        member_stds = np.zeros((X.shape[0], X.shape[1], X.shape[2]))
-        member_pred = np.zeros((X.shape[0], model.n_members, X.shape[2]))
+    member_stds = np.zeros((X.shape[0], X.shape[1], X.shape[2]))
+    member_pred = np.zeros((X.shape[0], model.n_members, X.shape[2]))
 
-        # At each step, generate a prediction, replace the predictions of
-        # markers you do not want to predict with the ground truth, and append
-        # the resulting vector to the end of the next input chunk.
-        while np.max(startpoint[mask]) > -input_length-1:
+    # At each step, generate a prediction, replace the predictions of
+    # markers you do not want to predict with the ground truth, and append
+    # the resulting vector to the end of the next input chunk.
+    while np.max(startpoint[mask]) > -input_length-1:
 
-            X_start = np.vstack([x[np.array([max(0, t) for t in range(s, s + input_length)])][np.newaxis] for (x, s) in zip(preds[mask], startpoint[mask])])
-            # If there is a marker prediction that is greater than the
-            # difference threshold above, mark it as a bad frame.
-            # These are likely just jumps or identity swaps from MoCap that
-            # were not picked up by preprocessing.
-            if fix_errors:
-                diff = pred[:, 0, :] - X[:, next_frame_id, :]
-                errors = np.squeeze(np.abs(diff) > error_diff_thresh)
-                errors[~markers_to_fix] = False
-                bad_frames[next_frame_id, errors] = True
-            if np.any(bad_frames[next_frame_id, :]):
-                pred, member_pred = model(torch.Tensor(X_start).to(device))
-                pred = pred.detach().cpu().numpy()
-                member_pred = member_pred.detach().cpu().numpy()
+        X_start = np.vstack([x[np.array([max(0, t) for t in range(s, s + input_length)])][np.newaxis] for (x, s) in zip(preds[mask], startpoint[mask])])
+        # If there is a marker prediction that is greater than the
+        # difference threshold above, mark it as a bad frame.
+        # These are likely just jumps or identity swaps from MoCap that
+        # were not picked up by preprocessing.
+        if fix_errors:
+            diff = pred[:, 0, :] - X[:, next_frame_id, :]
+            errors = np.squeeze(np.abs(diff) > error_diff_thresh)
+            errors[~markers_to_fix] = False
+            bad_frames[next_frame_id, errors] = True
+        if np.any(bad_frames[next_frame_id, :]):
+            pred, member_pred = model(torch.Tensor(X_start).to(device))
+            pred = pred.detach().cpu().numpy()
+            member_pred = member_pred.detach().cpu().numpy()
 
-            # Detect anomalous predictions.
-            outliers = np.squeeze(np.abs(pred) > outlier_thresh)
+        # Detect anomalous predictions.
+        outliers = np.squeeze(np.abs(pred) > outlier_thresh)
 
-            pred[:, 0][outliers] = preds[mask, next_frame_id[mask]][outliers]
+        pred[:, 0][outliers] = preds[mask, next_frame_id[mask]][outliers]
 
-            # Only use the predictions for the bad markers. Take the
-            # predictions and append to the end of X_start for future
-            # prediction.
-            pred[:, 0][~bad_frames[mask, next_frame_id[mask]]] = preds[mask, next_frame_id[mask]][~bad_frames[mask, next_frame_id[mask]]]
-            # print(pred[0, 0], X[mask][0, next_frame_id[mask][0]])
-            for i_member in range(0, model.n_members):
-                member_pred[:, i_member, 0][~bad_frames[mask, next_frame_id[mask]]] = float('nan')
-            member_std = np.nanstd(member_pred, axis=1)
-            preds[mask, next_frame_id[mask]] = np.squeeze(pred)
-            member_stds[0, next_frame_id[mask], :] = np.squeeze(member_std)
+        # Only use the predictions for the bad markers. Take the
+        # predictions and append to the end of X_start for future
+        # prediction.
+        pred[:, 0][~bad_frames[mask, next_frame_id[mask]]] = preds[mask, next_frame_id[mask]][~bad_frames[mask, next_frame_id[mask]]]
+        # print(pred[0, 0], X[mask][0, next_frame_id[mask][0]])
+        for i_member in range(0, model.n_members):
+            member_pred[:, i_member, 0][~bad_frames[mask, next_frame_id[mask]]] = float('nan')
+        member_std = np.nanstd(member_pred, axis=1)
+        if np.any(np.isnan(member_std)):
+            print('NANs!')
+        preds[mask, next_frame_id[mask]] = np.squeeze(pred)
+        member_stds[0, next_frame_id[mask], :] = np.squeeze(member_std)
 
-            bad_frames = preds == -4668
-            bad_frames_any = np.any(bad_frames, axis=2)
-            print(np.sum(bad_frames_any), end =' ')
-            startpoint = np.argmax(bad_frames_any, axis=1)
-            startpoint = np.clip(startpoint - input_length - 1, -input_length-1, X.shape[1] - 1)
-            next_frame_id = startpoint + input_length + 1
-            mask = next_frame_id < X.shape[1] - output_length
+        bad_frames = preds == -4668
+        bad_frames_any = np.any(bad_frames, axis=2)
+        print(np.sum(bad_frames_any), end =' ')
+        startpoint = np.argmax(bad_frames_any, axis=1)
+        startpoint = np.clip(startpoint - input_length - 1, -input_length-1, X.shape[1] - 1)
+        next_frame_id = startpoint + input_length + 1
+        mask = next_frame_id < X.shape[1] - output_length
 
-        return np.squeeze(preds), bad_frames, member_stds
-    else:
-        # At each step, generate a prediction, replace the predictions of
-        # markers you do not want to predict with the ground truth, and append
-        # the resulting vector to the end of the next input chunk.
-        for i in range(startpoint, X.shape[1]-input_length-startpoint):
-            if np.mod(i, 10000) == 0:
-                print('Predicting frame: ', i, flush=True)
-            next_frame_id = (startpoint+input_length)+i
+    return np.squeeze(preds), bad_frames, member_stds
 
-            # If there is a marker prediction that is greater than the
-            # difference threshold above, mark it as a bad frame.
-            # These are likely just jumps or identity swaps from MoCap that
-            # were not picked up by preprocessing.
-            if fix_errors:
-                diff = pred[:, 0, :] - X[:, next_frame_id, :]
-                errors = np.squeeze(np.abs(diff) > error_diff_thresh)
-                errors[~markers_to_fix] = False
-                bad_frames[next_frame_id, errors] = True
-            if np.any(bad_frames[next_frame_id, :]):
-                pred = model.predict(X_start)
-
-            # Detect anomalous predictions.
-            outliers = np.squeeze(np.abs(pred) > outlier_thresh)
-            pred[:, 0, outliers] = X[:, next_frame_id, outliers]
-
-            # Only use the predictions for the bad markers. Take the
-            # predictions and append to the end of X_start for future
-            # prediction.
-            pred[:, 0, ~bad_frames[next_frame_id, :]] = \
-                X[:, next_frame_id, ~bad_frames[next_frame_id, :]]
-            preds[:, next_frame_id, :] = np.squeeze(pred)
-            X_start = np.concatenate((X_start[:, 1:, :], pred), axis=1)
-        return np.squeeze(preds), bad_frames
 
 
 def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
@@ -178,8 +147,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
     """Imputes the position of missing markers.
 
     :param model_path: Path to model to use for prediction.
-    :param data_path: Path to marker and bad_frames data. Can be hdf5 or
-                      mat -v7.3.
+    :param data_path: Path to marker and bad_frames data. csv.
     :param pass_direction: Direction in which to impute markers.
                            Can be 'forward' or 'reverse'
     :param save_path: Path to a folder in which to store the prediction chunks.
@@ -247,18 +215,18 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
     # bad_frames = bad_frames[::stride, :]
     # n_frames = int(np.floor(markers.shape[0]/n_folds))
     markers, ground_truth, dataset_constants, marker_means, marker_stds = open_data_csv(filepath=data_file, dataset_path=dataset_path)
-    bad_frames = markers == -4668
-    fold_id = int(fold_id)
-    start_frame = markers.shape[1] * int(fold_id)
-    n_frames = int(np.floor(markers.shape[1] / n_folds))
+    bad_frames = markers == -4668 # value used by optipose to mark dropped frames
+    # fold_id = int(fold_id)
+    # start_frame = markers.shape[1] * int(fold_id)
+    # n_frames = int(np.floor(markers.shape[1] / n_folds))
 
-    # Also predict the remainder if on the last fold.
-    if fold_id == (n_folds-1):
-        markers = markers[start_frame:, :]
-        bad_frames = bad_frames[start_frame:, :]
-    else:
-        markers = markers[start_frame:(start_frame + n_frames), :]
-        bad_frames = bad_frames[start_frame:(start_frame + n_frames), :]
+    # # Also predict the remainder if on the last fold.
+    # if fold_id == (n_folds-1):
+    #     markers = markers[:, start_frame:, :]
+    #     bad_frames = bad_frames[:, start_frame:, :]
+    # else:
+    #     markers = markers[:, start_frame: start_frame + n_frames, :]
+    #     bad_frames = bad_frames[:, start_frame: start_frame + n_frames, :]
 
     # Load model
     if model is None:
@@ -266,12 +234,8 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
         with open(os.path.join(os.path.dirname(model_path), "training_info.json"), 'r') as fp:
             dict_training = json.load(fp)
         model = EnsembleModel(device=device, **dict_training)
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(os.path.join(basedir, model_path)))
         model.eval()
-
-    # Check how many outputs the model has to handle it appropriately
-    if model.return_member_data:
-        member_stds = [None]
 
     # # Set Markers to fix
     # if markers_to_fix is None:
@@ -286,51 +250,41 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
         markers = markers[:, ::-1, :]
         bad_frames = bad_frames[:, ::-1, :]
 
-    print('Predicting %d frames starting at frame %d.'
-          % (markers.shape[1], start_frame))
+    # print('Predicting %d frames starting at frame %d.'
+    #       % (markers.shape[1], start_frame))
 
     # If the model can return the member predictions, do so.
-    if model.return_member_data:
-        print('Imputing markers: %s pass' % (pass_direction), flush=True)
-        preds, bad_frames, member_stds = \
-            predict_markers(model, dict_training, markers, bad_frames,
-                            markers_to_fix=markers_to_fix,
-                            error_diff_thresh=error_diff_thresh)
-    else:
-        # Forward predict
-        print('Imputing markers: %s pass' % (pass_direction), flush=True)
-        preds, bad_frames = \
-            predict_markers(model, dict_training, markers, bad_frames,
-                            markers_to_fix=markers_to_fix,
-                            error_diff_thresh=error_diff_thresh)
+    print('Imputing markers: %s pass' % pass_direction, flush=True)
+    preds, _, member_stds = predict_markers(model, dict_training, markers, bad_frames,
+                                            markers_to_fix=markers_to_fix,
+                                            error_diff_thresh=error_diff_thresh)
+
 
     # Flip the data for the reverse cases to save in the correct direction.
     if pass_direction == 'reverse':
         markers = markers[:, ::-1, :]
         preds = preds[:, ::-1, :]
         bad_frames = bad_frames[:, ::-1, :]
-        if model.return_member_data:
-            member_stds = member_stds[:, ::-1, :]
+        member_stds = member_stds[:, ::-1, :]
 
     # Save predictions to a matlab file.
     if save_path is not None:
-        file_name = '%s_fold_id_%d.mat' % (pass_direction, fold_id)
+        # file_name = '%s_fold_id_%d.mat' % (pass_direction, fold_id)
+        file_name = '%s.mat' % (pass_direction)
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         save_path = os.path.join(save_path, file_name)
         print('Saving to %s' % save_path)
         output_dict = {'preds': preds,
-                        'markers': markers,
-                        'bad_frames': bad_frames,
-                        'n_folds': n_folds,
-                        'fold_id': fold_id,
+                        'markers': markers, # inputs to the model, z-scored
+                        'bad_frames': bad_frames, # original to keep track of where were the holes
+                        # 'n_folds': n_folds,
+                        # 'fold_id': fold_id,
                         'pass_direction': pass_direction,
                         'marker_means': marker_means,
                         'marker_stds': marker_stds,
-                        'ground_truth': ground_truth
-                        }
-        if model.return_member_data:
-            output_dict.update({'member_stds': np.squeeze(member_stds)})
+                        'ground_truth': ground_truth,
+                        'member_stds': np.squeeze(member_stds)}
         savemat(save_path, output_dict)
 
     return preds
@@ -342,7 +296,8 @@ if __name__ == '__main__':
     save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03_preds')
 
     impute_stride = 5
-    nfolds = 20
+    nfolds = 1 # 20
+    # folds are only for faster imputation, drop it
     errordiff_th = 0.5
 
     for i_fold in range(nfolds):

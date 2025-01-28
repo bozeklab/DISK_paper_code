@@ -22,11 +22,11 @@ else:
     basedir = '/projects/ag-bozek/france'
 
 class EnsembleModel(torch.nn.Module):
-    def __init__(self, model_paths, base_output_path, return_member_data=True, device=torch.device('cpu'), **kwargs):
+    def __init__(self, model_paths, base_output_path, device=torch.device('cpu'), **kwargs):
         """Build an ensemble of models that output the median of all members.
         Not really a model because does not learn anything
         Note: Does not compile the ensemble.
-        :param models: List of keras models to include in the ensemble. Currently
+        :param models: List of keras models to include in the ensemble. Curently
                        requires the same output shape.
         :param return_member_data: If True, model will have two outputs: the
                                    ensemble prediction and all member predictions.
@@ -37,11 +37,10 @@ class EnsembleModel(torch.nn.Module):
         self.models = []
 
         for i in range(len(model_paths)):
-            with open(os.path.join(os.path.dirname(model_paths[i]), "training_info.json"), 'r') as fp:
+            with open(os.path.join(basedir, os.path.dirname(model_paths[i]), "training_info.json"), 'r') as fp:
                 self.models_dict_training = json.load(fp)
             model = Wave_net(device=device, **self.models_dict_training)
-            model.load_state_dict(torch.load(os.path.join(base_output_path,
-                                                          model_paths[i])))
+            model.load_state_dict(torch.load(os.path.join(basedir, model_paths[i])))
             model.eval()
             self.models.append(model)
             # models[i] = load_model(os.path.join(base_output_path,
@@ -56,7 +55,6 @@ class EnsembleModel(torch.nn.Module):
         #
         # Get outputs from the ensemble models, compute the median, and fix the
         # shape.
-        self.return_member_data = return_member_data
         self.n_members = len(self.models)
         # member_predictions = concatenate(outputs, axis=1)
         # ensemble_prediction = Lambda(ens_median)(member_predictions)
@@ -75,14 +73,12 @@ class EnsembleModel(torch.nn.Module):
         outputs = [model(x) for model in self.models]
         member_predictions = torch.cat(outputs, dim=1)
         ensemble_pred = torch.quantile(member_predictions, 0.5, dim=1)
-        if self.return_member_data:
-            return ensemble_pred[:, None, :], member_predictions[:, :, None]
-        else:
-            return ensemble_pred[:, None, :]
+        return ensemble_pred[:, None, :], member_predictions[:, :, None]
+
 
 
 def build_ensemble(base_output_path, models_in_ensemble,
-                   return_member_data=True, run_name=None, clean=False,
+                   run_name=None, clean=False,
                    device=torch.device('cpu')):
     """Build an ensemble of models for marker prediction.
 
@@ -98,7 +94,7 @@ def build_ensemble(base_output_path, models_in_ensemble,
 
 
     # Build the ensemble
-    model_ensemble = EnsembleModel(models_in_ensemble, base_output_path, return_member_data=return_member_data)
+    model_ensemble = EnsembleModel(models_in_ensemble, base_output_path)
 
     # Build ensemble folder name if needed
     if run_name is None:
@@ -118,11 +114,13 @@ def build_ensemble(base_output_path, models_in_ensemble,
     # Save the training information in a mat file.
     print('Saving training info')
     with open(os.path.join(run_path, "training_info"), "w") as fp:
-        json.dump({"base_output_path": base_output_path, "run_name": run_name,
-             "return_member_data": return_member_data, "clean": clean,
-             "model_paths": model_paths, "n_members": len(models_in_ensemble),
-                   "input_length": model_ensemble.models_dict_training["input_length"],
-                   "output_length": model_ensemble.models_dict_training["output_length"],},
+        json.dump({"base_output_path": base_output_path[len(basedir):],
+                        "run_name": run_name,
+                        "clean": clean,
+                        "model_paths": [mp[len(basedir):] for mp in model_paths],
+                        "n_members": len(models_in_ensemble),
+                        "input_length": model_ensemble.models_dict_training["input_length"],
+                        "output_length": model_ensemble.models_dict_training["output_length"],},
                   fp)
 
     print('Saving model ensemble')
@@ -135,5 +133,4 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
 
     build_ensemble(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/'),
-                   models,
-                   return_member_data=True, run_name=None, clean=False, device=device)
+                   models, run_name=None, clean=False, device=device)

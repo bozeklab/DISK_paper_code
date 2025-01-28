@@ -5,6 +5,8 @@ import h5py
 import numpy as np
 import os
 import re
+
+import pandas as pd
 from scipy.io import savemat, loadmat
 from skimage import measure
 import json
@@ -38,11 +40,11 @@ def merge(save_path, fold_paths):
     """
     # Order the files in the imputation path by the fold id in the filename
     # Consider revising
-    fold_files = [os.path.basename(s) for s in fold_paths]
-    folds = [int(re.findall('\d+', s)[0]) for s in fold_files]
-    sorted_indices = sorted(range(len(folds)), key=lambda k: folds[k])
-    fold_paths = [fold_paths[i] for i in sorted_indices]
-    print('Reorganized fold paths:')
+    # fold_files = [os.path.basename(s) for s in fold_paths]
+    # folds = [int(re.findall('\d+', s)[0]) for s in fold_files]
+    # sorted_indices = sorted(range(len(folds)), key=lambda k: folds[k])
+    # fold_paths = [fold_paths[i] for i in sorted_indices]
+    # print('Reorganized fold paths:')
     print(fold_paths)
 
     n_folds_to_merge = len(fold_paths)
@@ -129,49 +131,54 @@ def merge(save_path, fold_paths):
 
     # Compute the weighted average of the forward and reverse predictions using
     # a logistic function
-    print('Computing weighted average', flush=True)
+    print('Computing weighted average:', flush=True, end=' ')
     preds = np.zeros(predsF.shape)
     member_stds = np.zeros(member_stdsF.shape)
     k = 1 # sigmoid exponent
-    for i in range(bad_frames.shape[2] * 3):
-        start = datetime.datetime.now()
-        print('marker number: %d' % i, flush=True)
-        is_bad = bad_frames[..., np.floor(i / 3).astype('int32')]
-        CC = measure.label(is_bad, background=0)
-        num_CC = len(np.unique(CC)) - 1
-        preds[..., i] = predsF[..., i]
-        for j in range(num_CC):
-            CC_ids = np.array(np.where(CC == j + 1))
-            length_CC = CC_ids.shape[0]
-            x_0 = np.round(length_CC / 2)
-            weightR = sigmoid(np.arange(length_CC), x_0, k)
-            weightF = 1 - weightR
-            preds[CC_ids, i] = (predsF[CC_ids, i] * weightF) + (predsR[CC_ids, i] * weightR)
-            member_stds[CC_ids, i] = np.sqrt(member_stdsF[CC_ids, i]**2 * weightF + member_stdsR[CC_ids, i]**2 * weightR)
-        elapsed = datetime.datetime.now() - start
-        print(elapsed)
+    start = datetime.datetime.now()
+    for sample in range(len(predsF)):
+        # for i in range(bad_frames.shape[2] * 3): # *3
+        is_bad = bad_frames[sample] #bad_frames[..., np.floor(i / 3).astype('int32')]
+        for kp in range(bad_frames.shape[-1]):
+            CC = measure.label(is_bad[:, kp], background=0)
+            num_CC = len(np.unique(CC)) - 1
+            # initialize to forward prediction
+            preds[sample, ..., 3 * kp: 3 * kp + 3] = predsF[sample, ..., 3 * kp: 3 * kp +3]
+            for j in range(num_CC):
+                time_ids = np.where(CC == j + 1)[0]
+                length_CC = len(time_ids)
+                x_0 = np.round(length_CC / 2)
+                weightR = sigmoid(np.arange(length_CC), x_0, k)[:, np.newaxis]
+                weightF = 1 - weightR
+                preds[sample, time_ids, kp * 3: kp * 3 + 3] = predsF[sample, time_ids, kp * 3: kp * 3 + 3] * weightF + predsR[sample, time_ids, kp * 3: kp * 3 + 3] * weightR
+                member_stds[sample, time_ids, kp * 3: kp * 3 + 3] = np.sqrt(member_stdsF[sample, time_ids, kp * 3: kp * 3 + 3]**2 * weightF + member_stdsR[sample, time_ids, kp * 3: kp * 3 + 3]**2 * weightR)
+    elapsed = datetime.datetime.now() - start
+    print(elapsed)
 
     # Save predictions to a matlab file.
     if save_path is not None:
         s = 'Saving to %s' % (save_path)
         print(s)
-        with h5py.File(save_path, "w") as f:
-            f.create_dataset("preds", data=preds)
-            f.create_dataset("markers", data=markers)
+        with h5py.File(os.path.join(save_path, 'final_predictions.h5'), "w") as f:
+            f.create_dataset("preds", data=preds) # merged predictions
+            f.create_dataset("markers", data=markers) # input to the ensemble models, de-z-scored
             f.create_dataset("badFrames", data=bad_frames)
-            # f.create_dataset("member_predsF", data=member_predsF)
-            # f.create_dataset("member_predsR", data=member_predsR)
-            f.create_dataset("member_stds", data=member_stds)
-        # savemat(save_path, {'preds': preds, 'markers': markers,
-        #                     'badFrames': bad_frames,
-        #                     'member_predsF': member_predsF,
-        #                     'member_predsR': member_predsR})
+            f.create_dataset("predsF", data=predsF)
+            f.create_dataset("predsR", data=predsR)
+            f.create_dataset("member_stds", data=member_stds) # should be 0 where no prediction, else a float giving the divergence of the ensemble models (std)
 
+        # save it in the same csv format as the other methods, so it is easier to compare
+        cols = [f'{i//3}_{i%3}' for i in range(preds.shape[2])]
+        for i_sample in range(preds.shape[0]):
+            output_file_path = os.path.join(save_path, f'test_repeat-0_sample{i_sample}_MBI.csv')
+            df = pd.DataFrame(columns=cols, data = preds[i_sample])
+            df['behaviour'] = np.nan
+            df.to_csv(output_file_path, index=False)
     return preds
 
 if __name__ == "__main__":
     # Wrapper for running from commandline
-    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03_merged')
+    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03_merged/')
     fold_paths = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03_preds/*.mat'))
 
     merge(save_path, fold_paths)
