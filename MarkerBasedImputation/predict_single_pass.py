@@ -250,14 +250,15 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
     bad_frames = markers == -4668
     fold_id = int(fold_id)
     start_frame = markers.shape[1] * int(fold_id)
+    n_frames = int(np.floor(markers.shape[1] / n_folds))
 
-    # # Also predict the remainder if on the last fold.
-    # if fold_id == (n_folds-1):
-    #     markers = markers[start_frame:, :]
-    #     bad_frames = bad_frames[start_frame:, :]
-    # else:
-    #     markers = markers[start_frame:(start_frame + n_frames), :]
-    #     bad_frames = bad_frames[start_frame:(start_frame + n_frames), :]
+    # Also predict the remainder if on the last fold.
+    if fold_id == (n_folds-1):
+        markers = markers[start_frame:, :]
+        bad_frames = bad_frames[start_frame:, :]
+    else:
+        markers = markers[start_frame:(start_frame + n_frames), :]
+        bad_frames = bad_frames[start_frame:(start_frame + n_frames), :]
 
     # Load model
     if model is None:
@@ -341,7 +342,7 @@ if __name__ == '__main__':
     save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03_preds')
 
     impute_stride = 5
-    nfolds = 2 # 20
+    nfolds = 20
     errordiff_th = 0.5
 
     for i_fold in range(nfolds):
