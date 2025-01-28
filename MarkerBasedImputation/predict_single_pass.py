@@ -308,13 +308,12 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
             os.makedirs(save_path)
         save_path = os.path.join(save_path, file_name)
         print('Saving to %s' % (save_path))
-        with open(save_path, "w") as fp:
-            json.dump({'preds': preds, 'markers': markers,
+        savemat(save_path, {'preds': preds, 'markers': markers,
                                 'bad_frames': bad_frames,
                                 'member_stds': np.squeeze(member_stds),
                                 'n_folds': n_folds,
                                 'fold_id': fold_id,
-                                'pass_direction': pass_direction}, fp)
+                                'pass_direction': pass_direction})
 
     return preds
 
