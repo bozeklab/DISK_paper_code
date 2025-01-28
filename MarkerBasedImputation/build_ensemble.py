@@ -57,8 +57,7 @@ class EnsembleModel(torch.nn.Module):
         # Get outputs from the ensemble models, compute the median, and fix the
         # shape.
         self.return_member_data = return_member_data
-        self.output_shape = 2 if self.return_member_data else 1
-        self.n_models = len(self.models)
+        self.n_members = len(self.models)
         # member_predictions = concatenate(outputs, axis=1)
         # ensemble_prediction = Lambda(ens_median)(member_predictions)
         # ensemble_prediction = Lambda(pad)(ensemble_prediction)

@@ -36,7 +36,17 @@ def open_data_csv(filepath, dataset_path, stride=1):
     ground_truth = np.vstack([np.array(eval(v))[np.newaxis] for v in df['label']])
     ground_truth = ground_truth.reshape(input.shape[0], input.shape[1], -1)
 
-    return input, ground_truth, dataset_constants
+    # Z-score the marker data
+    marker_means = np.mean(input, axis=1)
+    marker_means = marker_means[:, np.newaxis]
+    marker_stds = np.std(input, axis=1)
+    marker_stds = marker_stds[:, np.newaxis]
+    print(marker_means[0])
+    print(marker_stds[0])
+    input = (input - marker_means) / (marker_stds + 1e-9)
+
+
+    return input, ground_truth, dataset_constants, marker_means, marker_stds
 
 
 def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
@@ -79,7 +89,7 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
 
     if model.return_member_data:
         member_stds = np.zeros((X.shape[0], X.shape[1], X.shape[2]))
-        member_pred = np.zeros((X.shape[0], model.n_models, X.shape[2]))
+        member_pred = np.zeros((X.shape[0], model.n_members, X.shape[2]))
 
         # At each step, generate a prediction, replace the predictions of
         # markers you do not want to predict with the ground truth, and append
@@ -111,7 +121,7 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
             # prediction.
             pred[:, 0][~bad_frames[mask, next_frame_id[mask]]] = preds[mask, next_frame_id[mask]][~bad_frames[mask, next_frame_id[mask]]]
             # print(pred[0, 0], X[mask][0, next_frame_id[mask][0]])
-            for i_member in range(0, model.n_models):
+            for i_member in range(0, model.n_members):
                 member_pred[:, i_member, 0][~bad_frames[mask, next_frame_id[mask]]] = float('nan')
             member_std = np.nanstd(member_pred, axis=1)
             preds[mask, next_frame_id[mask]] = np.squeeze(pred)
@@ -236,7 +246,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
     # markers = markers[::stride, :]
     # bad_frames = bad_frames[::stride, :]
     # n_frames = int(np.floor(markers.shape[0]/n_folds))
-    markers, ground_truth, dataset_constants = open_data_csv(filepath=data_file, dataset_path=dataset_path)
+    markers, ground_truth, dataset_constants, marker_means, marker_stds = open_data_csv(filepath=data_file, dataset_path=dataset_path)
     bad_frames = markers == -4668
     fold_id = int(fold_id)
     start_frame = markers.shape[1] * int(fold_id)
@@ -259,8 +269,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
         model.eval()
 
     # Check how many outputs the model has to handle it appropriately
-    n_outputs = model.output_shape
-    if n_outputs == 1:
+    if model.return_member_data:
         member_stds = [None]
 
     # # Set Markers to fix
@@ -299,7 +308,8 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
         markers = markers[:, ::-1, :]
         preds = preds[:, ::-1, :]
         bad_frames = bad_frames[:, ::-1, :]
-        member_stds = member_stds[:, ::-1, :]
+        if model.return_member_data:
+            member_stds = member_stds[:, ::-1, :]
 
     # Save predictions to a matlab file.
     if save_path is not None:
@@ -307,13 +317,20 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         save_path = os.path.join(save_path, file_name)
-        print('Saving to %s' % (save_path))
-        savemat(save_path, {'preds': preds, 'markers': markers,
-                                'bad_frames': bad_frames,
-                                'member_stds': np.squeeze(member_stds),
-                                'n_folds': n_folds,
-                                'fold_id': fold_id,
-                                'pass_direction': pass_direction})
+        print('Saving to %s' % save_path)
+        output_dict = {'preds': preds,
+                        'markers': markers,
+                        'bad_frames': bad_frames,
+                        'n_folds': n_folds,
+                        'fold_id': fold_id,
+                        'pass_direction': pass_direction,
+                        'marker_means': marker_means,
+                        'marker_stds': marker_stds,
+                        'ground_truth': ground_truth
+                        }
+        if model.return_member_data:
+            output_dict.update({'member_stds': np.squeeze(member_stds)})
+        savemat(save_path, output_dict)
 
     return preds
 
@@ -324,7 +341,7 @@ if __name__ == '__main__':
     save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03_preds')
 
     impute_stride = 5
-    nfolds = 20
+    nfolds = 2 # 20
     errordiff_th = 0.5
 
     for i_fold in range(nfolds):
