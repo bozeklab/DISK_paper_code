@@ -22,16 +22,6 @@ else:
     matplotlib.use('Agg')
     basedir = '/projects/ag-bozek/france'
 
-def sigmoid(x, x_0, k):
-    """Sigmoid function.
-
-    For use in weighted averaging of marker predictions from
-    the forward and reverse passes.
-    :param x: domain
-    :param x_0: midpoint
-    :parak k: exponent constant.
-    """
-    return 1 / (1 + np.exp(-k*(x-x_0)))
 
 def open_data_csv(filepath, dataset_path, stride=1):
     """Load keypoints from DISK already processed .npz files."""
@@ -332,6 +322,7 @@ if __name__ == '__main__':
     model_ensemble_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03/final_model.h5')
     dataset_path = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
     data_file = os.path.join(basedir, 'results_behavior/models/test_CLB_optipose_debug/test_for_optipose_repeat_0/test_repeat-0.csv')
+    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03_preds')
 
     impute_stride = 5
     nfolds = 20
@@ -340,6 +331,6 @@ if __name__ == '__main__':
     for i_fold in range(nfolds):
         for pass_direction in ['reverse', 'forward']:
             predict_single_pass(model_ensemble_path, data_file, dataset_path, pass_direction,
-                                save_path=None, stride=impute_stride, n_folds=nfolds, fold_id=i_fold,
+                                save_path=save_path, stride=impute_stride, n_folds=nfolds, fold_id=i_fold,
                                 markers_to_fix=None, error_diff_thresh=errordiff_th,
                                 model=None)
