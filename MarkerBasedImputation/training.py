@@ -7,7 +7,7 @@ from glob import glob
 import os
 import matplotlib
 
-from MarkerBasedImputation.models import Wave_net
+from models import Wave_net
 
 if os.uname().nodename == 'france-XPS':
     matplotlib.use('TkAgg')
