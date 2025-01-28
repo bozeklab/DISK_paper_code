@@ -286,7 +286,8 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
 if __name__ == '__main__':
     model_ensemble_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03/final_model.h5')
     dataset_path = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
-    data_file = os.path.join(basedir, 'results_behavior/models/test_CLB_optipose_debug/test_for_optipose_repeat_0/test_repeat-0.csv')
+    data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file0.csv')
+    # data_file = os.path.join(basedir, 'results_behavior/models/test_CLB_optipose_debug/test_for_optipose_repeat_0/test_repeat-0.csv')
     save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03_preds')
 
     impute_stride = 5
