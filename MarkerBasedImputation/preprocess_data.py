@@ -33,21 +33,29 @@ def pad_vector(vect, n_pad):
     return np.array([vect[0], ] * n_pad + list(vect) + [vect[-1], ] * n_pad)
 
 
-# def simple_median_filter(X, k=3, axis=1):
-#     X_shape = X.shape
-#     idx = np.delete(np.arange(len(X_shape)), axis)
-#     other_dims = X_shape[idx]
-#     if len(other_dims) == 1:
-#         I = [slice(None)] * X.ndim
-#         I[other_dims[0]] = slice(0, X.shape[other_dims[0]])
-#         [pad_vector(X[i], k - 2) for i in I]
-#
-#     elif len(other_dims) == 2:
-#
-#     elif len(other_dims) == 3:
-#
-#     else:
-#         return ValueError(f'simple_median_filter not implemented for array with more than {len(other_dims) + 1}')
+def z_score_data(input, exclude_value=-4668):
+    """
+    Z-score the marker data across time
+
+    :param input: np array of shape (samples, time, keypoints * 3)
+    :param exclude_value:
+
+    :return:
+    """
+    input_with_nans = np.copy(input)
+    input_with_nans[input == exclude_value] = np.nan
+
+    marker_means = np.nanmean(input_with_nans, axis=1)
+    marker_means = marker_means[:, np.newaxis]
+
+    marker_stds = np.nanstd(input_with_nans, axis=1)
+    marker_stds = marker_stds[:, np.newaxis]
+
+    z_score_input = (input_with_nans - marker_means) / (marker_stds + 1e-9)
+    z_score_input[np.isnan(z_score_input)] = exclude_value
+
+    return z_score_input, marker_means, marker_stds
+
 
 def preprocess_data(X, marker_names, front_point, middle_point):
     """

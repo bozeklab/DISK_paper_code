@@ -13,6 +13,7 @@ import matplotlib
 import json
 
 from build_ensemble import EnsembleModel
+from preprocess_data import z_score_data
 from DISK.utils.utils import read_constant_file
 
 if os.uname().nodename == 'france-XPS':
@@ -37,16 +38,9 @@ def open_data_csv(filepath, dataset_path, stride=1):
     ground_truth = ground_truth.reshape(input.shape[0], input.shape[1], -1)
 
     # Z-score the marker data
-    input_with_nans = np.copy(input)
-    input_with_nans[input == -4668] = np.nan
-    marker_means = np.nanmean(input_with_nans, axis=1)
-    marker_means = marker_means[:, np.newaxis]
-    marker_stds = np.nanstd(input_with_nans, axis=1)
-    marker_stds = marker_stds[:, np.newaxis]
-    input = (input_with_nans - marker_means) / (marker_stds + 1e-9)
-    input[np.isnan(input)] = -4668
+    z_score_input, marker_means, marker_stds = z_score_data(input, exclude_value=-4668)
 
-    return input, ground_truth, dataset_constants, marker_means, marker_stds
+    return z_score_input, ground_truth, dataset_constants, marker_means, marker_stds
 
 
 def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
