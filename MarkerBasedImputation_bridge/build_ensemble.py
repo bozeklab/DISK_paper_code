@@ -37,10 +37,10 @@ class EnsembleModel(torch.nn.Module):
         self.models = []
 
         for i in range(len(model_paths)):
-            with open(os.path.join(basedir, os.path.dirname(model_paths[i]), "training_info.json"), 'r') as fp:
+            with open(os.path.join(basedir, os.path.dirname(model_paths[i]).lstrip('/'), "training_info.json"), 'r') as fp:
                 self.models_dict_training = json.load(fp)
             model = Wave_net(device=device, **self.models_dict_training)
-            model.load_state_dict(torch.load(os.path.join(basedir, model_paths[i])))
+            model.load_state_dict(torch.load(os.path.join(basedir, model_paths[i].lstrip('/'))))
             model.eval()
             self.models.append(model)
             # models[i] = load_model(os.path.join(base_output_path,
@@ -113,7 +113,7 @@ def build_ensemble(base_output_path, models_in_ensemble,
 
     # Save the training information in a mat file.
     print('Saving training info')
-    with open(os.path.join(run_path, "training_info"), "w") as fp:
+    with open(os.path.join(run_path, "training_info.json"), "w") as fp:
         json.dump({"base_output_path": base_output_path[len(basedir):],
                         "run_name": run_name,
                         "clean": clean,

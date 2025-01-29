@@ -34,12 +34,18 @@ class Wave_net(torch.nn.Module):
         dilation_rates = [2**i for i in range(n_dilations)]
         self.convs = []
         n_in = n_markers
+        self.input_length = input_length
         out_len_because_padding = int(input_length)
         for dilation_rate in dilation_rates:
             for i in range(layers_per_level):
-                self.convs.append(Conv1d(in_channels=n_in, out_channels=n_filters, kernel_size=filter_width,
-                                         padding=dilation_rate * (filter_width - 1), dilation=dilation_rate).to(device))
-                out_len_because_padding += dilation_rate * (filter_width - 1)
+                self.convs.append(Conv1d(in_channels=n_in,
+                                         out_channels=n_filters,
+                                         kernel_size=filter_width,
+                                         padding=dilation_rate * (filter_width - 1),
+                                         dilation=dilation_rate).to(device))
+                # torch.nn.init.xavier_uniform()
+                torch.nn.init.kaiming_normal_(self.convs[-1].weight, mode='fan_in', nonlinearity='relu')
+                #out_len_because_padding += dilation_rate * (filter_width - 1)
                 # filters=n_filters,
                 #                            kernel_size=filter_width,
                 #                            padding='causal',
@@ -49,7 +55,7 @@ class Wave_net(torch.nn.Module):
 
         # Dense connections
         self.linear_on_marker_dim = Linear(n_filters, n_markers)
-        self.linear_on_time_dimension = Linear(out_len_because_padding, output_length)
+        self.linear_on_time_dimension = Linear(self.input_length, output_length)
 
         # Build and compile the model
         # model = Model(history_seq, x)
@@ -59,8 +65,11 @@ class Wave_net(torch.nn.Module):
 
     def forward(self, x):
         x_ = torch.swapaxes(x, 1, 2) # shapes: (batch, len, markers) -> (batch, markers, len)
-        for c in self.convs:
-            x_ = torch.relu(c(x_)) # after convs, shape (batch, filters, len + padding)
+        for i_c, c in enumerate(self.convs):
+            if i_c == 0:
+                x_ = torch.relu(c(x_)[..., :self.input_length].contiguous()) # after convs, shape (batch, filters, len + padding)
+            else:
+                x_ = torch.relu(c(x_)[..., :self.input_length].contiguous() + x_)  # after convs, shape (batch, filters, len + padding)
         x_ = torch.permute(x_, [0, 2, 1]) # shape: (batch, filters, len + padding) -> (batch, len + padding, filters)
         x_ = self.linear_on_marker_dim(x_) # shape: (batch, len + padding, markers)
         x_ = torch.permute(x_, [0, 2, 1]) # shape: (batch, len + padding, markers) -> (batch, markers, len + padding)

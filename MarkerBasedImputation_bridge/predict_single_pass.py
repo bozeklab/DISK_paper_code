@@ -13,7 +13,7 @@ import matplotlib
 import json
 
 from build_ensemble import EnsembleModel
-from preprocess_data import z_score_data
+from preprocess_data import z_score_data, preprocess_data
 from DISK.utils.utils import read_constant_file
 
 if os.uname().nodename == 'france-XPS':
@@ -30,17 +30,38 @@ def open_data_csv(filepath, dataset_path, stride=1):
     dataset_constant_file = glob(os.path.join(dataset_path, 'constants.py'))[0]
     dataset_constants = read_constant_file(dataset_constant_file)
 
-    df = pd.read_csv(filepath, sep='|')
+    if 'repeat' in filepath:
+        df = pd.read_csv(filepath, sep='|')
 
-    input = np.vstack([np.array(eval(v))[np.newaxis] for v in df['input']])
-    input = input.reshape(input.shape[0], input.shape[1], -1)
-    ground_truth = np.vstack([np.array(eval(v))[np.newaxis] for v in df['label']])
-    ground_truth = ground_truth.reshape(input.shape[0], input.shape[1], -1)
+        input = np.vstack([np.array(eval(v))[np.newaxis] for v in df['input']])
+        input = input.reshape(input.shape[0], input.shape[1], -1)
+        ground_truth = np.vstack([np.array(eval(v))[np.newaxis] for v in df['label']])
+        ground_truth = ground_truth.reshape(input.shape[0], input.shape[1], -1)
+
+        exclude_value = -4668
+    else:
+        df = pd.read_csv(filepath, sep=',')
+        cols = df.columns
+
+        input = df[cols].values[np.newaxis]
+        ground_truth = np.copy(input)
+
+        exclude_value = np.nan
+
+    transformed_coords, rot_angle, mean_position = preprocess_data(input, dataset_constants.KEYPOINTS,
+                                                                        middle_point=['right_hip', 'left_hip'],
+                                                                        front_point=['right_coord', 'left_coord'])
 
     # Z-score the marker data
-    z_score_input, marker_means, marker_stds = z_score_data(input, exclude_value=-4668)
+    z_score_input, marker_means, marker_stds = z_score_data(transformed_coords, exclude_value=exclude_value)
 
-    return z_score_input, ground_truth, dataset_constants, marker_means, marker_stds
+    transforms_dict = {'rot_angle': rot_angle,
+                       'mean_position': mean_position,
+                       'marker_means': marker_means,
+                       'marker_stds': marker_stds,
+                       'exclude_value': exclude_value}
+
+    return z_score_input, ground_truth, dataset_constants, transforms_dict
 
 
 def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
@@ -120,7 +141,7 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
         if np.any(np.isnan(member_std)):
             print('NANs!')
         preds[mask, next_frame_id[mask]] = np.squeeze(pred)
-        member_stds[0, next_frame_id[mask], :] = np.squeeze(member_std)
+        member_stds[mask, next_frame_id[mask], :] = np.squeeze(member_std)
 
         bad_frames = preds == -4668
         bad_frames_any = np.any(bad_frames, axis=2)
@@ -130,7 +151,7 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
         next_frame_id = startpoint + input_length + 1
         mask = next_frame_id < X.shape[1] - output_length
 
-    return np.squeeze(preds), bad_frames, member_stds
+    return preds, bad_frames, member_stds
 
 
 
@@ -208,8 +229,8 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
     # markers = markers[::stride, :]
     # bad_frames = bad_frames[::stride, :]
     # n_frames = int(np.floor(markers.shape[0]/n_folds))
-    markers, ground_truth, dataset_constants, marker_means, marker_stds = open_data_csv(filepath=data_file, dataset_path=dataset_path)
-    bad_frames = markers == -4668 # value used by optipose to mark dropped frames
+    markers, ground_truth, dataset_constants, transform_dict = open_data_csv(filepath=data_file, dataset_path=dataset_path)
+    bad_frames = markers == -transform_dict['exclude_value'] # value used by optipose to mark dropped frames
     # fold_id = int(fold_id)
     # start_frame = markers.shape[1] * int(fold_id)
     # n_frames = int(np.floor(markers.shape[1] / n_folds))
@@ -264,31 +285,35 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
     # Save predictions to a matlab file.
     if save_path is not None:
         # file_name = '%s_fold_id_%d.mat' % (pass_direction, fold_id)
-        file_name = '%s.mat' % (pass_direction)
+        file_name = f'{os.path.basename(data_file).split(".csv")[0]}_{pass_direction}.mat'
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         save_path = os.path.join(save_path, file_name)
         print('Saving to %s' % save_path)
         output_dict = {'preds': preds,
                         'markers': markers, # inputs to the model, z-scored
+                       'marker_names': dataset_constants.KEYPOINTS,
                         'bad_frames': bad_frames, # original to keep track of where were the holes
                         # 'n_folds': n_folds,
                         # 'fold_id': fold_id,
+                       'data_file': data_file,
                         'pass_direction': pass_direction,
-                        'marker_means': marker_means,
-                        'marker_stds': marker_stds,
+                        'marker_means': transform_dict["marker_means"],
+                        'marker_stds': transform_dict["marker_stds"],
+                        'rot_angle': transform_dict["rot_angle"],
+                        'mean_position': transform_dict["mean_position"],
                         'ground_truth': ground_truth,
-                        'member_stds': np.squeeze(member_stds)}
+                        'member_stds': member_stds}
         savemat(save_path, output_dict)
 
     return preds
 
 if __name__ == '__main__':
-    model_ensemble_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03/final_model.h5')
+    model_ensemble_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01/final_model.h5')
     dataset_path = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
-    data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file0.csv')
-    # data_file = os.path.join(basedir, 'results_behavior/models/test_CLB_optipose_debug/test_for_optipose_repeat_0/test_repeat-0.csv')
-    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03_preds')
+    # data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file0.csv')
+    data_file = os.path.join(basedir, 'results_behavior/models/test_CLB_optipose_debug/test_for_optipose_repeat_0/test_repeat-0.csv')
+    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01')
 
     impute_stride = 5
     nfolds = 1 # 20

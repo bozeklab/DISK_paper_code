@@ -19,6 +19,7 @@ else:
     matplotlib.use('Agg')
     basedir = '/projects/ag-bozek/france'
 
+from preprocess_data import unprocess_data
 
 def sigmoid(x, x_0, k):
     """Sigmoid function.
@@ -103,7 +104,11 @@ def merge(save_path, fold_paths):
 
     marker_means = np.array(data['marker_means'][:])
     marker_stds = np.array(data['marker_stds'][:])
-    data = None
+    rot_angle = np.array(data['rot_angle'][:])
+    mean_position = np.array(data['mean_position'][:])
+    marker_names = np.array(data['marker_names'][:])
+    original_data_file = data['data_file'][0]
+    del data
 
     print(markers.shape)
     print(member_stdsF.shape)
@@ -117,9 +122,9 @@ def merge(save_path, fold_paths):
     #     markers[:, i] = markers[:, i] * marker_stds[:, 0] + marker_means[:, 0]
     #     predsF[:, i] = predsF[:, i] * marker_stds[:, 0] + marker_means[:, 0]
     #     predsR[:, i] = predsR[:, i] * marker_stds[:, 0] + marker_means[:, 0]
-    markers = markers * marker_stds + marker_means
-    predsF = predsF * marker_stds + marker_means
-    predsR = predsR * marker_stds + marker_means
+    markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names)
+    predsF = unprocess_data(predsF, rot_angle, mean_position, marker_means, marker_stds, marker_names)
+    predsR = unprocess_data(predsR, rot_angle, mean_position, marker_means, marker_stds, marker_names)
 
     # This is not necessarily all the error frames from
     # multiple_predict_recording_with_replacement, but if they overlap,
@@ -159,7 +164,7 @@ def merge(save_path, fold_paths):
     if save_path is not None:
         s = 'Saving to %s' % (save_path)
         print(s)
-        with h5py.File(os.path.join(save_path, 'final_predictions.h5'), "w") as f:
+        with h5py.File(os.path.join(save_path, f'{os.path.basename(original_data_file).split(".csv")[0]}_final_predictions.h5'), "w") as f:
             f.create_dataset("preds", data=preds) # merged predictions
             f.create_dataset("markers", data=markers) # input to the ensemble models, de-z-scored
             f.create_dataset("badFrames", data=bad_frames)
@@ -170,7 +175,7 @@ def merge(save_path, fold_paths):
         # save it in the same csv format as the other methods, so it is easier to compare
         cols = [f'{i//3}_{i%3}' for i in range(preds.shape[2])]
         for i_sample in range(preds.shape[0]):
-            output_file_path = os.path.join(save_path, f'test_repeat-0_sample{i_sample}_MBI.csv')
+            output_file_path = os.path.join(save_path, f'{os.path.basename(original_data_file).split(".csv")[0]}_sample{i_sample}_MBI.csv')
             df = pd.DataFrame(columns=cols, data = preds[i_sample])
             df['behaviour'] = np.nan
             df.to_csv(output_file_path, index=False)
@@ -178,7 +183,7 @@ def merge(save_path, fold_paths):
 
 if __name__ == "__main__":
     # Wrapper for running from commandline
-    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03_merged/')
-    fold_paths = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_03_preds/*.mat'))
+    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01/')
+    fold_paths = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01/test_repeat-0*.mat'))
 
     merge(save_path, fold_paths)

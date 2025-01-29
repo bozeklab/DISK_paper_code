@@ -96,3 +96,16 @@ def preprocess_data(X, marker_names, front_point, middle_point):
 
     return ego_X.reshape(X.shape), rot_angle, X_middle_point
 
+def unprocess_data(X, rot_angle, mean_position, marker_means, marker_stds, marker_names):
+    # undo the z-score
+    unz_X = X * marker_stds + marker_means
+    unz_X = unz_X.reshape(X.shape[0], X.shape[1], len(marker_names), 3)
+
+    # undo the rotation
+    unrot_X = np.copy(unz_X)
+    unrot_X[..., 0] = unz_X[..., 0] * np.cos(rot_angle[..., np.newaxis]) + unz_X[..., 1] * np.sin(rot_angle[..., np.newaxis])
+    unrot_X[..., 1] = - unz_X[..., 0] * np.sin(rot_angle[..., np.newaxis]) + unz_X[..., 1] * np.cos(rot_angle[..., np.newaxis])
+
+    # undo the centering
+    return (unrot_X + mean_position[:, :, np.newaxis]).reshape(X.shape)
+

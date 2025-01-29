@@ -75,7 +75,8 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1):
     input_coords = np.vstack([[v[i: i + input_length][np.newaxis] for i in idx] for v in z_score_coords])
     input_coords = input_coords.reshape((input_coords.shape[0], input_length, len(bodyparts), -1))[..., :3].reshape((input_coords.shape[0], input_length, -1))
     # mean_pos_input = np.vstack([[v[i: i + input_length] for i in idx] for v in mean_position])
-    output_coords = np.vstack([[v[i + input_length: i + input_length + output_length][np.newaxis] for i in idx] for v in z_score_coords])
+    output_coords = np.vstack([[v[i + input_length - 1: i + input_length][np.newaxis] for i in idx] for v in z_score_coords])  ### TEST, TOREMOVE, repeat the last value, should be able to learn easy
+    # output_coords = np.vstack([[v[i + input_length: i + input_length + output_length][np.newaxis] for i in idx] for v in z_score_coords])
     output_coords = output_coords.reshape((output_coords.shape[0], output_length, len(bodyparts), -1))[..., :3].reshape((output_coords.shape[0], output_length, -1))
     # mean_pos_output = np.vstack([[v[i + input_length: i + input_length + output_length] for i in idx] for v in mean_position])
 
@@ -296,7 +297,7 @@ def train(train_file, val_file, *, base_output_path="models", run_name=None,
             outputs = model(X) # forward
             if torch.isnan(X).any():
                 print(torch.where(torch.isnan(X)), outputs, y, flush=True)
-            loss = loss_function(torch.clip(outputs, 1e-9, 1-1e-9), y)
+            loss = loss_function(outputs, y)
 
             list_y_train.append(y.detach().cpu().numpy())
 
@@ -324,17 +325,33 @@ def train(train_file, val_file, *, base_output_path="models", run_name=None,
                     outputs = model(X) # this gets the prediction from the network
                     val_outputs.append(outputs.cpu().numpy())
 
-                    val_loss += loss_function(torch.clip(outputs, 1e-9, 1-1e-9), y).item() # MODIFIED - added [][]
+                    val_loss += loss_function(outputs, y).item() # MODIFIED - added [][]
 
                     list_y.append(y.cpu().numpy())
             scheduler.step(val_loss)
 
+
+            print(np.unique(np.vstack(val_outputs).flatten()))
             print(f"Epoch {epoch+1}/{epochs}, training loss: {total_loss/batches:.4f}, validation loss: {val_loss/val_batches:.4f}")
             losses.append(total_loss/batches) # for plotting learning curve
             val_losses.append(val_loss/val_batches) # for plotting learning curve
             if val_loss/val_batches < best_val_loss:
                 best_val_loss = val_loss/val_batches
                 torch.save(model.state_dict(), os.path.join(run_path, "best_model.h5"))
+
+    fig, axes = plt.subplots(8, 3)
+    item = np.random.randint(X.shape[0])
+    axes = axes.flatten()
+    for i in range(24):
+        axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
+        axes[i].plot([9], list_y[-1][item, :, i], 'o')
+        axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
+
+    plt.figure()
+    plt.hist(np.vstack(list_y).flatten(), bins=50)
+    plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
+
+    plt.show()
 
     fig, ax = plt.subplots(1, 1)
     x = np.arange(0, epochs, print_every)
@@ -399,9 +416,9 @@ if __name__ == '__main__':
     MERGEDFILE = os.path.join(BASEFOLDER, "/fullDay_model_ensemble.h5")
 
     # Training
-    NMODELS = 10
-    TRAINSTRIDE = 5
-    EPOCHS = 30
+    NMODELS = 1
+    TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
+    EPOCHS = 100
 
     # # Imputation
     # NFOLDS = 20
@@ -416,7 +433,7 @@ if __name__ == '__main__':
         train(train_file, val_file, base_output_path=MODELFOLDER, run_name=None,
               data_name=None, net_name="wave_net", clean=False, input_length=9,
               output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
-              val_fraction=0.15, only_moving_frames=False, n_filters=512,
+              val_fraction=0.15, only_moving_frames=False, n_filters=24, #512,
               filter_width=2, layers_per_level=3, n_dilations=None,
               latent_dim=750, epochs=EPOCHS, batch_size=1000,
               lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
