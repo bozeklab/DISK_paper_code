@@ -53,6 +53,8 @@ class Wave_net(torch.nn.Module):
                 #                            activation='relu'))
                 n_in = n_filters
 
+        self.downsample = Conv1d(n_markers, n_filters, 1) if n_markers != n_filters else None
+
         # Dense connections
         self.linear_on_marker_dim = Linear(n_filters, n_markers)
         self.linear_on_time_dimension = Linear(self.input_length, output_length)
@@ -67,9 +69,11 @@ class Wave_net(torch.nn.Module):
         x_ = torch.swapaxes(x, 1, 2) # shapes: (batch, len, markers) -> (batch, markers, len)
         for i_c, c in enumerate(self.convs):
             if i_c == 0:
-                x_ = torch.relu(c(x_)[..., :self.input_length].contiguous()) # after convs, shape (batch, filters, len + padding)
+                res = x_ if self.downsample is None else self.downsample(x_)
+                # x_ = torch.relu(c(x_)[..., :self.input_length].contiguous()) # after convs, shape (batch, filters, len + padding)
             else:
-                x_ = torch.relu(c(x_)[..., :self.input_length].contiguous() + x_)  # after convs, shape (batch, filters, len + padding)
+                res = x_
+            x_ = torch.relu(c(x_)[..., :self.input_length].contiguous() + res)  # after convs, shape (batch, filters, len + padding)
         x_ = torch.permute(x_, [0, 2, 1]) # shape: (batch, filters, len + padding) -> (batch, len + padding, filters)
         x_ = self.linear_on_marker_dim(x_) # shape: (batch, len + padding, markers)
         x_ = torch.permute(x_, [0, 2, 1]) # shape: (batch, len + padding, markers) -> (batch, markers, len + padding)
