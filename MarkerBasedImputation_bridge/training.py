@@ -433,7 +433,7 @@ if __name__ == '__main__':
         train(train_file, val_file, base_output_path=MODELFOLDER, run_name=None,
               data_name=None, net_name="wave_net", clean=False, input_length=9,
               output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
-              val_fraction=0.15, only_moving_frames=False, n_filters=24, #512,
+              val_fraction=0.15, only_moving_frames=False, n_filters=512,
               filter_width=2, layers_per_level=3, n_dilations=None,
               latent_dim=750, epochs=EPOCHS, batch_size=1000,
               lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,

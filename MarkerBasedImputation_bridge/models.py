@@ -44,7 +44,7 @@ class Wave_net(torch.nn.Module):
                                          padding=dilation_rate * (filter_width - 1),
                                          dilation=dilation_rate).to(device))
                 # torch.nn.init.xavier_uniform()
-                torch.nn.init.kaiming_normal_(self.convs[-1].weight, mode='fan_in', nonlinearity='relu')
+                # torch.nn.init.kaiming_normal_(self.convs[-1].weight, mode='fan_in', nonlinearity='relu')
                 #out_len_because_padding += dilation_rate * (filter_width - 1)
                 # filters=n_filters,
                 #                            kernel_size=filter_width,
