@@ -53,15 +53,15 @@ if __name__ == '__main__':
               reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
               reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
 
-    models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
+    models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
     build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
 
     # EVALUATION
 
     # ON SHORT SEQUENCES WITH GROUND TRUTH
-    model_ensemble_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01/final_model.h5')
+    model_ensemble_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/model_ensemble_01/final_model.h5')
     data_file = os.path.join(basedir, 'results_behavior/models/test_CLB_optipose_debug/test_for_optipose_repeat_0/test_repeat-0.csv')
-    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01')
+    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/model_ensemble_01')
 
     for pass_direction in ['reverse', 'forward']:
         predict_single_pass(model_ensemble_path, data_file, DATASETPATH, pass_direction,
@@ -69,7 +69,7 @@ if __name__ == '__main__':
                             markers_to_fix=None, error_diff_thresh=errordiff_th,
                             model=None)
 
-    fold_paths = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01/test_repeat-0*.mat'))
+    fold_paths = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/model_ensemble_01/test_repeat-0*.mat'))
     merge(save_path, fold_paths)
 
 
