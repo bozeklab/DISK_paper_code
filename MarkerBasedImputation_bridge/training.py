@@ -75,8 +75,7 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1):
     input_coords = np.vstack([[v[i: i + input_length][np.newaxis] for i in idx] for v in z_score_coords])
     input_coords = input_coords.reshape((input_coords.shape[0], input_length, len(bodyparts), -1))[..., :3].reshape((input_coords.shape[0], input_length, -1))
     # mean_pos_input = np.vstack([[v[i: i + input_length] for i in idx] for v in mean_position])
-    output_coords = np.vstack([[v[i + input_length - 1: i + input_length][np.newaxis] for i in idx] for v in z_score_coords])  ### TEST, TOREMOVE, repeat the last value, should be able to learn easy
-    # output_coords = np.vstack([[v[i + input_length: i + input_length + output_length][np.newaxis] for i in idx] for v in z_score_coords])
+    output_coords = np.vstack([[v[i + input_length: i + input_length + output_length][np.newaxis] for i in idx] for v in z_score_coords])
     output_coords = output_coords.reshape((output_coords.shape[0], output_length, len(bodyparts), -1))[..., :3].reshape((output_coords.shape[0], output_length, -1))
     # mean_pos_output = np.vstack([[v[i + input_length: i + input_length + output_length] for i in idx] for v in mean_position])
 
@@ -418,7 +417,7 @@ if __name__ == '__main__':
     # Training
     NMODELS = 1
     TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
-    EPOCHS = 100
+    EPOCHS = 30
 
     # # Imputation
     # NFOLDS = 20

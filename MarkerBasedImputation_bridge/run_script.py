@@ -30,12 +30,17 @@ if __name__ == '__main__':
     MODELFOLDER = os.path.join(BASEFOLDER, "models")
 
     # Training
-    NMODELS = 1
+    NMODELS = 10
     TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
     EPOCHS = 30
 
+    # Imputation
+    impute_stride = 1 #5
+    errordiff_th = 0.5
+
     device = torch.device('cuda:0')
 
+    # TRAINING
     for _ in range(NMODELS):
         train(train_file, val_file, base_output_path=MODELFOLDER, run_name=None,
               data_name=None, net_name="wave_net", clean=False, input_length=9,
@@ -51,12 +56,12 @@ if __name__ == '__main__':
     models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
     build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
 
+    # EVALUATION
+
+    # ON SHORT SEQUENCES WITH GROUND TRUTH
     model_ensemble_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01/final_model.h5')
     data_file = os.path.join(basedir, 'results_behavior/models/test_CLB_optipose_debug/test_for_optipose_repeat_0/test_repeat-0.csv')
     save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01')
-
-    impute_stride = 1 #5
-    errordiff_th = 0.5
 
     for pass_direction in ['reverse', 'forward']:
         predict_single_pass(model_ensemble_path, data_file, DATASETPATH, pass_direction,
@@ -65,21 +70,17 @@ if __name__ == '__main__':
                             model=None)
 
     fold_paths = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01/test_repeat-0*.mat'))
-
     merge(save_path, fold_paths)
 
-    data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file0.csv')
 
-    impute_stride = 1  # 5
-    errordiff_th = 0.5
+    # ON ORIGINAL FILES FOR REAL-SCENARIO IMPUTATION
+    for data_file in glob(os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')):
 
-    for pass_direction in ['reverse', 'forward']:
-        predict_single_pass(model_ensemble_path, data_file, DATASETPATH, pass_direction,
-                            save_path=save_path, stride=impute_stride, n_folds=1, fold_id=0,
-                            markers_to_fix=None, error_diff_thresh=errordiff_th,
-                            model=None)
+        for pass_direction in ['reverse', 'forward']:
+            predict_single_pass(model_ensemble_path, data_file, DATASETPATH, pass_direction,
+                                save_path=save_path, stride=impute_stride, n_folds=1, fold_id=0,
+                                markers_to_fix=None, error_diff_thresh=errordiff_th,
+                                model=None)
 
-    fold_paths = glob(
-        os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01/test_w-all-nans_file0*.mat'))
-
-    merge(save_path, fold_paths)
+        fold_paths = glob(data_file.split('.csv')[0])
+        merge(save_path, fold_paths)
