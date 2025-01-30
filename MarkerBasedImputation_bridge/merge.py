@@ -173,7 +173,7 @@ def merge(save_path, fold_paths):
             f.create_dataset("member_stds", data=member_stds) # should be 0 where no prediction, else a float giving the divergence of the ensemble models (std)
 
         # save it in the same csv format as the other methods, so it is easier to compare
-        cols = [f'{i//3}_{(i+1)%3}' for i in range(preds.shape[2])]
+        cols = [f'{i//3}_{i%3 + 1}' for i in range(preds.shape[2])]
         for i_sample in range(preds.shape[0]):
             output_file_path = os.path.join(save_path, f'{os.path.basename(original_data_file).split(".csv")[0]}_sample{i_sample}_MBI.csv')
             df = pd.DataFrame(columns=cols, data = preds[i_sample])

@@ -1,3 +1,6 @@
+from time import time
+
+t0 = time()
 import os, sys
 import tqdm
 from glob import glob
@@ -20,9 +23,11 @@ from training import train
 from build_ensemble import build_ensemble
 from predict_single_pass import predict_single_pass
 from merge import merge
+t_after_import = time()
 
 
 if __name__ == '__main__':
+    t_begin_main = time()
     BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_run")
     DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
     train_file = os.path.join(DATASETPATH, 'train_dataset_w-0-nans.npz')
@@ -38,6 +43,11 @@ if __name__ == '__main__':
     impute_stride = 1 #5
     errordiff_th = 0.5
 
+    t_start_computing = time()
+    print(f'Time imports: {t_after_import - t0}')
+    print(f'Time between: {t_begin_main - t_after_import}')
+    print(f'Time begin: {t_start_computing - t_begin_main}')
+    sys.exit(1)
     device = torch.device('cuda:0')
 
     # TRAINING
