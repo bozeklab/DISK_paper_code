@@ -28,6 +28,7 @@ if __name__ == '__main__':
     suffix_kpmoseq = 'kpmoseq'
     suffix_optipose = 'model_10_5_1'
     suffix_DISK = 'DISK'
+    suffix_MBI = 'MBI'
 
     ###################################################################################################################
     logging.basicConfig(level=logging.INFO,
@@ -56,6 +57,7 @@ if __name__ == '__main__':
             optipose_file = os.path.join(folder, 'optipose', f'test_repeat-0_sample{id_sample}_{suffix_optipose}.csv')
             kpmoseq_file = os.path.join(folder, 'kpmoseq', f'test_repeat-0_sample{id_sample}_{suffix_kpmoseq}.csv')
             DISK_file = os.path.join(folder, 'DISK', f'test_repeat-0_sample{id_sample}_{suffix_DISK}.csv')
+            MBI_file = os.path.join(folder, 'MBI', f'test_repeat-0_sample{id_sample}_{suffix_MBI}.csv')
             if not os.path.exists(optipose_file):
                 continue
             original_file = os.path.join(folder, f'test_repeat-0_sample{id_sample}.csv')
