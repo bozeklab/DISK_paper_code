@@ -30,7 +30,7 @@ def open_data_csv(filepath, dataset_path, stride=1):
     dataset_constant_file = glob(os.path.join(dataset_path, 'constants.py'))[0]
     dataset_constants = read_constant_file(dataset_constant_file)
 
-    if 'repeat' in filepath:
+    if 'repeat' in os.path.basename(filepath):
         df = pd.read_csv(filepath, sep='|')
         print(df.columns)
         input = np.vstack([np.array(eval(v))[np.newaxis] for v in df['input']])
