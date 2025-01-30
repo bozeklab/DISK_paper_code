@@ -348,9 +348,9 @@ def train(train_file, val_file, *, base_output_path="models", run_name=None,
             axes[i].plot([9], list_y[-1][item, :, i], 'o')
             axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
 
-        plt.figure()
-        plt.hist(np.vstack(list_y).flatten(), bins=50)
-        plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
+        # plt.figure()
+        # plt.hist(np.vstack(list_y).flatten(), bins=50)
+        # plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
         plt.savefig(os.path.join(run_path, f'last_epoch_prediction_val_item-{item}.png'))
         plt.close()
 
