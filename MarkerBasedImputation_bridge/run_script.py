@@ -23,7 +23,7 @@ from merge import merge
 
 
 if __name__ == '__main__':
-    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation")
+    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_run")
     DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
     train_file = os.path.join(DATASETPATH, 'train_dataset_w-0-nans.npz')
     val_file = os.path.join(DATASETPATH, 'val_dataset_w-0-nans.npz')

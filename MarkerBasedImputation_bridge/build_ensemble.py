@@ -37,10 +37,10 @@ class EnsembleModel(torch.nn.Module):
         self.models = []
 
         for i in range(len(model_paths)):
-            with open(os.path.join(basedir, os.path.dirname(model_paths[i]).lstrip('/'), "training_info.json"), 'r') as fp:
+            with open(os.path.join(os.path.dirname(model_paths[i]), "training_info.json"), 'r') as fp:
                 self.models_dict_training = json.load(fp)
             model = Wave_net(device=device, **self.models_dict_training)
-            model.load_state_dict(torch.load(os.path.join(basedir, model_paths[i].lstrip('/'))))
+            model.load_state_dict(torch.load(model_paths[i]))
             model.eval()
             self.models.append(model)
             # models[i] = load_model(os.path.join(base_output_path,
@@ -129,7 +129,7 @@ def build_ensemble(base_output_path, models_in_ensemble,
 
 if __name__ == '__main__':
 
-    models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
+    models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
     device = torch.device('cuda:0')
 
     build_ensemble(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/'),

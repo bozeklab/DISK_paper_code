@@ -241,11 +241,13 @@ def train(train_file, val_file, *, base_output_path="models", run_name=None,
              "n_filters": n_filters,
             "n_markers": dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
             "epochs": epochs,
-             "batch_size": batch_size, "train_fraction": train_fraction,
+             "batch_size": batch_size,
+                   "train_fraction": train_fraction,
              "val_fraction": val_fraction,
              "only_moving_frames": only_moving_frames,
              "filter_width": filter_width,
-             "layers_per_level": layers_per_level, "n_dilations": n_dilations,
+             "layers_per_level": layers_per_level,
+                   "n_dilations": n_dilations,
              "batches_per_epoch": batches_per_epoch,
              "val_batches_per_epoch": val_batches_per_epoch,
              "reduce_lr_factor": reduce_lr_factor,
@@ -339,18 +341,18 @@ def train(train_file, val_file, *, base_output_path="models", run_name=None,
                 torch.save(model.state_dict(), os.path.join(run_path, "best_model.h5"))
 
     fig, axes = plt.subplots(8, 3)
-    item = np.random.randint(X.shape[0])
-    axes = axes.flatten()
-    for i in range(24):
-        axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
-        axes[i].plot([9], list_y[-1][item, :, i], 'o')
-        axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
+    for item in np.random.randint(X.shape[0], 10):
+        axes = axes.flatten()
+        for i in range(24):
+            axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
+            axes[i].plot([9], list_y[-1][item, :, i], 'o')
+            axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
 
-    plt.figure()
-    plt.hist(np.vstack(list_y).flatten(), bins=50)
-    plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
-
-    plt.show()
+        plt.figure()
+        plt.hist(np.vstack(list_y).flatten(), bins=50)
+        plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
+        plt.savefig(os.path.join(run_path, f'last_epoch_prediction_val_item-{item}.png'))
+        plt.close()
 
     fig, ax = plt.subplots(1, 1)
     x = np.arange(0, epochs, print_every)
