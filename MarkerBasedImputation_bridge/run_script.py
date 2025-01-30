@@ -53,8 +53,8 @@ if __name__ == '__main__':
     #           reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
     #           reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
     #
-    # models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
-    # save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
+    models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
+    save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
 
     # EVALUATION
 
