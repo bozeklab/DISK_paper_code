@@ -341,7 +341,7 @@ def train(train_file, val_file, *, base_output_path="models", run_name=None,
                 torch.save(model.state_dict(), os.path.join(run_path, "best_model.h5"))
 
     fig, axes = plt.subplots(8, 3)
-    for item in np.random.randint(X.shape[0], 10):
+    for item in np.random.randint(0, X.shape[0], 10):
         axes = axes.flatten()
         for i in range(24):
             axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
