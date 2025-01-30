@@ -47,7 +47,6 @@ if __name__ == '__main__':
     print(f'Time imports: {t_after_import - t0}')
     print(f'Time between: {t_begin_main - t_after_import}')
     print(f'Time begin: {t_start_computing - t_begin_main}')
-    sys.exit(1)
     device = torch.device('cuda:0')
 
     # TRAINING

@@ -57,7 +57,7 @@ def z_score_data(input, exclude_value=-4668):
     return z_score_input, marker_means, marker_stds
 
 
-def preprocess_data(X, marker_names, front_point, middle_point):
+def preprocess_data(X, marker_names, front_point, middle_point, exclude_value):
     """
     Preprocess frame by frame for every sample
 
@@ -68,6 +68,7 @@ def preprocess_data(X, marker_names, front_point, middle_point):
     """
     # 1. medfilt, kernel=3
     # X = medfilt(X, kernel_size=3)
+    X[X == exclude_value] = np.nan
     filt_X = np.zeros_like(X)
     for i in range(X.shape[0]):
         for j in range(X.shape[2]):

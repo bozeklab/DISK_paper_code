@@ -51,7 +51,8 @@ def open_data_csv(filepath, dataset_path, stride=1):
 
     transformed_coords, rot_angle, mean_position = preprocess_data(input, dataset_constants.KEYPOINTS,
                                                                         middle_point=['right_hip', 'left_hip'],
-                                                                        front_point=['right_coord', 'left_coord'])
+                                                                        front_point=['right_coord', 'left_coord'],
+                                                                   exclude_value=exclude_value)
 
     # Z-score the marker data
     z_score_input, marker_means, marker_stds = z_score_data(transformed_coords, exclude_value=exclude_value)
@@ -231,7 +232,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
     # bad_frames = bad_frames[::stride, :]
     # n_frames = int(np.floor(markers.shape[0]/n_folds))
     markers, ground_truth, dataset_constants, transform_dict = open_data_csv(filepath=data_file, dataset_path=dataset_path)
-    bad_frames = markers == -transform_dict['exclude_value'] # value used by optipose to mark dropped frames
+    bad_frames = markers == transform_dict['exclude_value'] # value used by optipose to mark dropped frames
     # fold_id = int(fold_id)
     # start_frame = markers.shape[1] * int(fold_id)
     # n_frames = int(np.floor(markers.shape[1] / n_folds))
