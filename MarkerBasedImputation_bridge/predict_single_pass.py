@@ -40,12 +40,13 @@ def open_data_csv(filepath, dataset_path, stride=1):
 
         exclude_value = -4668
     else:
+        print('-- filepath', filepath, end = ' - ')
         df = pd.read_csv(filepath, sep=',')
         cols = df.columns
 
         input = df[cols].values[np.newaxis]
         ground_truth = np.copy(input)
-
+        print(input.shape)
         exclude_value = np.nan
 
     transformed_coords, rot_angle, mean_position = preprocess_data(input, dataset_constants.KEYPOINTS,

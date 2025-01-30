@@ -76,17 +76,17 @@ def preprocess_data(X, marker_names, front_point, middle_point):
 
     # 2. egocentric frame transformation
     ## 2.1 get the marker rotation matrix
-    X_front_point = get_ref_point(X, marker_names, front_point)
-    X_middle_point = get_ref_point(X, marker_names, middle_point)
+    X_front_point = get_ref_point(filt_X, marker_names, front_point)
+    X_middle_point = get_ref_point(filt_X, marker_names, middle_point)
 
-    rot_angle = np.arctan2( - (X_front_point[..., 1] - X_middle_point[..., 1]),
-                              (X_front_point[..., 0] - X_middle_point[..., 0]))
+    # rot_angle = np.arctan2( - (X_front_point[..., 1] - X_middle_point[..., 1]),
+    #                           (X_front_point[..., 0] - X_middle_point[..., 0]))
     first_axis = np.array([1, 0, 0])
     vectx = X_front_point[..., 0] - X_middle_point[..., 0], X_front_point[..., 1] - X_middle_point[..., 1]
     rot_angle = np.arctan2(first_axis[1], first_axis[0]) - np.arctan2(vectx[1], vectx[0])
 
     ## 2.2 subtract the mean and rotate
-    ego_X = X.reshape(X.shape[0], X.shape[1], len(marker_names), 3) - X_middle_point[:, :, np.newaxis]
+    ego_X = filt_X.reshape(filt_X.shape[0], filt_X.shape[1], len(marker_names), 3) - X_middle_point[:, :, np.newaxis]
     rot_X = np.copy(ego_X)
 
     # modify the x coordinates

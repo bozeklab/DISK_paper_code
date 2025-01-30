@@ -234,10 +234,15 @@ def train(train_file, val_file, *, base_output_path="models", run_name=None,
     # Save the training information in a mat file.
     print('Saving training info')
     with open(os.path.join(run_path, "training_info.json"), "w") as fp:
-        json.dump({"data_path": train_file, "base_output_path": base_output_path,
-             "run_name": run_name, "data_name": data_name,
-             "net_name": net_name, "clean": clean, "stride": stride,
-             "input_length": input_length, "output_length": output_length,
+        json.dump({"data_path": train_file[len(basedir):].lstrip('/'),
+                   "base_output_path": base_output_path[len(basedir):].lstrip('/'),
+             "run_name": run_name,
+                   "data_name": data_name,
+             "net_name": net_name,
+                   "clean": clean,
+                   "stride": stride,
+             "input_length": input_length,
+                   "output_length": output_length,
              "n_filters": n_filters,
             "n_markers": dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
             "epochs": epochs,
@@ -340,8 +345,8 @@ def train(train_file, val_file, *, base_output_path="models", run_name=None,
                 best_val_loss = val_loss/val_batches
                 torch.save(model.state_dict(), os.path.join(run_path, "best_model.h5"))
 
-    fig, axes = plt.subplots(8, 3)
     for item in np.random.randint(0, X.shape[0], 10):
+        fig, axes = plt.subplots(8, 3, figsize=(10, 10))
         axes = axes.flatten()
         for i in range(24):
             axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
