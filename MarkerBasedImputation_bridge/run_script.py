@@ -27,7 +27,6 @@ t_after_import = time()
 
 
 if __name__ == '__main__':
-    t_begin_main = time()
     BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_run")
     DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
     train_file = os.path.join(DATASETPATH, 'train_dataset_w-0-nans.npz')
@@ -43,10 +42,7 @@ if __name__ == '__main__':
     impute_stride = 1 #5
     errordiff_th = 0.5
 
-    t_start_computing = time()
     print(f'Time imports: {t_after_import - t0}')
-    print(f'Time between: {t_begin_main - t_after_import}')
-    print(f'Time begin: {t_start_computing - t_begin_main}')
     device = torch.device('cuda:0')
 
     # TRAINING
@@ -61,7 +57,10 @@ if __name__ == '__main__':
     #           val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
     #           reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
     #           reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
-    #
+
+    t_after_training = time()
+    print(f'Time training: {t_after_training - t_after_import}')
+
     # models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
     # save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
     save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/model_ensemble')
@@ -77,9 +76,14 @@ if __name__ == '__main__':
                             markers_to_fix=None, error_diff_thresh=errordiff_th,
                             model=None)
 
+    t_after_predict = time()
+    print(f'Time predict: {t_after_predict - t_after_training}')
+
     fold_paths = glob(os.path.join(save_path, 'test_repeat-0*.mat'))
     merge(save_path, fold_paths)
 
+    t_after_merge = time()
+    print(f'Time predict: {t_after_merge - t_after_predict}')
 
     # ON ORIGINAL FILES FOR REAL-SCENARIO IMPUTATION
     for data_file in glob(os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')):

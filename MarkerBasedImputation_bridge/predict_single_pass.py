@@ -111,7 +111,7 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
     # markers you do not want to predict with the ground truth, and append
     # the resulting vector to the end of the next input chunk.
     while np.max(startpoint[mask]) > -input_length-1:
-
+        print(startpoint)
         X_start = np.vstack([x[np.array([max(0, t) for t in range(s, s + input_length)])][np.newaxis] for (x, s) in zip(preds[mask], startpoint[mask])])
         # If there is a marker prediction that is greater than the
         # difference threshold above, mark it as a bad frame.
