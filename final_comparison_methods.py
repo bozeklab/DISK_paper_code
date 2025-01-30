@@ -57,7 +57,7 @@ if __name__ == '__main__':
             optipose_file = os.path.join(folder, 'optipose', f'test_repeat-0_sample{id_sample}_{suffix_optipose}.csv')
             kpmoseq_file = os.path.join(folder, 'kpmoseq', f'test_repeat-0_sample{id_sample}_{suffix_kpmoseq}.csv')
             DISK_file = os.path.join(folder, 'DISK', f'test_repeat-0_sample{id_sample}_{suffix_DISK}.csv')
-            MBI_file = os.path.join(folder, 'MBI', f'test_repeat-0_sample{id_sample}_{suffix_MBI}.csv')
+            mbi_file = os.path.join(folder, 'MBI', f'test_repeat-0_sample{id_sample}_{suffix_MBI}.csv')
             if not os.path.exists(optipose_file):
                 continue
             original_file = os.path.join(folder, f'test_repeat-0_sample{id_sample}.csv')
@@ -66,6 +66,7 @@ if __name__ == '__main__':
             df_kpmoseq = pd.read_csv(kpmoseq_file, sep=',')
             df_DISK = pd.read_csv(DISK_file, sep=',')
             df_original = pd.read_csv(original_file, sep=',')
+            df_mbi = pd.read_csv(mbi_file, sep=',')
 
             columns = [c for c in df_optipose.columns if c != 'behaviour']
             keypoints = [c.split('_')[0] for c in columns if c[-2:] == '_1']
@@ -86,6 +87,9 @@ if __name__ == '__main__':
                         kpmoseq_values = np.array(df_kpmoseq.loc[:, columns[i]].values)
                         kpmoseq_values[mask] = np.nan
                         axes[i].plot(kpmoseq_values, 'o-', c='purple', label='kpmoseq', ms=4)
+                        mbi_values = np.array(df_mbi.loc[:, columns[i]].values)
+                        mbi_values[mask] = np.nan
+                        axes[i].plot(mbi_values, 'o-', c='gold', label='mbi', ms=4)
                         disk_values = np.array(df_DISK.loc[:, columns[i]].values)
                         disk_values[mask] = np.nan
                         axes[i].plot(disk_values, 'o-', c='orangered', label='DISK', ms=4)
@@ -99,12 +103,38 @@ if __name__ == '__main__':
                     plt.savefig(os.path.join(folder, 'plots', f'test_repeat-0_sample{id_sample}.png'))
                     plt.savefig(os.path.join(folder, 'plots', f'test_repeat-0_sample{id_sample}.svg'))
                     plt.close()
+
+                    fig, axes = plt.subplots(len(keypoints), num_dims, figsize=(12, 9), sharex='all')
+                    axes = axes.flatten()
+                    for i in range(len(columns)):
+                        axes[i].plot(orig_values[:, i], 'o-')
+                        optipose_values = np.array(df_optipose.loc[:, columns[i]].values)
+                        axes[i].plot(optipose_values, 'o-', c='limegreen', label='optipose', ms=4)
+                        kpmoseq_values = np.array(df_kpmoseq.loc[:, columns[i]].values)
+                        axes[i].plot(kpmoseq_values, 'o-', c='purple', label='kpmoseq', ms=4)
+                        mbi_values = np.array(df_mbi.loc[:, columns[i]].values)
+                        axes[i].plot(mbi_values, 'o-', c='gold', label='mbi', ms=4)
+                        disk_values = np.array(df_DISK.loc[:, columns[i]].values)
+                        axes[i].plot(disk_values, 'o-', c='orangered', label='DISK', ms=4)
+                        ymin, ymax = axes[i].get_ylim()
+                        ymean = (ymin + ymax) / 2
+                        y_range = np.abs(ymax - ymin)
+                        if y_range < 10:
+                            axes[i].set_ylim(ymean - 5, ymean + 5)
+                    axes[0].legend()
+                    plt.tight_layout()
+                    plt.savefig(os.path.join(folder, 'plots', f'test_repeat-0_sample{id_sample}_womask.png'))
+                    plt.savefig(os.path.join(folder, 'plots', f'test_repeat-0_sample{id_sample}_womask.svg'))
+                    plt.close()
+
                     n_plots += 1
 
             data_with_holes_np = df_original.loc[:, columns].values.reshape(-1, len(keypoints), dataset_constants.DIVIDER)
             optipose_values = df_optipose.loc[:, columns].values.reshape(-1, len(keypoints), dataset_constants.DIVIDER)
             disk_values = df_DISK.loc[:, columns].values.reshape(-1, len(keypoints), dataset_constants.DIVIDER)
             kpmoseq_values = df_kpmoseq.loc[:, columns].values.reshape(-1, len(keypoints), dataset_constants.DIVIDER)
+            mbi_values = df_mbi.loc[:, columns].values.reshape(-1, len(keypoints), dataset_constants.DIVIDER)
+
             full_data_np = np.array(eval(big_df.loc[id_sample, 'label']))
             mask_holes_np = np.isnan(data_with_holes_np).astype(int)  #np.ones(data_with_holes_np.shape, dtype=int)#np.isnan(data_with_holes_np).astype(int)  # 1 is gap, 0 is non missing
             n_missing = np.sum(mask_holes_np[..., 0])
@@ -124,6 +154,14 @@ if __name__ == '__main__':
             euclidean_distance_kpmoseq = np.sqrt(np.sum(((kpmoseq_values - full_data_np) ** 2) * mask_holes_np,
                                                               axis=2))  # sum on the XYZ dimension, output shape (batch, time, keypoint)
             pck_kpmoseq = euclidean_distance_kpmoseq <= pck_final_threshold
+
+            rmse_mbi = np.sum(((mbi_values - full_data_np) ** 2) * mask_holes_np,
+                                        axis=2)  # sum on the XYZ dimension, output shape (batch, time, keypoint)
+            mae_mbi = np.sum(np.abs((mbi_values - full_data_np) * mask_holes_np),
+                                        axis=2)  # sum on the XYZ dimension, output shape (batch, time, keypoint)
+            euclidean_distance_mbi = np.sqrt(np.sum(((mbi_values - full_data_np) ** 2) * mask_holes_np,
+                                                              axis=2))  # sum on the XYZ dimension, output shape (batch, time, keypoint)
+            pck_mbi = euclidean_distance_mbi <= pck_final_threshold
 
             rmse_disk = np.sum(((disk_values - full_data_np) ** 2) * mask_holes_np,
                                         axis=2)  # sum on the XYZ dimension, output shape (batch, time, keypoint)
@@ -172,6 +210,27 @@ if __name__ == '__main__':
             total_rmse.loc[total_rmse.shape[0], :] = [id_sample, -1, 'all',
                                                       'kpmoseq',
                                                       np.sum(mae_kpmoseq) / n_missing,
+                                                      'MAE',
+                                                      n_missing]
+
+            total_rmse.loc[total_rmse.shape[0], :] = [id_sample, -1, 'all',
+                                                      'mbi',
+                                                      np.sum(pck_mbi * mask_holes_np[..., 0]) / n_missing,
+                                                      pck_name,
+                                                      n_missing]
+            total_rmse.loc[total_rmse.shape[0], :] = [id_sample, -1, 'all',
+                                                      'mbi',
+                                                      np.sum(euclidean_distance_mbi) / n_missing,
+                                                      'MPJPE',
+                                                      n_missing]
+            total_rmse.loc[total_rmse.shape[0], :] = [id_sample, -1, 'all',
+                                                      'mbi',
+                                                      np.sqrt(np.sum(rmse_mbi) / n_missing),
+                                                      'RMSE',
+                                                      n_missing]
+            total_rmse.loc[total_rmse.shape[0], :] = [id_sample, -1, 'all',
+                                                      'mbi',
+                                                      np.sum(mae_mbi) / n_missing,
                                                       'MAE',
                                                       n_missing]
 
