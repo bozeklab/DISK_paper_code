@@ -32,7 +32,7 @@ def open_data_csv(filepath, dataset_path, stride=1):
 
     if 'repeat' in filepath:
         df = pd.read_csv(filepath, sep='|')
-
+        print(df.columns)
         input = np.vstack([np.array(eval(v))[np.newaxis] for v in df['input']])
         input = input.reshape(input.shape[0], input.shape[1], -1)
         ground_truth = np.vstack([np.array(eval(v))[np.newaxis] for v in df['label']])
