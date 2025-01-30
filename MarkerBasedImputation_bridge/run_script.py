@@ -30,7 +30,7 @@ if __name__ == '__main__':
     MODELFOLDER = os.path.join(BASEFOLDER, "models")
 
     # Training
-    NMODELS = 10
+    NMODELS = 2
     TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
     EPOCHS = 30
 
