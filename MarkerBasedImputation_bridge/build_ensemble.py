@@ -36,6 +36,8 @@ class EnsembleModel(torch.nn.Module):
         super(EnsembleModel, self).__init__()
         self.models = []
 
+        model_paths = [mp if mp[0] == '/' else os.path.join(basedir, mp) for mp in model_paths]
+
         for i in range(len(model_paths)):
             with open(os.path.join(os.path.dirname(model_paths[i]), "training_info.json"), 'r') as fp:
                 self.models_dict_training = json.load(fp)
@@ -117,7 +119,7 @@ def build_ensemble(base_output_path, models_in_ensemble,
         json.dump({"base_output_path": base_output_path[len(basedir):],
                         "run_name": run_name,
                         "clean": clean,
-                        "model_paths": [mp[len(basedir):] for mp in model_paths],
+                        "model_paths": [mp[len(basedir):].lstrip('/') for mp in model_paths],
                         "n_members": len(models_in_ensemble),
                         "input_length": model_ensemble.models_dict_training["input_length"],
                         "output_length": model_ensemble.models_dict_training["output_length"],},
@@ -125,7 +127,7 @@ def build_ensemble(base_output_path, models_in_ensemble,
 
     print('Saving model ensemble')
     torch.save(model_ensemble.state_dict(), os.path.join(run_path, "final_model.h5"))
-
+    return run_path
 
 if __name__ == '__main__':
 

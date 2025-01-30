@@ -53,13 +53,12 @@ if __name__ == '__main__':
     #           reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
     #           reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
     #
-    # models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
-    # build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
+    models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
+    save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
 
     # EVALUATION
 
     # ON SHORT SEQUENCES WITH GROUND TRUTH
-    save_path = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/model_ensemble*'))[0]
     model_ensemble_path = os.path.join(save_path, 'final_model.h5')
     data_file = os.path.join(basedir, 'results_behavior/models/test_CLB_optipose_debug/test_for_optipose_repeat_0/test_repeat-0.csv')
 
