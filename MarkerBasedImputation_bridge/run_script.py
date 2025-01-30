@@ -55,7 +55,7 @@ if __name__ == '__main__':
     #
     # models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
     # save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
-    save_path = '/home/france/Mounted_dir/results_behavior/MarkerBasedImputation_run/model_ensemble'
+    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/model_ensemble')
     # EVALUATION
 
     # ON SHORT SEQUENCES WITH GROUND TRUTH
