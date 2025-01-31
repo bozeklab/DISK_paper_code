@@ -58,20 +58,20 @@ def open_data_csv(filepath, dataset_path, stride=1):
     # Z-score the marker data
     z_score_input, marker_means, marker_stds = z_score_data(transformed_coords, exclude_value=exclude_value)
 
-    unproc_X = unprocess_data(z_score_input, rot_angle, mean_position, marker_means, marker_stds, dataset_constants.KEYPOINTS, exclude_value)
-
-    items = np.random.choice(transformed_coords.shape[0], 1)
-    for item in items:
-        fig, axes = plt.subplots(transformed_coords.shape[-1]//3, 3, figsize=(10, 10))
-        axes = axes.flatten()
-        for i in range(transformed_coords.shape[-1]):
-            x = input[item, :, i]
-            x[x == exclude_value] = np.nan
-            axes[i].plot(x, 'o-')
-
-            x = unproc_X[item, :, i]
-            x[x == exclude_value] = np.nan
-            axes[i].plot(x, 'o-')
+    # unproc_X = unprocess_data(z_score_input, rot_angle, mean_position, marker_means, marker_stds, dataset_constants.KEYPOINTS, exclude_value)
+    #
+    # items = np.random.choice(transformed_coords.shape[0], 1)
+    # for item in items:
+    #     fig, axes = plt.subplots(transformed_coords.shape[-1]//3, 3, figsize=(10, 10))
+    #     axes = axes.flatten()
+    #     for i in range(transformed_coords.shape[-1]):
+    #         x = input[item, :, i]
+    #         x[x == exclude_value] = np.nan
+    #         axes[i].plot(x, 'o-')
+    #
+    #         x = unproc_X[item, :, i]
+    #         x[x == exclude_value] = np.nan
+    #         axes[i].plot(x, 'o-')
 
     transforms_dict = {'rot_angle': rot_angle,
                        'mean_position': mean_position,

@@ -61,9 +61,9 @@ if __name__ == '__main__':
     t_after_training = time()
     print(f'Time training: {t_after_training - t_after_import}')
 
-    models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs=100_input_9_output_1*/best_model.h5'))
+    models = glob(os.path.join(basedir, f'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs={EPOCHS}_input_9_output_1*/best_model.h5'))
     if len(models) == 0:
-        print(f"no models found at {os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs=100_input_9_output_1*/best_model.h5')}")
+        print(f"no models found at {os.path.join(basedir, f'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs={EPOCHS}_input_9_output_1*/best_model.h5')}")
     save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
     # save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/model_ensemble')
 
