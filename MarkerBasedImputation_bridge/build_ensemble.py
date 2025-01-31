@@ -39,6 +39,7 @@ class EnsembleModel(torch.nn.Module):
         model_paths = [mp if mp[0] == '/' else os.path.join(basedir, mp) for mp in model_paths]
 
         for i in range(len(model_paths)):
+            print(os.path.join(os.path.dirname(model_paths[i]), "training_info.json"))
             with open(os.path.join(os.path.dirname(model_paths[i]), "training_info.json"), 'r') as fp:
                 self.models_dict_training = json.load(fp)
             model = Wave_net(device=device, **self.models_dict_training)
