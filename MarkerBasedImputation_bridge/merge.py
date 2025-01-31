@@ -5,7 +5,7 @@ import h5py
 import numpy as np
 import os
 import re
-
+import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.io import savemat, loadmat
 from skimage import measure
@@ -108,6 +108,7 @@ def merge(save_path, fold_paths):
     mean_position = np.array(data['mean_position'][:])
     marker_names = np.array(data['marker_names'][:])
     original_data_file = data['data_file'][0]
+    exclude_value = data['exclude_value'][0][0]
     del data
 
     print(markers.shape)
@@ -122,9 +123,33 @@ def merge(save_path, fold_paths):
     #     markers[:, i] = markers[:, i] * marker_stds[:, 0] + marker_means[:, 0]
     #     predsF[:, i] = predsF[:, i] * marker_stds[:, 0] + marker_means[:, 0]
     #     predsR[:, i] = predsR[:, i] * marker_stds[:, 0] + marker_means[:, 0]
-    markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names)
-    predsF = unprocess_data(predsF, rot_angle, mean_position, marker_means, marker_stds, marker_names)
-    predsR = unprocess_data(predsR, rot_angle, mean_position, marker_means, marker_stds, marker_names)
+
+    items = np.random.choice(predsF.shape[0], 10)
+    for item in items:
+        fig, axes = plt.subplots(predsF.shape[-1]//3, 3, figsize=(10, 10))
+        axes = axes.flatten()
+        for i in range(predsF.shape[-1]):
+            x = markers[item, :, i]
+            x[x == exclude_value] = np.nan
+            t = np.arange(markers.shape[1])
+            axes[i].plot(x, 'o-')
+            axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
+        plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}.png'))
+
+    markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
+    predsF = unprocess_data(predsF, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
+    predsR = unprocess_data(predsR, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
+
+    for item in items:
+        fig, axes = plt.subplots(predsF.shape[-1]//3, 3, figsize=(10, 10))
+        axes = axes.flatten()
+        for i in range(predsF.shape[-1]):
+            x = markers[item, :, i]
+            x[x == exclude_value] = np.nan
+            t = np.arange(markers.shape[1])
+            axes[i].plot(x, 'o-')
+            axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
+        plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}_after_unprocess.png'))
 
     # This is not necessarily all the error frames from
     # multiple_predict_recording_with_replacement, but if they overlap,

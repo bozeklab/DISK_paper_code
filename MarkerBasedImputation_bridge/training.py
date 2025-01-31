@@ -7,6 +7,7 @@ from glob import glob
 import os
 import matplotlib
 
+from MarkerBasedImputation_bridge.preprocess_data import unprocess_data
 from models import Wave_net
 
 if os.uname().nodename == 'france-XPS':
@@ -64,11 +65,31 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1):
     else:
         new_coords = coords
 
+    exclude_value = np.nan
     transformed_coords, rot_angle, mean_position = preprocess_data(new_coords, bodyparts,
                                                                         middle_point=['right_hip', 'left_hip'],
-                                                                        front_point=['right_coord', 'left_coord'])
+                                                                        front_point=['right_coord', 'left_coord'],
+                                                                   exclude_value=exclude_value)
 
     z_score_coords, marker_means, marker_stds = z_score_data(transformed_coords, exclude_value=np.nan)
+    # marker_means = None
+    # marker_stds = None
+
+    # unproc_X = unprocess_data(z_score_coords, rot_angle, mean_position, marker_means, marker_stds, bodyparts, exclude_value)
+    #
+    # items = np.random.choice(transformed_coords.shape[0], 1)
+    # for item in items:
+    #     fig, axes = plt.subplots(transformed_coords.shape[-1]//3, 3, figsize=(10, 10))
+    #     axes = axes.flatten()
+    #     for i in range(transformed_coords.shape[-1]):
+    #         x = new_coords[item, :, i]
+    #         x[x == exclude_value] = np.nan
+    #         axes[i].plot(x, 'o-')
+    #
+    #         x = unproc_X[item, :, i]
+    #         x[x == exclude_value] = np.nan
+    #         axes[i].plot(x, 'o-')
+
 
     ## reshape the data to match input_length, output_length
     idx = np.arange(0, z_score_coords.shape[1] - (input_length + output_length), stride)

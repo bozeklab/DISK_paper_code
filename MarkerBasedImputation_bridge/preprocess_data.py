@@ -95,12 +95,40 @@ def preprocess_data(X, marker_names, front_point, middle_point, exclude_value):
     # modify the y coordinates
     rot_X[..., 1] = ego_X[..., 0] * np.sin(rot_angle[..., np.newaxis]) + ego_X[..., 1] * np.cos(rot_angle[..., np.newaxis])
 
-    return ego_X.reshape(X.shape), rot_angle, X_middle_point
+    return rot_X.reshape(X.shape), rot_angle, X_middle_point
 
-def unprocess_data(X, rot_angle, mean_position, marker_means, marker_stds, marker_names):
+def fill_nan_forward(arr):
+    mask = np.isnan(arr)
+    if len(arr.shape) == 2:
+        idx = np.where(~mask, np.arange(mask.shape[1]), 0)
+        np.maximum.accumulate(idx, axis=1, out=idx)
+        out = arr[np.arange(idx.shape[0])[:, None], idx]
+    elif len(arr.shape) == 3:
+        arr2 = np.swapaxes(arr, 2, 1)
+        new_arr = np.vstack([fill_nan_forward(arr2D)[np.newaxis, :] for arr2D in arr2])
+        out = np.swapaxes(new_arr, 1, 2)
+    else:
+        raise ValueError(f'support only arr with 2 and 3 dimensions')
+    return out
+
+def unprocess_data(X, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value):
     # undo the z-score
+    if np.any(np.isnan(marker_means)):
+        marker_means = fill_nan_forward(np.squeeze(marker_means)).reshape(marker_stds.shape)
+
+    if np.any(np.isnan(marker_stds)):
+        marker_stds = fill_nan_forward(np.squeeze(marker_stds)).reshape(marker_means.shape)
+
+    if np.any(np.isnan(rot_angle)):
+        rot_angle = fill_nan_forward(rot_angle)
+
+    if np.any(np.isnan(mean_position)):
+        mean_position = fill_nan_forward(np.squeeze(mean_position))
+
+    # undo the z-scoring
     unz_X = X * marker_stds + marker_means
     unz_X = unz_X.reshape(X.shape[0], X.shape[1], len(marker_names), 3)
+    # unz_X = np.copy(X).reshape(X.shape[0], X.shape[1], len(marker_names), 3)
 
     # undo the rotation
     unrot_X = np.copy(unz_X)
@@ -108,5 +136,24 @@ def unprocess_data(X, rot_angle, mean_position, marker_means, marker_stds, marke
     unrot_X[..., 1] = - unz_X[..., 0] * np.sin(rot_angle[..., np.newaxis]) + unz_X[..., 1] * np.cos(rot_angle[..., np.newaxis])
 
     # undo the centering
-    return (unrot_X + mean_position[:, :, np.newaxis]).reshape(X.shape)
+    unproc_X = (unrot_X + mean_position[:, :, np.newaxis]).reshape(X.shape)
+    unproc_X[X == exclude_value] = exclude_value
+
+    # items = np.random.choice(X.shape[0], 1)
+    # for item in items:
+    #     fig, axes = plt.subplots(X.shape[-1]//3, 3, figsize=(10, 10))
+    #     axes = axes.flatten()
+    #     for i in range(X.shape[-1]):
+    #         x = X[item, :, i]
+    #         x[x == exclude_value] = np.nan
+    #         axes[i].plot(x, 'o-')
+    #
+    #     fig, axes = plt.subplots(X.shape[-1]//3, 3, figsize=(10, 10))
+    #     axes = axes.flatten()
+    #     for i in range(X.shape[-1]):
+    #         x = unproc_X[item, :, i]
+    #         x[x == exclude_value] = np.nan
+    #         axes[i].plot(x, 'o-')
+
+    return unproc_X
 

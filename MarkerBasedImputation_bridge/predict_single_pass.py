@@ -10,10 +10,11 @@ from glob import glob
 import torch
 import pandas as pd
 import matplotlib
+import matplotlib.pyplot as plt
 import json
 
 from build_ensemble import EnsembleModel
-from preprocess_data import z_score_data, preprocess_data
+from preprocess_data import z_score_data, preprocess_data, unprocess_data
 from DISK.utils.utils import read_constant_file
 
 if os.uname().nodename == 'france-XPS':
@@ -57,6 +58,21 @@ def open_data_csv(filepath, dataset_path, stride=1):
     # Z-score the marker data
     z_score_input, marker_means, marker_stds = z_score_data(transformed_coords, exclude_value=exclude_value)
 
+    unproc_X = unprocess_data(z_score_input, rot_angle, mean_position, marker_means, marker_stds, dataset_constants.KEYPOINTS, exclude_value)
+
+    items = np.random.choice(transformed_coords.shape[0], 1)
+    for item in items:
+        fig, axes = plt.subplots(transformed_coords.shape[-1]//3, 3, figsize=(10, 10))
+        axes = axes.flatten()
+        for i in range(transformed_coords.shape[-1]):
+            x = input[item, :, i]
+            x[x == exclude_value] = np.nan
+            axes[i].plot(x, 'o-')
+
+            x = unproc_X[item, :, i]
+            x[x == exclude_value] = np.nan
+            axes[i].plot(x, 'o-')
+
     transforms_dict = {'rot_angle': rot_angle,
                        'mean_position': mean_position,
                        'marker_means': marker_means,
@@ -67,7 +83,8 @@ def open_data_csv(filepath, dataset_path, stride=1):
 
 
 def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
-                    error_diff_thresh=.25, outlier_thresh=3, device=torch.device('cpu')):
+                    error_diff_thresh=.25, outlier_thresh=3, device=torch.device('cpu'), save_path='',
+                    exclude_value=-4668):
     """Imputes the position of missing markers.
 
     :param model: Ensemble model to use for prediction
@@ -88,31 +105,34 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
     # Get the input lengths and find the first instance of all good frames.
     input_length = dict_model["input_length"]
     output_length = dict_model["output_length"]
-    # bad_frames = np.repeat(bad_frames, 3, axis=1) > .5
 
     # See whether you should fix errors
     fix_errors = np.any(markers_to_fix)
 
     # Reshape and get the starting seed.
-    # X = X[None, ...]
-    bad_frames_any = np.any(bad_frames, axis=2)
-    startpoint = np.argmax(bad_frames_any, axis=1)
-    startpoint = np.clip(startpoint - input_length - 1, a_min=-input_length-1, a_max=X.shape[1] - 1)
-    next_frame_id = startpoint + input_length + 1
-    mask = next_frame_id < X.shape[1] - output_length
+    # X has shape (samples, time, keypoints * 3D)
+    bad_frames_any = np.any(bad_frames, axis=2) # axis=2 is the keypoint axis
+    startpoint = np.argmax(bad_frames_any, axis=1) # returns the first point of missing = next_frame_id
+    next_frame_id = startpoint
+    startpoint = np.clip(startpoint - input_length, a_min=-input_length - 1, a_max=X.shape[1] - 1)
+    mask = next_frame_id > 0 # only consider the samples needing imputation
+
     # Preallocate
     preds = np.copy(X)
     pred = np.zeros((X.shape[0], output_length, X.shape[2]))
 
     member_stds = np.zeros((X.shape[0], X.shape[1], X.shape[2]))
-    member_pred = np.zeros((X.shape[0], model.n_members, X.shape[2]))
+    # member_pred = np.zeros((X.shape[0], model.n_members, X.shape[2]))
 
     # At each step, generate a prediction, replace the predictions of
     # markers you do not want to predict with the ground truth, and append
     # the resulting vector to the end of the next input chunk.
-    while np.max(startpoint[mask]) > -input_length-1:
-        print(startpoint)
+    while np.sum(mask) > 0 and np.max(startpoint[mask]) > - input_length:
+        # print(set(zip(startpoint, next_frame_id)))
+
+        # if first missing value before input_length, then pad before with first value
         X_start = np.vstack([x[np.array([max(0, t) for t in range(s, s + input_length)])][np.newaxis] for (x, s) in zip(preds[mask], startpoint[mask])])
+
         # If there is a marker prediction that is greater than the
         # difference threshold above, mark it as a bad frame.
         # These are likely just jumps or identity swaps from MoCap that
@@ -122,36 +142,47 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
             errors = np.squeeze(np.abs(diff) > error_diff_thresh)
             errors[~markers_to_fix] = False
             bad_frames[next_frame_id, errors] = True
-        if np.any(bad_frames[next_frame_id, :]):
-            pred, member_pred = model(torch.Tensor(X_start).to(device))
-            pred = pred.detach().cpu().numpy()
-            member_pred = member_pred.detach().cpu().numpy()
 
+        pred, member_pred = model(torch.Tensor(X_start).to(device))
+        pred = pred.detach().cpu().numpy()
+        member_pred = member_pred.detach().cpu().numpy()
         # Detect anomalous predictions.
-        outliers = np.squeeze(np.abs(pred) > outlier_thresh)
-
-        pred[:, 0][outliers] = preds[mask, next_frame_id[mask]][outliers]
+        # outliers = np.squeeze(np.abs(pred) > outlier_thresh)
+        # pred[:, 0][outliers] = preds[mask, next_frame_id[mask]][outliers]
 
         # Only use the predictions for the bad markers. Take the
         # predictions and append to the end of X_start for future
         # prediction.
         pred[:, 0][~bad_frames[mask, next_frame_id[mask]]] = preds[mask, next_frame_id[mask]][~bad_frames[mask, next_frame_id[mask]]]
-        # print(pred[0, 0], X[mask][0, next_frame_id[mask][0]])
         for i_member in range(0, model.n_members):
             member_pred[:, i_member, 0][~bad_frames[mask, next_frame_id[mask]]] = float('nan')
         member_std = np.nanstd(member_pred, axis=1)
-        if np.any(np.isnan(member_std)):
-            print('NANs!')
+
+        if np.all(np.isnan(member_std)):
+            print('NANs', bad_frames[mask, next_frame_id[mask]][::3].shape, np.any(bad_frames[mask, next_frame_id[mask]][::3], axis=-1))
+
         preds[mask, next_frame_id[mask]] = np.squeeze(pred)
         member_stds[mask, next_frame_id[mask], :] = np.squeeze(member_std)
 
-        bad_frames = preds == -4668
-        bad_frames_any = np.any(bad_frames, axis=2)
-        print(np.sum(bad_frames_any), end =' ')
-        startpoint = np.argmax(bad_frames_any, axis=1)
-        startpoint = np.clip(startpoint - input_length - 1, -input_length-1, X.shape[1] - 1)
-        next_frame_id = startpoint + input_length + 1
-        mask = next_frame_id < X.shape[1] - output_length
+        bad_frames = preds == exclude_value
+        bad_frames_any = np.any(bad_frames, axis=2)  # axis=2 is the keypoint axis
+        print(np.sum(bad_frames_any), end =' ', flush=True)
+        startpoint = np.argmax(bad_frames_any, axis=1)  # returns the first point of missing = next_frame_id
+        next_frame_id = startpoint
+        startpoint = np.clip(startpoint - input_length, a_min=-input_length - 1, a_max=X.shape[1] - 1)
+        mask = next_frame_id > 0
+
+    bad_frames_orig = X == exclude_value
+    for item in np.random.choice(preds.shape[0], 10):
+        fig, axes = plt.subplots(pred.shape[-1]//3, 3, figsize=(10, 10))
+        axes = axes.flatten()
+        for i in range(pred.shape[-1]):
+            x = X[item, :, i]
+            x[x == exclude_value] = np.nan
+            t = np.arange(X.shape[1])
+            axes[i].plot(x, 'o-')
+            axes[i].plot(t[bad_frames_orig[item, :, i]], preds[item, bad_frames_orig[item, :, i], i], 'x')
+        plt.savefig(os.path.join(save_path, f'single_pred_item-{item}.png'))
 
     return preds, bad_frames, member_stds
 
@@ -274,7 +305,9 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
     print('Imputing markers: %s pass' % pass_direction, flush=True)
     preds, _, member_stds = predict_markers(model, dict_training, markers, bad_frames,
                                             markers_to_fix=markers_to_fix,
-                                            error_diff_thresh=error_diff_thresh)
+                                            error_diff_thresh=error_diff_thresh,
+                                            save_path=save_path,
+                                            exclude_value=transform_dict['exclude_value'])
 
 
     # Flip the data for the reverse cases to save in the correct direction.
@@ -304,6 +337,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
                         'marker_stds': transform_dict["marker_stds"],
                         'rot_angle': transform_dict["rot_angle"],
                         'mean_position': transform_dict["mean_position"],
+                        'exclude_value': transform_dict["exclude_value"],
                         'ground_truth': ground_truth,
                         'member_stds': member_stds}
         savemat(save_path, output_dict)
