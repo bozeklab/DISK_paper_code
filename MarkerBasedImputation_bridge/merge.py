@@ -126,7 +126,7 @@ def merge(save_path, fold_paths):
 
     items = np.random.choice(predsF.shape[0], 10)
     for item in items:
-        fig, axes = plt.subplots(predsF.shape[-1]//3, 3, figsize=(10, 10))
+        fig, axes = plt.subplots(predsF.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
         for i in range(predsF.shape[-1]):
             x = markers[item, :, i]
@@ -134,14 +134,17 @@ def merge(save_path, fold_paths):
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
+            if i%3 == 0:
+                axes[i].ylabel(marker_names[i//3])
         plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}.png'))
+        plt.close()
 
     markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
     predsF = unprocess_data(predsF, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
     predsR = unprocess_data(predsR, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
 
     for item in items:
-        fig, axes = plt.subplots(predsF.shape[-1]//3, 3, figsize=(10, 10))
+        fig, axes = plt.subplots(predsF.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
         for i in range(predsF.shape[-1]):
             x = markers[item, :, i]
@@ -149,7 +152,10 @@ def merge(save_path, fold_paths):
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
+            if i%3 == 0:
+                axes[i].ylabel(marker_names[i//3])
         plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}_after_unprocess.png'))
+        plt.close()
 
     # This is not necessarily all the error frames from
     # multiple_predict_recording_with_replacement, but if they overlap,

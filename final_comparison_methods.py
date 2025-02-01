@@ -11,20 +11,21 @@ import matplotlib
 matplotlib.use('TkAgg')
 import seaborn as sns
 
+import matplotlib
+if os.uname().nodename == 'france-XPS':
+    matplotlib.use('TkAgg')
+    basedir = '/home/france/Mounted_dir/results_behavior/'
+else:
+    matplotlib.use('Agg')
+    basedir = '/projects/ag-bozek/france/results_behavior/'
 
-basedir = '/home/france/Mounted_dir/results_behavior/'
 from DISK.utils.utils import read_constant_file
 
 
-
-if __name__ == '__main__':
-
-
+def evaluate_and_plots(dataset_name, folder):
     ###################################################################################################################
 
-    dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
     pck_final_threshold = 0.5409094601634411
-    folder = os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0')
     suffix_kpmoseq = 'kpmoseq'
     suffix_optipose = 'model_10_5_1'
     suffix_DISK = 'DISK'
@@ -269,3 +270,24 @@ if __name__ == '__main__':
         total_rmse.to_csv(os.path.join(folder, f'total_rmse_repeat-{i_repeat}_comparison.csv'), index=False)
     mean_df = pd.concat(mean_RMSE)
     mean_df.to_csv(os.path.join(folder, f'mean_rmse_comparison.csv'), index=False)
+
+def plot_average(folder):
+    mean_df = pd.read_csv(os.path.join(folder, f'mean_rmse_comparison.csv'))
+    methods = ['DISK', 'mbi', 'kpmoseq', 'optipose']
+    hue = ['orangered', 'gold', 'purple', 'limegreen']
+    fig, axes = plt.subplots(1, 4, figsize=(10, 6))
+    sns.barplot(data=mean_df.loc[mean_df['metric_type'] == 'MAE'], x='metric_type', y='metric_value', hue='method', ax=axes[0], hue_order=methods, palette=hue)
+    sns.barplot(data=mean_df.loc[mean_df['metric_type'] == 'RMSE'], x='metric_type', y='metric_value', hue='method', ax=axes[1], hue_order=methods, palette=hue)
+    sns.barplot(data=mean_df.loc[mean_df['metric_type'] == 'MPJPE'], x='metric_type', y='metric_value', hue='method', ax=axes[2], hue_order=methods, palette=hue)
+    sns.barplot(data=mean_df.loc[mean_df['metric_type'] == 'PCK@0.01'], x='metric_type', y='metric_value', hue='method', ax=axes[3], hue_order=methods, palette=hue)
+    axes[3].set_ylim(0, 1)
+    plt.savefig(os.path.join(folder, 'mean_barplot_4methods_202502.svg'))
+    plt.close()
+
+
+if __name__ == '__main__':
+    folder = os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0')
+    dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
+
+    # evaluate_and_plots(dataset, folder)
+    plot_average(folder)

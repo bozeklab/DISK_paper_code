@@ -114,16 +114,16 @@ def fill_nan_forward(arr):
 def unprocess_data(X, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value):
     # undo the z-score
     if np.any(np.isnan(marker_means)):
-        marker_means = fill_nan_forward(np.squeeze(marker_means)).reshape(marker_stds.shape)
+        marker_means = fill_nan_forward(marker_means)
 
     if np.any(np.isnan(marker_stds)):
-        marker_stds = fill_nan_forward(np.squeeze(marker_stds)).reshape(marker_means.shape)
+        marker_stds = fill_nan_forward(marker_stds)
 
     if np.any(np.isnan(rot_angle)):
         rot_angle = fill_nan_forward(rot_angle)
 
     if np.any(np.isnan(mean_position)):
-        mean_position = fill_nan_forward(np.squeeze(mean_position))
+        mean_position = fill_nan_forward(mean_position)
 
     # undo the z-scoring
     unz_X = X * marker_stds + marker_means
@@ -139,21 +139,6 @@ def unprocess_data(X, rot_angle, mean_position, marker_means, marker_stds, marke
     unproc_X = (unrot_X + mean_position[:, :, np.newaxis]).reshape(X.shape)
     unproc_X[X == exclude_value] = exclude_value
 
-    # items = np.random.choice(X.shape[0], 1)
-    # for item in items:
-    #     fig, axes = plt.subplots(X.shape[-1]//3, 3, figsize=(10, 10))
-    #     axes = axes.flatten()
-    #     for i in range(X.shape[-1]):
-    #         x = X[item, :, i]
-    #         x[x == exclude_value] = np.nan
-    #         axes[i].plot(x, 'o-')
-    #
-    #     fig, axes = plt.subplots(X.shape[-1]//3, 3, figsize=(10, 10))
-    #     axes = axes.flatten()
-    #     for i in range(X.shape[-1]):
-    #         x = unproc_X[item, :, i]
-    #         x[x == exclude_value] = np.nan
-    #         axes[i].plot(x, 'o-')
 
     return unproc_X
 

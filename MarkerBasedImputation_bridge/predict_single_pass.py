@@ -174,7 +174,7 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
 
     bad_frames_orig = X == exclude_value
     for item in np.random.choice(preds.shape[0], 10):
-        fig, axes = plt.subplots(pred.shape[-1]//3, 3, figsize=(10, 10))
+        fig, axes = plt.subplots(pred.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
         for i in range(pred.shape[-1]):
             x = X[item, :, i]
@@ -183,6 +183,7 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
             axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_frames_orig[item, :, i]], preds[item, bad_frames_orig[item, :, i], i], 'x')
         plt.savefig(os.path.join(save_path, f'single_pred_item-{item}.png'))
+        plt.close()
 
     return preds, bad_frames, member_stds
 
