@@ -32,8 +32,8 @@ if __name__ == '__main__':
         os.mkdir(BASEFOLDER)
     DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10')
     # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
-    front_point = 'spineF'
-    middle_point = 'spineM'
+    front_point = 'SpineF'
+    middle_point = 'SpineM'
     train_file = os.path.join(DATASETPATH, 'train_dataset_w-0-nans.npz')
     val_file = os.path.join(DATASETPATH, 'val_dataset_w-0-nans.npz')
     MODELFOLDER = os.path.join(BASEFOLDER, "models")
