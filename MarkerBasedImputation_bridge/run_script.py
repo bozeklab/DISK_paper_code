@@ -32,6 +32,8 @@ if __name__ == '__main__':
         os.mkdir(BASEFOLDER)
     DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10')
     # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
+    front_point = 'spineF'
+    middle_point = 'spineM'
     train_file = os.path.join(DATASETPATH, 'train_dataset_w-0-nans.npz')
     val_file = os.path.join(DATASETPATH, 'val_dataset_w-0-nans.npz')
     MODELFOLDER = os.path.join(BASEFOLDER, "models")
@@ -50,7 +52,8 @@ if __name__ == '__main__':
 
     # TRAINING
     for _ in range(NMODELS):
-        train(train_file, val_file, base_output_path=MODELFOLDER, run_name=None,
+        train(train_file, val_file, front_point=front_point, middle_point=middle_point,
+              base_output_path=MODELFOLDER, run_name=None,
               data_name=None, net_name="wave_net", clean=False, input_length=9,
               output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
               val_fraction=0.15, only_moving_frames=False, n_filters=512,
@@ -68,7 +71,7 @@ if __name__ == '__main__':
     if len(models) == 0:
         print(f"no models found at {os.path.join(BASEFOLDER, f'models-wave_net_epochs={EPOCHS}_input_9_output_1*/best_model.h5')}")
         sys.exit(1)
-        
+
     save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
     # save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/model_ensemble_02')
 

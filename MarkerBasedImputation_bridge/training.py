@@ -44,7 +44,7 @@ from preprocess_data import preprocess_data, z_score_data
 #     return compile_model(**kwargs)
 
 
-def _disk_loader(filepath, input_length=9, output_length=1, stride=1):
+def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_point='', front_point=''):
     """Load keypoints from DISK already processed .npz files."""
 
     dataset_constant_file = glob(os.path.join(os.path.dirname(filepath), 'constants.py'))[0]
@@ -66,8 +66,8 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1):
 
     exclude_value = np.nan
     transformed_coords, rot_angle, mean_position = preprocess_data(new_coords, bodyparts,
-                                                                        middle_point=['right_hip', 'left_hip'],
-                                                                        front_point=['right_coord', 'left_coord'],
+                                                                        middle_point=middle_point,#['right_hip', 'left_hip'],
+                                                                        front_point=front_point, #['right_coord', 'left_coord'],
                                                                    exclude_value=exclude_value)
 
     z_score_coords, marker_means, marker_stds = z_score_data(transformed_coords, exclude_value=np.nan)
@@ -115,7 +115,8 @@ class CustomDataset(Dataset):
         return self.X[item], self.y[item]
 
 
-def train(train_file, val_file, *, base_output_path="models", run_name=None,
+def train(train_file, val_file, *, front_point='', middle_point='',
+          base_output_path="models", run_name=None,
           data_name=None, net_name="wave_net", clean=False, input_length=9,
           output_length=1,  stride=1, train_fraction=.85,
           val_fraction=0.15, only_moving_frames=False, n_filters=512,
@@ -203,8 +204,10 @@ def train(train_file, val_file, *, base_output_path="models", run_name=None,
     # val_X = markers[input_ids[n_train:(n_train+n_val), :], :]
     # val_Y = markers[target_ids[n_train:(n_train+n_val), :], :]
 
-    train_input, train_output, dataset_constants = _disk_loader(train_file, input_length=input_length, output_length=output_length)
-    val_input, val_output, _ = _disk_loader(val_file, input_length=input_length, output_length=output_length, stride=stride)
+    train_input, train_output, dataset_constants = _disk_loader(train_file, input_length=input_length, output_length=output_length,
+                                                                middle_point=middle_point, front_point=front_point)
+    val_input, val_output, _ = _disk_loader(val_file, input_length=input_length, output_length=output_length,
+                                            stride=stride, middle_point=middle_point, front_point=front_point)
     train_dataset = CustomDataset(train_input, train_output)
     val_dataset = CustomDataset(val_input, val_output)
     train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
