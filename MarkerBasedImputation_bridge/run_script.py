@@ -49,17 +49,17 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
 
     # TRAINING
-    # for _ in range(NMODELS):
-    #     train(train_file, val_file, base_output_path=MODELFOLDER, run_name=None,
-    #           data_name=None, net_name="wave_net", clean=False, input_length=9,
-    #           output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
-    #           val_fraction=0.15, only_moving_frames=False, n_filters=512,
-    #           filter_width=2, layers_per_level=3, n_dilations=None,
-    #           latent_dim=750, epochs=EPOCHS, batch_size=1000,
-    #           lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
-    #           val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
-    #           reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
-    #           reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
+    for _ in range(NMODELS):
+        train(train_file, val_file, base_output_path=MODELFOLDER, run_name=None,
+              data_name=None, net_name="wave_net", clean=False, input_length=9,
+              output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
+              val_fraction=0.15, only_moving_frames=False, n_filters=512,
+              filter_width=2, layers_per_level=3, n_dilations=None,
+              latent_dim=750, epochs=EPOCHS, batch_size=1000,
+              lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
+              val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
+              reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
+              reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
 
     t_after_training = time()
     print(f'Time training: {t_after_training - t_after_import}')
@@ -67,6 +67,8 @@ if __name__ == '__main__':
     models = glob(os.path.join(BASEFOLDER, f'models-wave_net_epochs={EPOCHS}_input_9_output_1*/best_model.h5'))
     if len(models) == 0:
         print(f"no models found at {os.path.join(BASEFOLDER, f'models-wave_net_epochs={EPOCHS}_input_9_output_1*/best_model.h5')}")
+        sys.exit(1)
+        
     save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
     # save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/model_ensemble_02')
 
