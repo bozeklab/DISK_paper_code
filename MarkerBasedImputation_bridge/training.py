@@ -65,6 +65,7 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
         new_coords = coords
 
     exclude_value = np.nan
+    print(bodyparts)
     transformed_coords, rot_angle, mean_position = preprocess_data(new_coords, bodyparts,
                                                                         middle_point=middle_point,#['right_hip', 'left_hip'],
                                                                         front_point=front_point, #['right_coord', 'left_coord'],
