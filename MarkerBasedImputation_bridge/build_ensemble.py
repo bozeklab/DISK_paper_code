@@ -101,7 +101,7 @@ def build_ensemble(base_output_path, models_in_ensemble,
     # Build ensemble folder name if needed
     if run_name is None:
         run_name = "model_ensemble"
-    logging.info("run_name:", run_name)
+    logging.info(f"run_name: {run_name}")
 
     # Initialize run directories
     logging.info('Building run folders')
@@ -125,7 +125,7 @@ def build_ensemble(base_output_path, models_in_ensemble,
                         "output_length": model_ensemble.models_dict_training["output_length"],},
                   fp)
 
-    logging.info('Saving model ensemble')
+    logging.info(f'Saving model ensemble in {os.path.join(run_path, "final_model.h5")}')
     torch.save(model_ensemble.state_dict(), os.path.join(run_path, "final_model.h5"))
     return run_path
 

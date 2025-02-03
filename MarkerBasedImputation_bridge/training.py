@@ -239,7 +239,7 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     #                          layers_per_level=layers_per_level,
     #                          n_dilations=n_dilations, print_summary=True)
     if model is None:
-        logging.info("Could not find model:", net_name)
+        logging.info(f"Could not find model: {net_name}")
         return
 
     # Build run name if needed
@@ -248,8 +248,8 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     if run_name is None:
         run_name = "%s-%s_epochs=%d_input_%d_output_%d" \
             % (data_name, net_name, epochs, input_length, output_length)
-    logging.info("data_name:", data_name)
-    logging.info("run_name:", run_name)
+    logging.info(f"data_name: {data_name}")
+    logging.info(f"run_name: {run_name}")
 
     # Initialize run directories
     logging.info('Building run folders')

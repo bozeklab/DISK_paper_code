@@ -224,7 +224,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
 
         bad_frames = preds == exclude_value
         bad_frames_any = np.any(bad_frames, axis=2)  # axis=2 is the keypoint axis
-        logging.info('Progress: remaining missing values = {np.sum(bad_frames_any)}')
+        logging.info(f'Progress: remaining missing values = {np.sum(bad_frames_any)}')
         startpoint = np.argmax(bad_frames_any, axis=1)  # returns the first point of missing = next_frame_id
         next_frame_id = startpoint
         startpoint = np.clip(startpoint - input_length, a_min=-input_length - 1, a_max=X.shape[1] - 1)
@@ -349,7 +349,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
 
     # Load model
     if model is None:
-        logging.info('Loading ensemble model')
+        logging.info(f'Loading ensemble model from {os.path.join(os.path.dirname(model_path), "training_info.json")}')
         with open(os.path.join(os.path.dirname(model_path), "training_info.json"), 'r') as fp:
             dict_training = json.load(fp)
         model = EnsembleModel(device=device, **dict_training)
