@@ -56,6 +56,23 @@ def z_score_data(input, exclude_value=-4668):
 
     return z_score_input, marker_means, marker_stds
 
+def apply_z_score(input, marker_means, marker_stds, exclude_value=-4668):
+    """
+    Z-score the marker data across time
+
+    :param input: np array of shape (samples, time, keypoints * 3)
+    :param exclude_value:
+
+    :return:
+    """
+    input_with_nans = np.copy(input)
+    input_with_nans[input == exclude_value] = np.nan
+
+    z_score_input = (input_with_nans - marker_means) / (marker_stds + 1e-9)
+    z_score_input[np.isnan(z_score_input)] = exclude_value
+
+    return z_score_input
+
 
 def preprocess_data(X, marker_names, front_point, middle_point, exclude_value):
     """
@@ -68,11 +85,12 @@ def preprocess_data(X, marker_names, front_point, middle_point, exclude_value):
     """
     # 1. medfilt, kernel=3
     # X = medfilt(X, kernel_size=3)
-    X[X == exclude_value] = np.nan
-    filt_X = np.zeros_like(X)
+    orig_X = np.copy(X)
+    filt_X = np.copy(X)
+    orig_X[orig_X == exclude_value] = np.nan
     for i in range(X.shape[0]):
         for j in range(X.shape[2]):
-            x = medfilt(pad_vector(X[i, :, j], 3), kernel_size=3)
+            x = medfilt(pad_vector(orig_X[i, :, j], 3), kernel_size=3)
             filt_X[i, :, j] = x[3: -3]
 
     # 2. egocentric frame transformation
@@ -94,8 +112,35 @@ def preprocess_data(X, marker_names, front_point, middle_point, exclude_value):
     rot_X[..., 0] = ego_X[..., 0] * np.cos(rot_angle[..., np.newaxis]) - ego_X[..., 1] * np.sin(rot_angle[..., np.newaxis])
     # modify the y coordinates
     rot_X[..., 1] = ego_X[..., 0] * np.sin(rot_angle[..., np.newaxis]) + ego_X[..., 1] * np.cos(rot_angle[..., np.newaxis])
+    rot_X = rot_X.reshape(X.shape)
 
-    return rot_X.reshape(X.shape), rot_angle, X_middle_point
+    rot_X[np.isnan(rot_X)] = exclude_value
+
+    return rot_X, rot_angle, X_middle_point
+
+def apply_transform(X, rot_angle, mean_position, marker_means, marker_stds, exclude_value):
+    X[X == exclude_value] = np.nan
+    filt_X = np.zeros_like(X)
+    for i in range(X.shape[0]):
+        for j in range(X.shape[2]):
+            x = medfilt(pad_vector(X[i, :, j], 3), kernel_size=3)
+            filt_X[i, :, j] = x[3: -3]
+
+    # 2. egocentric frame transformation
+    ## 2.2 subtract the mean and rotate
+    ego_X = filt_X.reshape(filt_X.shape[0], filt_X.shape[1], -1, 3) - mean_position[:, :, np.newaxis]
+
+    rot_X = np.copy(ego_X)
+    # modify the x coordinates
+    rot_X[..., 0] = ego_X[..., 0] * np.cos(rot_angle[..., np.newaxis]) - ego_X[..., 1] * np.sin(rot_angle[..., np.newaxis])
+    # modify the y coordinates
+    rot_X[..., 1] = ego_X[..., 0] * np.sin(rot_angle[..., np.newaxis]) + ego_X[..., 1] * np.cos(rot_angle[..., np.newaxis])
+
+    z_score_input = (rot_X - marker_means) / (marker_stds + 1e-9)
+    z_score_input[np.isnan(z_score_input)] = exclude_value
+
+    return z_score_input
+
 
 def fill_nan_forward(arr):
     mask = np.isnan(arr)

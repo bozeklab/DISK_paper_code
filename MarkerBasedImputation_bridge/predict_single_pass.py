@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import json
 
 from build_ensemble import EnsembleModel
-from preprocess_data import z_score_data, preprocess_data, unprocess_data
+from preprocess_data import preprocess_data, unprocess_data, apply_transform, z_score_data, apply_z_score
 from DISK.utils.utils import read_constant_file
 
 if os.uname().nodename == 'france-XPS':
@@ -50,39 +50,50 @@ def open_data_csv(filepath, dataset_path, stride=1):
         print(input.shape)
         exclude_value = np.nan
 
-    transformed_coords, rot_angle, mean_position = preprocess_data(input, dataset_constants.KEYPOINTS,
-                                                                        middle_point=['right_hip', 'left_hip'],
-                                                                        front_point=['right_coord', 'left_coord'],
-                                                                   exclude_value=exclude_value)
-
-    # Z-score the marker data
-    z_score_input, marker_means, marker_stds = z_score_data(transformed_coords, exclude_value=exclude_value)
-
-    # unproc_X = unprocess_data(z_score_input, rot_angle, mean_position, marker_means, marker_stds, dataset_constants.KEYPOINTS, exclude_value)
+    return input, ground_truth, dataset_constants, exclude_value
+    # processed_GT, rot_angle, mean_position, marker_means, marker_stds = preprocess_data(ground_truth, dataset_constants.KEYPOINTS, ## TEST TO UNDO
+    #                                                                     middle_point=['right_hip', 'left_hip'],
+    #                                                                     front_point=['right_coord', 'left_coord'],
+    #                                                                exclude_value=exclude_value)
     #
-    # items = np.random.choice(transformed_coords.shape[0], 1)
-    # for item in items:
-    #     fig, axes = plt.subplots(transformed_coords.shape[-1]//3, 3, figsize=(10, 10))
-    #     axes = axes.flatten()
-    #     for i in range(transformed_coords.shape[-1]):
-    #         x = input[item, :, i]
-    #         x[x == exclude_value] = np.nan
-    #         axes[i].plot(x, 'o-')
+    # transformed_coords = apply_transform(input, rot_angle, mean_position, marker_means, marker_stds,  exclude_value)
     #
-    #         x = unproc_X[item, :, i]
-    #         x[x == exclude_value] = np.nan
-    #         axes[i].plot(x, 'o-')
+    # # unproc_X = unprocess_data(transformed_coords, rot_angle, mean_position, marker_means, marker_stds, dataset_constants.KEYPOINTS, exclude_value)
+    # #
+    # # items = np.random.choice(transformed_coords.shape[0], 5)
+    # # for item in items:
+    # #     fig, axes = plt.subplots(transformed_coords.shape[-1]//3, 3, figsize=(10, 10))
+    # #     axes = axes.flatten()
+    # #     for i in range(transformed_coords.shape[-1]):
+    # #         x = ground_truth[item, :, i]
+    # #         x[x == exclude_value] = np.nan
+    # #         axes[i].plot(x, 'o-')
+    # #
+    # #         x = input[item, :, i]
+    # #         x[x == exclude_value] = np.nan
+    # #         axes[i].plot(x, 'x')
+    # #
+    # #     fig, axes = plt.subplots(transformed_coords.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
+    # #     axes = axes.flatten()
+    # #     for i in range(transformed_coords.shape[-1]):
+    # #         x = processed_GT[item, :, i]
+    # #         x[x == exclude_value] = np.nan
+    # #         axes[i].plot(x, 'o-')
+    # #
+    # #         x = transformed_coords[item, :, i]
+    # #         x[x == exclude_value] = np.nan
+    # #         axes[i].plot(x, 'x')
+    #
+    # transforms_dict = {'rot_angle': rot_angle,
+    #                    'mean_position': mean_position,
+    #                    'marker_means': marker_means,
+    #                    'marker_stds': marker_stds,
+    #                    'exclude_value': exclude_value}
+    #
+    # return transformed_coords, processed_GT, dataset_constants, transforms_dict
 
-    transforms_dict = {'rot_angle': rot_angle,
-                       'mean_position': mean_position,
-                       'marker_means': marker_means,
-                       'marker_stds': marker_stds,
-                       'exclude_value': exclude_value}
 
-    return z_score_input, ground_truth, dataset_constants, transforms_dict
-
-
-def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
+def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=None, markers_to_fix=None,
                     error_diff_thresh=.25, outlier_thresh=3, device=torch.device('cpu'), save_path='',
                     exclude_value=-4668):
     """Imputes the position of missing markers.
@@ -117,8 +128,26 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
     startpoint = np.clip(startpoint - input_length, a_min=-input_length - 1, a_max=X.shape[1] - 1)
     mask = next_frame_id > 0 # only consider the samples needing imputation
 
+
+
+    processed_ground_truth, rot_angle_GT, mean_position_GT = preprocess_data(ground_truth,
+                                                                             keypoints,
+                                                                             middle_point=['right_hip', 'left_hip'],
+                                                                             front_point=['right_coord', 'left_coord'],
+                                                                             exclude_value=exclude_value)
+
+    processed_X, rot_angle, mean_position = preprocess_data(X,
+                                                                  keypoints,
+                                                                  middle_point=['right_hip', 'left_hip'],
+                                                                  front_point=['right_coord', 'left_coord'],
+                                                                  exclude_value=exclude_value)
+
+    _, marker_means, marker_stds = z_score_data(processed_X.reshape(1, -1, processed_X.shape[2]), exclude_value=exclude_value)
+
+    processed_ground_truth = apply_z_score(processed_ground_truth, marker_means, marker_stds, exclude_value=exclude_value)
+
     # Preallocate
-    preds = np.copy(X)
+    preds = np.copy(processed_X)
     pred = np.zeros((X.shape[0], output_length, X.shape[2]))
 
     member_stds = np.zeros((X.shape[0], X.shape[1], X.shape[2]))
@@ -133,6 +162,13 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
         # if first missing value before input_length, then pad before with first value
         X_start = np.vstack([x[np.array([max(0, t) for t in range(s, s + input_length)])][np.newaxis] for (x, s) in zip(preds[mask], startpoint[mask])])
 
+        processed_X_start, rot_angle, mean_position = preprocess_data(X_start,
+                                                                keypoints,
+                                                                middle_point=['right_hip', 'left_hip'],
+                                                                front_point=['right_coord', 'left_coord'],
+                                                                exclude_value=exclude_value)
+        processed_X_start = apply_z_score(processed_X_start, marker_means, marker_stds, exclude_value=-4668)
+
         # If there is a marker prediction that is greater than the
         # difference threshold above, mark it as a bad frame.
         # These are likely just jumps or identity swaps from MoCap that
@@ -143,12 +179,37 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
             errors[~markers_to_fix] = False
             bad_frames[next_frame_id, errors] = True
 
-        pred, member_pred = model(torch.Tensor(X_start).to(device))
+        pred, member_pred = model(torch.Tensor(processed_X_start).to(device))
         pred = pred.detach().cpu().numpy()
         member_pred = member_pred.detach().cpu().numpy()
         # Detect anomalous predictions.
         # outliers = np.squeeze(np.abs(pred) > outlier_thresh)
         # pred[:, 0][outliers] = preds[mask, next_frame_id[mask]][outliers]
+        rmse = np.sqrt((pred[:, 0] - processed_ground_truth[mask, next_frame_id[mask]])**2)
+        rmse[~bad_frames[mask, next_frame_id[mask]]] = np.nan
+        rmse = np.nanmean(rmse, axis=1)
+
+        if len(np.where(startpoint[mask] > 0)[0]) > 0:
+            for item in np.random.choice(np.where(startpoint[mask] > 0)[0], 1):
+                fig, axes = plt.subplots(pred.shape[-1] // 3, 3, figsize=(10, 10), sharey='col')
+                axes = axes.flatten()
+                for i in range(pred.shape[-1]):
+                    t = np.arange(9)
+                    x = processed_X_start[item, :, i]
+                    x[x == exclude_value] = np.nan
+                    axes[i].plot(list(t) + [9], processed_ground_truth[mask][item][next_frame_id[mask][item]-9:next_frame_id[mask][item] + 1][:, i], 'o-', label='GT')
+                    axes[i].plot(x, 'o-', label='input')
+                    if bad_frames[mask, next_frame_id[mask]][item, i]:
+                        axes[i].plot(9, pred[item, 0, i], 'x', c= 'red', label='pred wo missing data')
+                    else:
+                        axes[i].plot(9, pred[item, 0, i], 'x', c='cyan', label='pred w missing data')
+                    if i%3 == 0:
+                        axes[i].set_ylabel(keypoints[i//3])
+                    if i==2:
+                        axes[i].legend()
+                plt.suptitle(f'RMSE {rmse[item]:.3f}')
+            print('stop')
+
 
         # Only use the predictions for the bad markers. Take the
         # predictions and append to the end of X_start for future
@@ -172,20 +233,28 @@ def predict_markers(model, dict_model, X, bad_frames, markers_to_fix=None,
         startpoint = np.clip(startpoint - input_length, a_min=-input_length - 1, a_max=X.shape[1] - 1)
         mask = next_frame_id > 0
 
-    bad_frames_orig = X == exclude_value
+    bad_frames_orig = processed_X == exclude_value
     for item in np.random.choice(preds.shape[0], 10):
         fig, axes = plt.subplots(pred.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
         for i in range(pred.shape[-1]):
-            x = X[item, :, i]
-            x[x == exclude_value] = np.nan
             t = np.arange(X.shape[1])
-            axes[i].plot(x, 'o-')
+            if ground_truth is not None:
+                axes[i].plot(t[bad_frames_orig[item, :, i]], processed_ground_truth[item, bad_frames_orig[item, :, i], i], 'o-')
+            else:
+                x = processed_X[item, :, i]
+                x[x == exclude_value] = np.nan
+                axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_frames_orig[item, :, i]], preds[item, bad_frames_orig[item, :, i], i], 'x')
         plt.savefig(os.path.join(save_path, f'single_pred_item-{item}.png'))
         plt.close()
 
-    return preds, bad_frames, member_stds
+    transforms_dict = {'rot_angle': rot_angle,
+                       'mean_position': mean_position,
+                       'marker_means': marker_means,
+                       'marker_stds': marker_stds}
+
+    return preds, bad_frames, member_stds, transforms_dict
 
 
 
@@ -263,8 +332,12 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
     # markers = markers[::stride, :]
     # bad_frames = bad_frames[::stride, :]
     # n_frames = int(np.floor(markers.shape[0]/n_folds))
-    markers, ground_truth, dataset_constants, transform_dict = open_data_csv(filepath=data_file, dataset_path=dataset_path)
-    bad_frames = markers == transform_dict['exclude_value'] # value used by optipose to mark dropped frames
+    # markers, ground_truth, dataset_constants, transform_dict = open_data_csv(filepath=data_file, dataset_path=dataset_path)
+    # bad_frames = markers == transform_dict['exclude_value'] # value used by optipose to mark dropped frames
+
+    markers, ground_truth, dataset_constants, exclude_value = open_data_csv(filepath=data_file, dataset_path=dataset_path)
+    bad_frames = markers == exclude_value # value used by optipose to mark dropped frames
+
     # fold_id = int(fold_id)
     # start_frame = markers.shape[1] * int(fold_id)
     # n_frames = int(np.floor(markers.shape[1] / n_folds))
@@ -297,6 +370,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
 
     if pass_direction == 'reverse':
         markers = markers[:, ::-1, :]
+        ground_truth = ground_truth[:, ::-1, :]
         bad_frames = bad_frames[:, ::-1, :]
 
     # print('Predicting %d frames starting at frame %d.'
@@ -304,16 +378,18 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
 
     # If the model can return the member predictions, do so.
     print('Imputing markers: %s pass' % pass_direction, flush=True)
-    preds, _, member_stds = predict_markers(model, dict_training, markers, bad_frames,
+    preds, _, member_stds, transform_dict = predict_markers(model, dict_training, markers, bad_frames,
+                                                            dataset_constants.KEYPOINTS, ground_truth,
                                             markers_to_fix=markers_to_fix,
                                             error_diff_thresh=error_diff_thresh,
                                             save_path=save_path,
-                                            exclude_value=transform_dict['exclude_value'])
+                                            exclude_value=exclude_value)
 
 
     # Flip the data for the reverse cases to save in the correct direction.
     if pass_direction == 'reverse':
         markers = markers[:, ::-1, :]
+        ground_truth = ground_truth[:, ::-1, :]
         preds = preds[:, ::-1, :]
         bad_frames = bad_frames[:, ::-1, :]
         member_stds = member_stds[:, ::-1, :]
@@ -338,7 +414,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
                         'marker_stds': transform_dict["marker_stds"],
                         'rot_angle': transform_dict["rot_angle"],
                         'mean_position': transform_dict["mean_position"],
-                        'exclude_value': transform_dict["exclude_value"],
+                        'exclude_value': exclude_value,
                         'ground_truth': ground_truth,
                         'member_stds': member_stds}
         savemat(save_path, output_dict)

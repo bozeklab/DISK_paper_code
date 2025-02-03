@@ -28,7 +28,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Dataset
 
 from DISK.utils.utils import read_constant_file
-from preprocess_data import preprocess_data, z_score_data
+from preprocess_data import preprocess_data, z_score_data, apply_z_score
 
 # def create_model(net_name, **kwargs):
 #     """Initialize a network for training."""
@@ -67,11 +67,14 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
     exclude_value = np.nan
     print(bodyparts)
     transformed_coords, rot_angle, mean_position = preprocess_data(new_coords, bodyparts,
-                                                                        middle_point=middle_point,#['right_hip', 'left_hip'],
-                                                                        front_point=front_point, #['right_coord', 'left_coord'],
+                                                                        middle_point=middle_point,
+                                                                        front_point=front_point,
                                                                    exclude_value=exclude_value)
 
-    z_score_coords, marker_means, marker_stds = z_score_data(transformed_coords, exclude_value=np.nan)
+    _, marker_means, marker_stds = z_score_data(transformed_coords.reshape(1, -1, transformed_coords.shape[2]),
+                                                             exclude_value=exclude_value)
+
+    z_score_coords = apply_z_score(transformed_coords, marker_means, marker_stds, exclude_value)
     # marker_means = None
     # marker_stds = None
 
