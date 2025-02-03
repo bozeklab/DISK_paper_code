@@ -180,7 +180,7 @@ def train(train_file, val_file, *, front_point='', middle_point='',
         n_dilations = int(n_dilations)
 
     # Load Data
-    logging.ingo('Loading Data')
+    logging.info('Loading Data')
     # # markers, marker_means, marker_stds, bad_frames, moving_frames = \
     # #     load_dataset(data_path)
     # markers, bad_frames = None, None
