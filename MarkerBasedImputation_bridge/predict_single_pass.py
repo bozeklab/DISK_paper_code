@@ -1,11 +1,8 @@
 """Imputes markers with mbi models."""
-# import clize
-import h5py
-# from keras.models import load_model
 import numpy as np
 import os
 from scipy.io import savemat
-from scipy import stats
+import logging
 from glob import glob
 import torch
 import pandas as pd
@@ -33,7 +30,7 @@ def open_data_csv(filepath, dataset_path, stride=1):
 
     if 'repeat' in os.path.basename(filepath):
         df = pd.read_csv(filepath, sep='|')
-        print(df.columns)
+        logging.info(f'input df columns: {df.columns}')
         input = np.vstack([np.array(eval(v))[np.newaxis] for v in df['input']])
         input = input.reshape(input.shape[0], input.shape[1], -1)
         ground_truth = np.vstack([np.array(eval(v))[np.newaxis] for v in df['label']])
@@ -41,13 +38,13 @@ def open_data_csv(filepath, dataset_path, stride=1):
 
         exclude_value = -4668
     else:
-        print('-- filepath', filepath, end = ' - ')
+        logging.info(f'-- filepath {filepath}')
         df = pd.read_csv(filepath, sep=',')
         cols = df.columns
 
         input = df[cols].values[np.newaxis]
         ground_truth = np.copy(input)
-        print(input.shape)
+        logging.info(f'input shape: {input.shape}')
         exclude_value = np.nan
 
     return input, ground_truth, dataset_constants, exclude_value
@@ -189,26 +186,26 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
         rmse[~bad_frames[mask, next_frame_id[mask]]] = np.nan
         rmse = np.nanmean(rmse, axis=1)
 
-        if len(np.where(startpoint[mask] > 0)[0]) > 0:
-            for item in np.random.choice(np.where(startpoint[mask] > 0)[0], 1):
-                fig, axes = plt.subplots(pred.shape[-1] // 3, 3, figsize=(10, 10), sharey='col')
-                axes = axes.flatten()
-                for i in range(pred.shape[-1]):
-                    t = np.arange(9)
-                    x = processed_X_start[item, :, i]
-                    x[x == exclude_value] = np.nan
-                    axes[i].plot(list(t) + [9], processed_ground_truth[mask][item][next_frame_id[mask][item]-9:next_frame_id[mask][item] + 1][:, i], 'o-', label='GT')
-                    axes[i].plot(x, 'o-', label='input')
-                    if bad_frames[mask, next_frame_id[mask]][item, i]:
-                        axes[i].plot(9, pred[item, 0, i], 'x', c= 'red', label='pred wo missing data')
-                    else:
-                        axes[i].plot(9, pred[item, 0, i], 'x', c='cyan', label='pred w missing data')
-                    if i%3 == 0:
-                        axes[i].set_ylabel(keypoints[i//3])
-                    if i==2:
-                        axes[i].legend()
-                plt.suptitle(f'RMSE {rmse[item]:.3f}')
-            print('stop')
+        # if len(np.where(startpoint[mask] > 0)[0]) > 0:
+        #     for item in np.random.choice(np.where(startpoint[mask] > 0)[0], 1):
+        #         fig, axes = plt.subplots(pred.shape[-1] // 3, 3, figsize=(10, 10), sharey='col')
+        #         axes = axes.flatten()
+        #         for i in range(pred.shape[-1]):
+        #             t = np.arange(9)
+        #             x = processed_X_start[item, :, i]
+        #             x[x == exclude_value] = np.nan
+        #             axes[i].plot(list(t) + [9], processed_ground_truth[mask][item][next_frame_id[mask][item]-9:next_frame_id[mask][item] + 1][:, i], 'o-', label='GT')
+        #             axes[i].plot(x, 'o-', label='input')
+        #             if bad_frames[mask, next_frame_id[mask]][item, i]:
+        #                 axes[i].plot(9, pred[item, 0, i], 'x', c= 'red', label='pred wo missing data')
+        #             else:
+        #                 axes[i].plot(9, pred[item, 0, i], 'x', c='cyan', label='pred w missing data')
+        #             if i%3 == 0:
+        #                 axes[i].set_ylabel(keypoints[i//3])
+        #             if i==2:
+        #                 axes[i].legend()
+        #         plt.suptitle(f'RMSE {rmse[item]:.3f}')
+        #     print('stop')
 
 
         # Only use the predictions for the bad markers. Take the
@@ -220,14 +217,14 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
         member_std = np.nanstd(member_pred, axis=1)
 
         if np.all(np.isnan(member_std)):
-            print('NANs', bad_frames[mask, next_frame_id[mask]][::3].shape, np.any(bad_frames[mask, next_frame_id[mask]][::3], axis=-1))
+            logging.info(f'NANs: {bad_frames[mask, next_frame_id[mask]][::3].shape}, {np.any(bad_frames[mask, next_frame_id[mask]][::3], axis=-1)}')
 
         preds[mask, next_frame_id[mask]] = np.squeeze(pred)
         member_stds[mask, next_frame_id[mask], :] = np.squeeze(member_std)
 
         bad_frames = preds == exclude_value
         bad_frames_any = np.any(bad_frames, axis=2)  # axis=2 is the keypoint axis
-        print(np.sum(bad_frames_any), end =' ', flush=True)
+        logging.info('Progress: remaining missing values = {np.sum(bad_frames_any)}')
         startpoint = np.argmax(bad_frames_any, axis=1)  # returns the first point of missing = next_frame_id
         next_frame_id = startpoint
         startpoint = np.clip(startpoint - input_length, a_min=-input_length - 1, a_max=X.shape[1] - 1)
@@ -352,7 +349,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
 
     # Load model
     if model is None:
-        print('Loading model')
+        logging.info('Loading ensemble model')
         with open(os.path.join(os.path.dirname(model_path), "training_info.json"), 'r') as fp:
             dict_training = json.load(fp)
         model = EnsembleModel(device=device, **dict_training)
@@ -377,7 +374,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
     #       % (markers.shape[1], start_frame))
 
     # If the model can return the member predictions, do so.
-    print('Imputing markers: %s pass' % pass_direction, flush=True)
+    logging.info(f'Imputing markers: {pass_direction} pass')
     preds, _, member_stds, transform_dict = predict_markers(model, dict_training, markers, bad_frames,
                                                             dataset_constants.KEYPOINTS, ground_truth,
                                             markers_to_fix=markers_to_fix,
@@ -401,7 +398,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         save_path = os.path.join(save_path, file_name)
-        print('Saving to %s' % save_path)
+        logging.ingo(f'Saving to {save_path}')
         output_dict = {'preds': preds,
                         'markers': markers, # inputs to the model, z-scored
                        'marker_names': dataset_constants.KEYPOINTS,

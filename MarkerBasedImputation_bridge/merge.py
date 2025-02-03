@@ -10,6 +10,7 @@ import pandas as pd
 from scipy.io import savemat, loadmat
 from skimage import measure
 import json
+import logging
 from glob import glob
 import matplotlib
 if os.uname().nodename == 'france-XPS':
@@ -46,7 +47,7 @@ def merge(save_path, fold_paths):
     # sorted_indices = sorted(range(len(folds)), key=lambda k: folds[k])
     # fold_paths = [fold_paths[i] for i in sorted_indices]
     # print('Reorganized fold paths:')
-    print(fold_paths)
+    # print(fold_paths)
 
     n_folds_to_merge = len(fold_paths)
     markers = None
@@ -58,7 +59,7 @@ def merge(save_path, fold_paths):
     member_stdsF = None
     member_stdsR = None
     for i in range(n_folds_to_merge):
-        print('%d' % i, flush=True)
+        # print('%d' % i, flush=True)
 
         data = loadmat(fold_paths[i])
         pass_direction = data['pass_direction'][:]
@@ -111,12 +112,12 @@ def merge(save_path, fold_paths):
     exclude_value = data['exclude_value'][0][0]
     del data
 
-    print(markers.shape)
-    print(member_stdsF.shape)
-    print(predsF.shape)
-    print(bad_framesF.shape)
-    print(marker_means.shape)
-    print(marker_stds.shape, flush=True)
+    logging.info(f'shape markers: {markers.shape}')
+    logging.info(f'shape member_stdsF: {member_stdsF.shape}')
+    logging.info(f'shape predsF: {predsF.shape}')
+    logging.info(f'shape bad_framesF: {bad_framesF.shape}')
+    logging.info(f'shape markers_means: {marker_means.shape}')
+    logging.info(f'shape marker_stds: {marker_stds.shape}')
     # Convert to real world coordinates
     # for i in range(markers.shape[1]):
     #     # looping on the time
@@ -167,7 +168,7 @@ def merge(save_path, fold_paths):
 
     # Compute the weighted average of the forward and reverse predictions using
     # a logistic function
-    print('Computing weighted average:', flush=True, end=' ')
+    logging.info('Computing weighted average')
     preds = np.zeros(predsF.shape)
     member_stds = np.zeros(member_stdsF.shape)
     k = 1 # sigmoid exponent
@@ -189,12 +190,11 @@ def merge(save_path, fold_paths):
                 preds[sample, time_ids, kp * 3: kp * 3 + 3] = predsF[sample, time_ids, kp * 3: kp * 3 + 3] * weightF + predsR[sample, time_ids, kp * 3: kp * 3 + 3] * weightR
                 member_stds[sample, time_ids, kp * 3: kp * 3 + 3] = np.sqrt(member_stdsF[sample, time_ids, kp * 3: kp * 3 + 3]**2 * weightF + member_stdsR[sample, time_ids, kp * 3: kp * 3 + 3]**2 * weightR)
     elapsed = datetime.datetime.now() - start
-    print(elapsed)
+    logging.info(f'Computing average took: {elapsed} seconds')
 
     # Save predictions to a matlab file.
     if save_path is not None:
-        s = 'Saving to %s' % (save_path)
-        print(s)
+        logging.info(f'Saving to {save_path}')
         with h5py.File(os.path.join(save_path, f'{os.path.basename(original_data_file).split(".csv")[0]}_final_predictions.h5'), "w") as f:
             f.create_dataset("preds", data=preds) # merged predictions
             f.create_dataset("markers", data=markers) # input to the ensemble models, de-z-scored

@@ -19,9 +19,8 @@ import matplotlib.pyplot as plt
 import torch
 from scipy.io import savemat
 from time import time
-# from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 from utils import load_dataset, get_ids, create_run_folders
-import models
+import logging
 import json
 from torch import optim
 from torch.utils.data import DataLoader
@@ -59,13 +58,12 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
         new_time = np.array([np.arange(np.max(time_) + 1) for _ in range(coords.shape[0])])
         new_coords = np.zeros((coords.shape[0], np.max(time_) + 1, coords.shape[2]), dtype=coords.dtype) * np.nan
         for i in range(len(time_)):
-            print(new_coords[i].shape, (time_[i][time_[i] >= 0]).dtype, (time_[i][time_[i] >= 0]).shape, coords[i].shape)
+            # print(new_coords[i].shape, (time_[i][time_[i] >= 0]).dtype, (time_[i][time_[i] >= 0]).shape, coords[i].shape)
             new_coords[i, time_[i][time_[i] >= 0]] = coords[i][time_[i] >= 0]
     else:
         new_coords = coords
 
     exclude_value = np.nan
-    print(bodyparts)
     transformed_coords, rot_angle, mean_position = preprocess_data(new_coords, bodyparts,
                                                                         middle_point=middle_point,
                                                                         front_point=front_point,
@@ -182,7 +180,7 @@ def train(train_file, val_file, *, front_point='', middle_point='',
         n_dilations = int(n_dilations)
 
     # Load Data
-    print('Loading Data')
+    logging.ingo('Loading Data')
     # # markers, marker_means, marker_stds, bad_frames, moving_frames = \
     # #     load_dataset(data_path)
     # markers, bad_frames = None, None
@@ -216,10 +214,10 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     val_dataset = CustomDataset(val_input, val_output)
     train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
     val_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size)
-    print(f'Data loaded, number of train samples {len(train_dataset)}, number of val samples {len(val_dataset)}')
+    logging.info(f'Data loaded, number of train samples {len(train_dataset)}, number of val samples {len(val_dataset)}')
 
     # Create network
-    print('Compiling network')
+    logging.info('Compiling network')
     model = None
     if isinstance(net_name, torch.nn.Module):
         model = net_name
@@ -241,7 +239,7 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     #                          layers_per_level=layers_per_level,
     #                          n_dilations=n_dilations, print_summary=True)
     if model is None:
-        print("Could not find model:", net_name)
+        logging.info("Could not find model:", net_name)
         return
 
     # Build run name if needed
@@ -250,16 +248,16 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     if run_name is None:
         run_name = "%s-%s_epochs=%d_input_%d_output_%d" \
             % (data_name, net_name, epochs, input_length, output_length)
-    print("data_name:", data_name)
-    print("run_name:", run_name)
+    logging.info("data_name:", data_name)
+    logging.info("run_name:", run_name)
 
     # Initialize run directories
-    print('Building run folders')
+    logging.info('Building run folders')
     run_path = create_run_folders(run_name, base_path=base_output_path,
                                   clean=clean)
 
     # Save the training information in a mat file.
-    print('Saving training info')
+    logging.info(f'Saving training info in {os.path.join(run_path, "training_info.json")}')
     with open(os.path.join(run_path, "training_info.json"), "w") as fp:
         json.dump({"data_path": train_file[len(basedir):].lstrip('/'),
                    "base_output_path": base_output_path[len(basedir):].lstrip('/'),
@@ -364,8 +362,8 @@ def train(train_file, val_file, *, front_point='', middle_point='',
             scheduler.step(val_loss)
 
 
-            print(np.unique(np.vstack(val_outputs).flatten()))
-            print(f"Epoch {epoch+1}/{epochs}, training loss: {total_loss/batches:.4f}, validation loss: {val_loss/val_batches:.4f}")
+            logging.info(f'{np.unique(np.vstack(val_outputs).flatten())}')
+            logging.info(f"Epoch {epoch+1}/{epochs}, training loss: {total_loss/batches:.4f}, validation loss: {val_loss/val_batches:.4f}")
             losses.append(total_loss/batches) # for plotting learning curve
             val_losses.append(val_loss/val_batches) # for plotting learning curve
             if val_loss/val_batches < best_val_loss:
@@ -395,7 +393,7 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     plt.savefig(os.path.join(run_path, f'loss_curves.png'))
     plt.close()
 
-    print(f"Training time: {time()-start_ts}s")
+    logging.info(f"Training time: {time()-start_ts}s")
 
     # Save initial network
     # print('Saving initial network')

@@ -5,9 +5,8 @@
 import numpy as np
 import os
 from scipy.io import savemat
-
+import logging
 from models import Wave_net
-# import tensorflow as tf
 from utils import create_run_folders
 import torch
 import json
@@ -39,7 +38,7 @@ class EnsembleModel(torch.nn.Module):
         model_paths = [mp if mp[0] == '/' else os.path.join(basedir, mp) for mp in model_paths]
 
         for i in range(len(model_paths)):
-            print(os.path.join(os.path.dirname(model_paths[i]), "training_info.json"))
+            logging.info(f' Loading model from {os.path.join(os.path.dirname(model_paths[i]), "training_info.json")}')
             with open(os.path.join(os.path.dirname(model_paths[i]), "training_info.json"), 'r') as fp:
                 self.models_dict_training = json.load(fp)
             model = Wave_net(device=device, **self.models_dict_training)
@@ -102,10 +101,10 @@ def build_ensemble(base_output_path, models_in_ensemble,
     # Build ensemble folder name if needed
     if run_name is None:
         run_name = "model_ensemble"
-    print("run_name:", run_name)
+    logging.info("run_name:", run_name)
 
     # Initialize run directories
-    print('Building run folders')
+    logging.info('Building run folders')
     run_path = create_run_folders(run_name, base_path=base_output_path,
                                   clean=clean)
 
@@ -115,7 +114,7 @@ def build_ensemble(base_output_path, models_in_ensemble,
         model_paths.append(models_in_ensemble[i])
 
     # Save the training information in a mat file.
-    print('Saving training info')
+    logging.info(f'Saving training info in{os.path.join(run_path, "training_info.json")}')
     with open(os.path.join(run_path, "training_info.json"), "w") as fp:
         json.dump({"base_output_path": base_output_path[len(basedir):],
                         "run_name": run_name,
@@ -126,7 +125,7 @@ def build_ensemble(base_output_path, models_in_ensemble,
                         "output_length": model_ensemble.models_dict_training["output_length"],},
                   fp)
 
-    print('Saving model ensemble')
+    logging.info('Saving model ensemble')
     torch.save(model_ensemble.state_dict(), os.path.join(run_path, "final_model.h5"))
     return run_path
 
