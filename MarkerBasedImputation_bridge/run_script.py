@@ -57,7 +57,7 @@ if __name__ == '__main__':
     # Training
     NMODELS = 10
     TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
-    EPOCHS = 100 #30
+    EPOCHS = 30 #30
 
     # Imputation
     impute_stride = 1 #5
