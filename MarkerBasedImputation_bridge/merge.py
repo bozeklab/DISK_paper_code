@@ -136,7 +136,7 @@ def merge(save_path, fold_paths):
             axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
             if i%3 == 0:
-                axes[i].ylabel(marker_names[i//3])
+                axes[i].set_ylabel(marker_names[i//3])
         plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}.png'))
         plt.close()
 
@@ -154,7 +154,7 @@ def merge(save_path, fold_paths):
             axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
             if i%3 == 0:
-                axes[i].ylabel(marker_names[i//3])
+                axes[i].set_ylabel(marker_names[i//3])
         plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}_after_unprocess.png'))
         plt.close()
 
