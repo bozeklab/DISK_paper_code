@@ -398,7 +398,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
         if not os.path.exists(save_path):
             os.makedirs(save_path)
         save_path = os.path.join(save_path, file_name)
-        logging.ingo(f'Saving to {save_path}')
+        logging.info(f'Saving to {save_path}')
         output_dict = {'preds': preds,
                         'markers': markers, # inputs to the model, z-scored
                        'marker_names': dataset_constants.KEYPOINTS,
