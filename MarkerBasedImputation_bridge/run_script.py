@@ -98,7 +98,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
-    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/model_ensemble')
+    save_path = os.path.join(BASEFOLDER, 'model_ensemble')
     logging.info(f'SAVEPATH = {save_path}')
     # EVALUATION
 
