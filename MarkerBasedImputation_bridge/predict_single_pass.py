@@ -92,7 +92,7 @@ def open_data_csv(filepath, dataset_path, stride=1):
 
 def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=None, markers_to_fix=None,
                     error_diff_thresh=.25, outlier_thresh=3, device=torch.device('cpu'), save_path='',
-                    exclude_value=-4668):
+                    exclude_value=-4668, pass_direction='forward'):
     """Imputes the position of missing markers.
 
     :param model: Ensemble model to use for prediction
@@ -186,26 +186,28 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
         rmse[~bad_frames[mask, next_frame_id[mask]]] = np.nan
         rmse = np.nanmean(rmse, axis=1)
 
-        # if len(np.where(startpoint[mask] > 0)[0]) > 0:
-        #     for item in np.random.choice(np.where(startpoint[mask] > 0)[0], 1):
-        #         fig, axes = plt.subplots(pred.shape[-1] // 3, 3, figsize=(10, 10), sharey='col')
-        #         axes = axes.flatten()
-        #         for i in range(pred.shape[-1]):
-        #             t = np.arange(9)
-        #             x = processed_X_start[item, :, i]
-        #             x[x == exclude_value] = np.nan
-        #             axes[i].plot(list(t) + [9], processed_ground_truth[mask][item][next_frame_id[mask][item]-9:next_frame_id[mask][item] + 1][:, i], 'o-', label='GT')
-        #             axes[i].plot(x, 'o-', label='input')
-        #             if bad_frames[mask, next_frame_id[mask]][item, i]:
-        #                 axes[i].plot(9, pred[item, 0, i], 'x', c= 'red', label='pred wo missing data')
-        #             else:
-        #                 axes[i].plot(9, pred[item, 0, i], 'x', c='cyan', label='pred w missing data')
-        #             if i%3 == 0:
-        #                 axes[i].set_ylabel(keypoints[i//3])
-        #             if i==2:
-        #                 axes[i].legend()
-        #         plt.suptitle(f'RMSE {rmse[item]:.3f}')
-        #     print('stop')
+        if len(np.where(startpoint[mask] > 0)[0]) > 0:
+            for item in np.random.choice(np.where(startpoint[mask] > 0)[0], 1):
+                fig, axes = plt.subplots(pred.shape[-1] // 3, 3, figsize=(10, 10), sharey='col')
+                axes = axes.flatten()
+                for i in range(pred.shape[-1]):
+                    t = np.arange(9)
+                    x = processed_X_start[item, :, i]
+                    x[x == exclude_value] = np.nan
+                    axes[i].plot(list(t) + [9], processed_ground_truth[mask][item][next_frame_id[mask][item]-9:next_frame_id[mask][item] + 1][:, i], 'o-', label='GT')
+                    axes[i].plot(x, 'o-', label='input')
+                    if bad_frames[mask, next_frame_id[mask]][item, i]:
+                        axes[i].plot(9, pred[item, 0, i], 'x', c= 'red', label='pred wo missing data')
+                    else:
+                        axes[i].plot(9, pred[item, 0, i], 'x', c='cyan', label='pred w missing data')
+                    if i%3 == 0:
+                        axes[i].set_ylabel(keypoints[i//3])
+                    if i==2:
+                        axes[i].legend()
+                plt.suptitle(f'RMSE {rmse[item]:.3f}')
+                plt.savefig(os.path.join(save_path, f'single_pred_single_step_{pass_direction}_item-{item}.png'))
+                plt.close()
+            print('stop')
 
 
         # Only use the predictions for the bad markers. Take the
@@ -232,18 +234,18 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
 
     bad_frames_orig = processed_X == exclude_value
     for item in np.random.choice(preds.shape[0], 10):
-        fig, axes = plt.subplots(pred.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
+        fig, axes = plt.subplots(pred.shape[-1]//3, 3, figsize=(10, 10), sharey='col', sharex='all')
         axes = axes.flatten()
         for i in range(pred.shape[-1]):
             t = np.arange(X.shape[1])
             if ground_truth is not None:
-                axes[i].plot(t[bad_frames_orig[item, :, i]], processed_ground_truth[item, bad_frames_orig[item, :, i], i], 'o-')
+                axes[i].plot(t, processed_ground_truth[item, :, i], 'o-')
             else:
                 x = processed_X[item, :, i]
                 x[x == exclude_value] = np.nan
                 axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_frames_orig[item, :, i]], preds[item, bad_frames_orig[item, :, i], i], 'x')
-        plt.savefig(os.path.join(save_path, f'single_pred_item-{item}.png'))
+        plt.savefig(os.path.join(save_path, f'single_pred_{pass_direction}_item-{item}.png'))
         plt.close()
 
     transforms_dict = {'rot_angle': rot_angle,
@@ -380,7 +382,8 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
                                             markers_to_fix=markers_to_fix,
                                             error_diff_thresh=error_diff_thresh,
                                             save_path=save_path,
-                                            exclude_value=exclude_value)
+                                            exclude_value=exclude_value,
+                                                            pass_direction=pass_direction)
 
 
     # Flip the data for the reverse cases to save in the correct direction.
