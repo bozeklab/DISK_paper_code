@@ -230,6 +230,9 @@ def train(train_file, val_file, *, front_point='', middle_point='',
                              n_filters=n_filters, filter_width=filter_width,
                              layers_per_level=layers_per_level, device=device,
                              n_dilations=n_dilations, print_summary=False).to(device)
+        print(input_length, output_length, dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
+              n_filters, filter_width, layers_per_level, device,
+              n_dilations)
     # elif net_name == 'lstm_model':
     #     model = create_model(net_name, lossfunc=lossfunc, lr=lr,
     #                          input_length=input_length, n_markers=n_markers,
@@ -370,14 +373,28 @@ def train(train_file, val_file, *, front_point='', middle_point='',
             val_losses.append(val_loss/val_batches) # for plotting learning curve
             if val_loss/val_batches < best_val_loss:
                 best_val_loss = val_loss/val_batches
-                torch.save(model.state_dict(), os.path.join(run_path, "best_model.h5"))
+                torch.save({
+                        'epoch': epoch,
+                        'model_state_dict': model.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                        'scheduler_state_dict': scheduler.state_dict(),
+                        'loss': loss,
+                        }, os.path.join(run_path, "best_model.h5"))
 
+    torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'loss': loss,
+            }, os.path.join(run_path, "best_model.h5"))
     array_y = np.vstack(list_y)
     array_outputs = np.vstack(val_outputs)
     rmse = np.squeeze(np.sqrt((array_y - array_outputs)**2))
     rmse = np.nanmean(rmse, axis=1)
 
-    for item in np.random.randint(0, X.shape[0], 10):
+    items = np.random.randint(0, X.shape[0], 10)
+    for item in items:
         fig, axes = plt.subplots(8, 3, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
         for i in range(24):
@@ -407,7 +424,73 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     plt.savefig(os.path.join(run_path, f'loss_curves.png'))
     plt.close()
 
+
+
     logging.info(f"Training time: {time()-start_ts}s")
+
+    logging.info(
+        f'Loading ensemble model from {os.path.join(run_name, "training_info.json")}')
+    with open(os.path.join(run_name, "training_info.json"), 'r') as fp:
+        dict_training = json.load(fp)
+    print(dict_training["input_length"], dict_training["output_length"], dict_training['n_markers'],
+          dict_training["n_filters"], dict_training["filter_width"], dict_training["layers_per_level"], device,
+          dict_training["n_dilations"], )
+    model1 = Wave_net(input_length=input_length,
+             output_length=output_length, n_markers=dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
+             n_filters=n_filters, filter_width=filter_width,
+             layers_per_level=layers_per_level, device=device,
+             n_dilations=n_dilations, print_summary=False).to(device)
+    # model = Wave_net(device=device, **dict_training).to(device)
+    # model.load_state_dict(torch.load(os.path.join(basedir, run_name, 'best_model.h5')))
+    checkpoint = torch.load(os.path.join(basedir, run_name, 'best_model.h5'))
+    print(checkpoint['epoch'])
+    model1.load_state_dict(checkpoint['model_state_dict'])
+    model1.eval()
+
+    for key in model1.state_dict().keys():
+        if not (torch.equal(model.state_dict()[key], model1.state_dict()[key])):
+            print(key)
+
+    with torch.no_grad():
+        val_loss = 0
+        list_y = []
+        val_outputs = []
+        for i, data in enumerate(val_loader):
+            X = data[0].to(device)
+            y = data[1].to(device)
+
+            outputs = model1(X)  # this gets the prediction from the network
+            val_outputs.append(outputs.cpu().numpy())
+
+            val_loss += loss_function(outputs, y).item()  # MODIFIED - added [][]
+
+            list_y.append(y.cpu().numpy())
+
+        array_y = np.vstack(list_y)
+        array_outputs = np.vstack(val_outputs)
+        rmse = np.squeeze(np.sqrt((array_y - array_outputs) ** 2))
+        rmse = np.nanmean(rmse, axis=1)
+
+        for item in items:
+            fig, axes = plt.subplots(8, 3, figsize=(10, 10), sharey='col')
+            axes = axes.flatten()
+            for i in range(24):
+                axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
+                axes[i].plot([9], list_y[-1][item, :, i], 'o')
+                axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
+
+            plt.suptitle(f'RMSE = {rmse[item]:.3f}')
+            # plt.figure()
+            # plt.hist(np.vstack(list_y).flatten(), bins=50)
+            # plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
+            plt.savefig(os.path.join(run_path, f'reload_model_prediction_val_item-{item}.png'))
+            plt.close()
+        plt.figure()
+        plt.hist(rmse, bins=50)
+        plt.yscale('log')
+        plt.suptitle(f'mean RMSE: {np.mean(rmse):.3f} +/- {np.std(rmse):.3f}')
+        plt.savefig(os.path.join(run_path, f'reload_model_hist_val_RMSE.png'))
+        plt.close()
 
     # Save initial network
     # print('Saving initial network')
