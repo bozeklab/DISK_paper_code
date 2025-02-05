@@ -270,7 +270,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
     if ground_truth is not None:
         rmse = np.sqrt((pred - processed_ground_truth) ** 2)
         rmse[~bad_frames_orig] = np.nan
-        rmse = np.nanmean(np.squeeze(rmse), axis=1)
+        rmse = np.nanmean(np.squeeze(rmse), axis=(1, 2))
         print(rmse.shape)
 
         plt.figure()
