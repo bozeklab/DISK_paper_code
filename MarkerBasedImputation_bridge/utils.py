@@ -1,13 +1,16 @@
 """Utitlity functions for mbi."""
 import h5py
-# from keras import backend as K
-# from keras.layers import Conv1D
-# from keras.utils.conv_utils import conv_output_length
 import numpy as np
 import os
 import shutil
-# import tensorflow as tf
 import torch
+
+
+def get_mask(X, value):
+    if value is np.nan:
+        return np.isnan(X)
+    else:
+        return X == value
 
 def load_dataset(data_path):
     """Load marker, marker_means, marker_stds, and bad_frames from .h5 dataset.

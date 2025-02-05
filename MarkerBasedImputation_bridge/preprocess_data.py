@@ -3,16 +3,10 @@ Inspiration from CAPTURE paper and CAPTURE_demo matlab scripts
 https://github.com/jessedmarshall/CAPTURE_demo/blob/b85581c796237634c50f715549519a9b98507867/Utility/align_hands_elbows.m
 """
 
-import os, sys
-import tqdm
-from glob import glob
-
 import numpy as np
-import pandas as pd
-from skimage.io import imread, imsave
-import math
-import matplotlib.pyplot as plt
 from scipy.signal import medfilt
+from utils import get_mask
+
 
 def get_ref_point(X, marker_names, point):
     if type(point) == list:
@@ -43,7 +37,7 @@ def z_score_data(input, exclude_value=-4668):
     :return:
     """
     input_with_nans = np.copy(input)
-    input_with_nans[input == exclude_value] = np.nan
+    input_with_nans[get_mask(input, exclude_value)] = np.nan
 
     marker_means = np.nanmean(input_with_nans, axis=1)
     marker_means = marker_means[:, np.newaxis]
@@ -66,7 +60,7 @@ def apply_z_score(input, marker_means, marker_stds, exclude_value=-4668):
     :return:
     """
     input_with_nans = np.copy(input)
-    input_with_nans[input == exclude_value] = np.nan
+    input_with_nans[get_mask(input, exclude_value)] = np.nan
 
     z_score_input = (input_with_nans - marker_means) / (marker_stds + 1e-9)
     z_score_input[np.isnan(z_score_input)] = exclude_value
@@ -87,7 +81,7 @@ def preprocess_data(X, marker_names, front_point, middle_point, exclude_value):
     # X = medfilt(X, kernel_size=3)
     orig_X = np.copy(X)
     filt_X = np.copy(X)
-    orig_X[orig_X == exclude_value] = np.nan
+    orig_X[get_mask(orig_X, exclude_value)] = np.nan
     for i in range(X.shape[0]):
         for j in range(X.shape[2]):
             x = medfilt(pad_vector(orig_X[i, :, j], 3), kernel_size=3)
@@ -119,7 +113,7 @@ def preprocess_data(X, marker_names, front_point, middle_point, exclude_value):
     return rot_X, rot_angle, X_middle_point
 
 def apply_transform(X, rot_angle, mean_position, marker_means, marker_stds, exclude_value):
-    X[X == exclude_value] = np.nan
+    X[get_mask(X, exclude_value)] = np.nan
     filt_X = np.zeros_like(X)
     for i in range(X.shape[0]):
         for j in range(X.shape[2]):
@@ -182,7 +176,7 @@ def unprocess_data(X, rot_angle, mean_position, marker_means, marker_stds, marke
 
     # undo the centering
     unproc_X = (unrot_X + mean_position[:, :, np.newaxis]).reshape(X.shape)
-    unproc_X[X == exclude_value] = exclude_value
+    unproc_X[get_mask(X, exclude_value)] = exclude_value
 
 
     return unproc_X

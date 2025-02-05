@@ -55,9 +55,9 @@ if __name__ == '__main__':
     MODELFOLDER = os.path.join(BASEFOLDER, "models")
 
     # Training
-    NMODELS = 10
+    NMODELS = 1
     TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
-    EPOCHS = 30 #30
+    EPOCHS = 5 #30
 
     # Imputation
     impute_stride = 1 #5
@@ -100,14 +100,17 @@ if __name__ == '__main__':
     # save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
     save_path = os.path.join(BASEFOLDER, 'model_ensemble')
     logging.info(f'SAVEPATH = {save_path}')
+
     # EVALUATION
 
-    # ON SHORT SEQUENCES WITH GROUND TRUTH
+    # ON DATA LIKE SEEN IN TRAINING
     model_ensemble_path = os.path.join(save_path, 'final_model.h5')
-    data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+    data_file = os.path.join(DATASETPATH, 'val_dataset_w-0-nans.npz')
+    # data_file = os.path.join(DATASETPATH, 'test_dataset_w-0-nans.npz')
+
     logging.info(f'datafile = {data_file}')
 
-    for pass_direction in ['reverse', 'forward']:
+    for pass_direction in ['forward', ]:
         predict_single_pass(model_ensemble_path, data_file, DATASETPATH, pass_direction,
                             save_path=save_path, stride=impute_stride, n_folds=1, fold_id=0,
                             markers_to_fix=None, error_diff_thresh=errordiff_th,
@@ -116,8 +119,24 @@ if __name__ == '__main__':
     t_after_predict = time()
     logging.info(f'Time predict: {t_after_predict - t_after_training}')
 
-    fold_paths = glob(os.path.join(save_path, 'test_repeat-0*.mat'))
+    fold_paths = glob(os.path.join(save_path, f'{os.path.basename(data_file).split(".npz")[0]}*.mat'))
     merge(save_path, fold_paths)
+
+    # ON SHORT SEQUENCES WITH GROUND TRUTH
+    # data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+    # logging.info(f'datafile = {data_file}')
+    #
+    # for pass_direction in ['reverse', 'forward']:
+    #     predict_single_pass(model_ensemble_path, data_file, DATASETPATH, pass_direction,
+    #                         save_path=save_path, stride=impute_stride, n_folds=1, fold_id=0,
+    #                         markers_to_fix=None, error_diff_thresh=errordiff_th,
+    #                         model=None)
+    #
+    t_after_predict = time()
+    # logging.info(f'Time predict: {t_after_predict - t_after_training}')
+    #
+    # fold_paths = glob(os.path.join(save_path, 'test_repeat-0*.mat'))
+    # merge(save_path, fold_paths)
 
     t_after_merge = time()
     logging.info(f'Time predict: {t_after_merge - t_after_predict}')

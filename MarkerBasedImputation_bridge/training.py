@@ -64,6 +64,8 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
         new_coords = coords
 
     exclude_value = np.nan
+
+    # here we can preprocess the data without precautions, because no missing data in training scenario
     transformed_coords, rot_angle, mean_position = preprocess_data(new_coords, bodyparts,
                                                                         middle_point=middle_point,
                                                                         front_point=front_point,
@@ -84,11 +86,11 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
     #     axes = axes.flatten()
     #     for i in range(transformed_coords.shape[-1]):
     #         x = new_coords[item, :, i]
-    #         x[x == exclude_value] = np.nan
+    #         x[get_mask(x, exclude_value)] = np.nan
     #         axes[i].plot(x, 'o-')
     #
     #         x = unproc_X[item, :, i]
-    #         x[x == exclude_value] = np.nan
+    #         x[get_mask(x, exclude_value)] = np.nan
     #         axes[i].plot(x, 'o-')
 
 
@@ -370,19 +372,31 @@ def train(train_file, val_file, *, front_point='', middle_point='',
                 best_val_loss = val_loss/val_batches
                 torch.save(model.state_dict(), os.path.join(run_path, "best_model.h5"))
 
+    array_y = np.vstack(list_y)
+    array_outputs = np.vstack(val_outputs)
+    rmse = np.squeeze(np.sqrt((array_y - array_outputs)**2))
+    rmse = np.nanmean(rmse, axis=1)
+
     for item in np.random.randint(0, X.shape[0], 10):
-        fig, axes = plt.subplots(8, 3, figsize=(10, 10))
+        fig, axes = plt.subplots(8, 3, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
         for i in range(24):
             axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
             axes[i].plot([9], list_y[-1][item, :, i], 'o')
             axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
 
+        plt.suptitle(f'RMSE = {rmse[item]:.3f}')
         # plt.figure()
         # plt.hist(np.vstack(list_y).flatten(), bins=50)
         # plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
         plt.savefig(os.path.join(run_path, f'last_epoch_prediction_val_item-{item}.png'))
         plt.close()
+    plt.figure()
+    plt.hist(rmse, bins=50)
+    plt.yscale('log')
+    plt.suptitle(f'mean RMSE: {np.mean(rmse):.3f} +/- {np.std(rmse):.3f}')
+    plt.savefig(os.path.join(run_path, f'last_epoch_hist_val_RMSE.png'))
+    plt.close()
 
     fig, ax = plt.subplots(1, 1)
     x = np.arange(0, epochs, print_every)

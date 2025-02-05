@@ -21,6 +21,8 @@ else:
     basedir = '/projects/ag-bozek/france'
 
 from preprocess_data import unprocess_data
+from utils import get_mask
+
 
 def sigmoid(x, x_0, k):
     """Sigmoid function.
@@ -131,7 +133,7 @@ def merge(save_path, fold_paths):
         axes = axes.flatten()
         for i in range(predsF.shape[-1]):
             x = markers[item, :, i]
-            x[x == exclude_value] = np.nan
+            x[get_mask(x, exclude_value)] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
@@ -149,7 +151,7 @@ def merge(save_path, fold_paths):
         axes = axes.flatten()
         for i in range(predsF.shape[-1]):
             x = markers[item, :, i]
-            x[x == exclude_value] = np.nan
+            x[get_mask(x, exclude_value)] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
