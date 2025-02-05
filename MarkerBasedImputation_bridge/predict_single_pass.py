@@ -37,14 +37,24 @@ def open_data_csv(filepath, dataset_path, stride=20):
         input_length = 9
         output_length = 1
 
-        idx = np.arange(0, coords.shape[1] - (input_length + output_length), stride)
-        input = np.vstack([[v[i: i + input_length + 1] for i in idx] for v in coords])
+        transformed_coords, rot_angle, mean_position = preprocess_data(coords, dataset_constants.KEYPOINTS,
+                                                                       middle_point=['left_hip', 'right_hip'],
+                                                                       front_point=['left_corrd', 'right_coord'],
+                                                                       exclude_value=exclude_value)
+
+        _, marker_means, marker_stds = z_score_data(transformed_coords.reshape(1, -1, transformed_coords.shape[2]),
+                                                    exclude_value=exclude_value)
+
+        z_score_coords = apply_z_score(transformed_coords, marker_means, marker_stds, exclude_value)
+
+        idx = np.arange(0, z_score_coords.shape[1] - (input_length + output_length), stride)
+        input = np.vstack([[v[i: i + input_length + 1] for i in idx] for v in z_score_coords])
         input = input.reshape((input.shape[0], input_length + output_length, n_keypoints, -1))[..., :3].reshape(
             (input.shape[0], input_length + output_length, -1))
         input[:, -1] = exclude_value
 
         ground_truth = np.vstack(
-            [[v[i: i + input_length + output_length][np.newaxis] for i in idx] for v in coords])
+            [[v[i: i + input_length + output_length][np.newaxis] for i in idx] for v in z_score_coords])
         ground_truth = ground_truth.reshape((ground_truth.shape[0], input_length + output_length, n_keypoints, -1))[...,
                         :3].reshape((ground_truth.shape[0], input_length + output_length, -1))
 
@@ -146,23 +156,26 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
     startpoint = np.clip(startpoint - input_length, a_min=-input_length - 1, a_max=X.shape[1] - 1)
     mask = next_frame_id > 0 # only consider the samples needing imputation
 
-    if ground_truth is not None:
-        processed_ground_truth, rot_angle_GT, mean_position_GT = preprocess_data(ground_truth,
-                                                                                 keypoints,
-                                                                                 middle_point=['right_hip', 'left_hip'],
-                                                                                 front_point=['right_coord', 'left_coord'],
-                                                                                 exclude_value=exclude_value)
+    # if ground_truth is not None:
+    #     processed_ground_truth, rot_angle_GT, mean_position_GT = preprocess_data(ground_truth,
+    #                                                                              keypoints,
+    #                                                                              middle_point=['right_hip', 'left_hip'],
+    #                                                                              front_point=['right_coord', 'left_coord'],
+    #                                                                              exclude_value=exclude_value)
+    #
+    # processed_X, rot_angle, mean_position = preprocess_data(X,
+    #                                                               keypoints,
+    #                                                               middle_point=['right_hip', 'left_hip'],
+    #                                                               front_point=['right_coord', 'left_coord'],
+    #                                                               exclude_value=exclude_value)
+    #
+    # _, marker_means, marker_stds = z_score_data(processed_X.reshape(1, -1, processed_X.shape[2]), exclude_value=exclude_value)
+    #
+    # if ground_truth is not None:
+    #     processed_ground_truth = apply_z_score(processed_ground_truth, marker_means, marker_stds, exclude_value=exclude_value)
 
-    processed_X, rot_angle, mean_position = preprocess_data(X,
-                                                                  keypoints,
-                                                                  middle_point=['right_hip', 'left_hip'],
-                                                                  front_point=['right_coord', 'left_coord'],
-                                                                  exclude_value=exclude_value)
-
-    _, marker_means, marker_stds = z_score_data(processed_X.reshape(1, -1, processed_X.shape[2]), exclude_value=exclude_value)
-
-    if ground_truth is not None:
-        processed_ground_truth = apply_z_score(processed_ground_truth, marker_means, marker_stds, exclude_value=exclude_value)
+    processed_X = np.copy(X)
+    processed_ground_truth = np.copy(ground_truth)
 
     # Preallocate
     preds = np.copy(processed_X)
@@ -180,12 +193,13 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
         # if first missing value before input_length, then pad before with first value
         X_start = np.vstack([x[np.array([max(0, t) for t in range(s, s + input_length)])][np.newaxis] for (x, s) in zip(preds[mask], startpoint[mask])])
 
-        processed_X_start, rot_angle, mean_position = preprocess_data(X_start,
-                                                                keypoints,
-                                                                middle_point=['right_hip', 'left_hip'],
-                                                                front_point=['right_coord', 'left_coord'],
-                                                                exclude_value=exclude_value)
-        processed_X_start = apply_z_score(processed_X_start, marker_means, marker_stds, exclude_value=-4668)
+        processed_X_start = np.copy(X_start)
+        # processed_X_start, rot_angle, mean_position = preprocess_data(X_start,
+        #                                                         keypoints,
+        #                                                         middle_point=['right_hip', 'left_hip'],
+        #                                                         front_point=['right_coord', 'left_coord'],
+        #                                                         exclude_value=exclude_value)
+        # processed_X_start = apply_z_score(processed_X_start, marker_means, marker_stds, exclude_value=-4668)
 
         # If there is a marker prediction that is greater than the
         # difference threshold above, mark it as a bad frame.
@@ -297,10 +311,11 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
         plt.savefig(os.path.join(save_path, f'single_pred_item-{item}.png'))
         plt.close()
 
-    transforms_dict = {'rot_angle': rot_angle,
-                       'mean_position': mean_position,
-                       'marker_means': marker_means,
-                       'marker_stds': marker_stds}
+    transforms_dict = {}
+    # {'rot_angle': rot_angle,
+    #                    'mean_position': mean_position,
+    #                    'marker_means': marker_means,
+    #                    'marker_stds': marker_stds}
 
     return preds, bad_frames_orig, member_stds, transforms_dict
 

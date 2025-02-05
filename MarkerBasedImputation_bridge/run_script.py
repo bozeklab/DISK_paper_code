@@ -137,21 +137,21 @@ if __name__ == '__main__':
     #
     # fold_paths = glob(os.path.join(save_path, 'test_repeat-0*.mat'))
     # merge(save_path, fold_paths)
-
-    t_after_merge = time()
-    logging.info(f'Time predict: {t_after_merge - t_after_predict}')
-
-    # ON ORIGINAL FILES FOR REAL-SCENARIO IMPUTATION
-    for data_file in glob(os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')):
-        if 'model_10_5_1' in data_file:
-            continue
-        logging.info(f'datafile = {data_file}')
-
-        for pass_direction in ['reverse', 'forward']:
-            predict_single_pass(model_ensemble_path, data_file, DATASETPATH, pass_direction,
-                                save_path=save_path, stride=impute_stride, n_folds=1, fold_id=0,
-                                markers_to_fix=None, error_diff_thresh=errordiff_th,
-                                model=None)
-
-        fold_paths = glob(os.path.join(save_path, f'{os.path.basename(data_file).split(".csv")[0]}*.mat'))
-        merge(save_path, fold_paths)
+    #
+    # t_after_merge = time()
+    # logging.info(f'Time predict: {t_after_merge - t_after_predict}')
+    #
+    # # ON ORIGINAL FILES FOR REAL-SCENARIO IMPUTATION
+    # for data_file in glob(os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')):
+    #     if 'model_10_5_1' in data_file:
+    #         continue
+    #     logging.info(f'datafile = {data_file}')
+    #
+    #     for pass_direction in ['reverse', 'forward']:
+    #         predict_single_pass(model_ensemble_path, data_file, DATASETPATH, pass_direction,
+    #                             save_path=save_path, stride=impute_stride, n_folds=1, fold_id=0,
+    #                             markers_to_fix=None, error_diff_thresh=errordiff_th,
+    #                             model=None)
+    #
+    #     fold_paths = glob(os.path.join(save_path, f'{os.path.basename(data_file).split(".csv")[0]}*.mat'))
+    #     merge(save_path, fold_paths)
