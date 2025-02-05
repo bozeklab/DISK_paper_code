@@ -39,7 +39,7 @@ def open_data_csv(filepath, dataset_path, stride=20):
 
         transformed_coords, rot_angle, mean_position = preprocess_data(coords, dataset_constants.KEYPOINTS,
                                                                        middle_point=['left_hip', 'right_hip'],
-                                                                       front_point=['left_corrd', 'right_coord'],
+                                                                       front_point=['left_coord', 'right_coord'],
                                                                        exclude_value=exclude_value)
 
         _, marker_means, marker_stds = z_score_data(transformed_coords.reshape(1, -1, transformed_coords.shape[2]),
