@@ -515,7 +515,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
                         'rot_angle': transform_dict["rot_angle"],
                         'mean_position': transform_dict["mean_position"],
                         'exclude_value': exclude_value,
-                        'ground_truth': ground_truth,
+                        'ground_truth': ground_truth if ground_truth is not None else [],
                         'member_stds': member_stds}
         logging.info(f'{output_dict}')
         savemat(save_path, output_dict)
