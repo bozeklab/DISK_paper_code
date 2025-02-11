@@ -5,8 +5,9 @@
 # from keras.models import Model
 # from keras.optimizers import Adam
 # from keras.regularizers import l2
+import numpy as np
 import torch
-from torch.nn import Conv1d, Linear
+from torch.nn import Conv1d, Linear, ModuleList
 
 class Wave_net(torch.nn.Module):
     def __init__(self, input_length, output_length, n_markers, n_filters,
@@ -32,7 +33,7 @@ class Wave_net(torch.nn.Module):
 
         # Dilated causal convolutions
         dilation_rates = [2**i for i in range(n_dilations)]
-        self.convs = []
+        self.convs = ModuleList()
         n_in = n_markers
         self.input_length = input_length
         out_len_because_padding = int(input_length)
@@ -65,20 +66,36 @@ class Wave_net(torch.nn.Module):
         # if print_summary:
         #     model.summary()
 
-    def forward(self, x):
+    def forward(self, x, verbose=False):
         x_ = torch.swapaxes(x, 1, 2) # shapes: (batch, len, markers) -> (batch, markers, len)
+        if verbose:
+            print('FORWARD', np.round(x_.flatten()[0].item(), 2), end=' ')
         for i_c, c in enumerate(self.convs):
             if i_c == 0:
                 res = x_ if self.downsample is None else self.downsample(x_)
                 # x_ = torch.relu(c(x_)[..., :self.input_length].contiguous()) # after convs, shape (batch, filters, len + padding)
             else:
                 res = x_
+            if verbose:
+                print('res', np.round(res.flatten()[0].item(), 2), end=' ')
             x_ = torch.relu(c(x_)[..., :self.input_length].contiguous() + res)  # after convs, shape (batch, filters, len + padding)
+            if verbose:
+                print('conv', np.round(x_.flatten()[0].item(), 2), end=' - ')
         x_ = torch.permute(x_, [0, 2, 1]) # shape: (batch, filters, len + padding) -> (batch, len + padding, filters)
+        if verbose:
+            print(np.round(x_.flatten()[0].item(), 2), end=' ')
         x_ = self.linear_on_marker_dim(x_) # shape: (batch, len + padding, markers)
+        if verbose:
+            print('linear1', np.round(x_.flatten()[0].item(), 2), end=' ')
         x_ = torch.permute(x_, [0, 2, 1]) # shape: (batch, len + padding, markers) -> (batch, markers, len + padding)
+        if verbose:
+            print(np.round(x_.flatten()[0].item(), 2), end=' ')
         x_ = self.linear_on_time_dimension(x_) # shape: (batch, markers, output_len = 1)
+        if verbose:
+            print('linear2', np.round(x_.flatten()[0].item(), 2), end=' ')
         x_ = torch.permute(x_, [0, 2, 1]) # shape: (batch, markers, output_len = 1) -> (batch, output_len = 1, markers)
+        if verbose:
+            print(np.round(x_.flatten()[0].item(), 2))
         return x_
 
 #

@@ -230,9 +230,7 @@ def train(train_file, val_file, *, front_point='', middle_point='',
                              n_filters=n_filters, filter_width=filter_width,
                              layers_per_level=layers_per_level, device=device,
                              n_dilations=n_dilations, print_summary=False).to(device)
-        print(input_length, output_length, dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
-              n_filters, filter_width, layers_per_level, device,
-              n_dilations)
+
     # elif net_name == 'lstm_model':
     #     model = create_model(net_name, lossfunc=lossfunc, lr=lr,
     #                          input_length=input_length, n_markers=n_markers,
@@ -381,13 +379,6 @@ def train(train_file, val_file, *, front_point='', middle_point='',
                         'loss': loss,
                         }, os.path.join(run_path, "best_model.h5"))
 
-    torch.save({
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'scheduler_state_dict': scheduler.state_dict(),
-            'loss': loss,
-            }, os.path.join(run_path, "best_model.h5"))
     array_y = np.vstack(list_y)
     array_outputs = np.vstack(val_outputs)
     rmse = np.squeeze(np.sqrt((array_y - array_outputs)**2))
@@ -427,111 +418,78 @@ def train(train_file, val_file, *, front_point='', middle_point='',
 
 
     logging.info(f"Training time: {time()-start_ts}s")
-
-    logging.info(
-        f'Loading ensemble model from {os.path.join(run_name, "training_info.json")}')
-    with open(os.path.join(run_name, "training_info.json"), 'r') as fp:
-        dict_training = json.load(fp)
-    print(dict_training["input_length"], dict_training["output_length"], dict_training['n_markers'],
-          dict_training["n_filters"], dict_training["filter_width"], dict_training["layers_per_level"], device,
-          dict_training["n_dilations"], )
-    model1 = Wave_net(input_length=input_length,
-             output_length=output_length, n_markers=dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
-             n_filters=n_filters, filter_width=filter_width,
-             layers_per_level=layers_per_level, device=device,
-             n_dilations=n_dilations, print_summary=False).to(device)
-    # model = Wave_net(device=device, **dict_training).to(device)
-    # model.load_state_dict(torch.load(os.path.join(basedir, run_name, 'best_model.h5')))
-    checkpoint = torch.load(os.path.join(basedir, run_name, 'best_model.h5'))
-    print(checkpoint['epoch'])
-    model1.load_state_dict(checkpoint['model_state_dict'])
-    model1.eval()
-
-    for key in model1.state_dict().keys():
-        if not (torch.equal(model.state_dict()[key], model1.state_dict()[key])):
-            print(key)
-
-    with torch.no_grad():
-        val_loss = 0
-        list_y = []
-        val_outputs = []
-        for i, data in enumerate(val_loader):
-            X = data[0].to(device)
-            y = data[1].to(device)
-
-            outputs = model1(X)  # this gets the prediction from the network
-            val_outputs.append(outputs.cpu().numpy())
-
-            val_loss += loss_function(outputs, y).item()  # MODIFIED - added [][]
-
-            list_y.append(y.cpu().numpy())
-
-        array_y = np.vstack(list_y)
-        array_outputs = np.vstack(val_outputs)
-        rmse = np.squeeze(np.sqrt((array_y - array_outputs) ** 2))
-        rmse = np.nanmean(rmse, axis=1)
-
-        for item in items:
-            fig, axes = plt.subplots(8, 3, figsize=(10, 10), sharey='col')
-            axes = axes.flatten()
-            for i in range(24):
-                axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
-                axes[i].plot([9], list_y[-1][item, :, i], 'o')
-                axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
-
-            plt.suptitle(f'RMSE = {rmse[item]:.3f}')
-            # plt.figure()
-            # plt.hist(np.vstack(list_y).flatten(), bins=50)
-            # plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
-            plt.savefig(os.path.join(run_path, f'reload_model_prediction_val_item-{item}.png'))
-            plt.close()
-        plt.figure()
-        plt.hist(rmse, bins=50)
-        plt.yscale('log')
-        plt.suptitle(f'mean RMSE: {np.mean(rmse):.3f} +/- {np.std(rmse):.3f}')
-        plt.savefig(os.path.join(run_path, f'reload_model_hist_val_RMSE.png'))
-        plt.close()
-
-    # Save initial network
-    # print('Saving initial network')
-    # model.save(os.path.join(run_path, "initial_model.h5"))
     #
-    # # Initialize training callbacks
-    # # history_callback = LossHistory(run_path=run_path)
-    # reduce_lr_callback = ReduceLROnPlateau(monitor="val_loss",
-    #                                        factor=reduce_lr_factor,
-    #                                        patience=reduce_lr_patience,
-    #                                        verbose=1, mode="auto",
-    #                                        epsilon=reduce_lr_min_delta,
-    #                                        cooldown=reduce_lr_cooldown,
-    #                                        min_lr=reduce_lr_min_lr)
-    # if save_every_epoch:
-    #     save_string = "weights/weights.{epoch:03d}-{val_loss:.9f}.h5"
-    #     checkpointer = ModelCheckpoint(filepath=os.path.join(run_path,
-    #                                    save_string), verbose=1,
-    #                                    save_best_only=False)
-    # else:
-    #     checkpointer = ModelCheckpoint(filepath=os.path.join(run_path,
-    #                                    "best_model.h5"), verbose=1,
-    #                                    save_best_only=True)
+    # logging.info(
+    #     f'Loading ensemble model from {os.path.join(run_name, "training_info.json")}')
+    # with open(os.path.join(run_name, "training_info.json"), 'r') as fp:
+    #     dict_training = json.load(fp)
     #
-    # # Train!
-    # print('Training')
-    # t0_train = time()
-    # training = model.fit(X, Y, batch_size=batch_size, epochs=epochs,
-    #                      verbose=1, validation_data=(val_X, val_Y),
-    #                      callbacks=[history_callback, checkpointer,
-    #                                 reduce_lr_callback])
+    # # model1 = Wave_net(input_length=input_length,
+    # #          output_length=output_length, n_markers=dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
+    # #          n_filters=n_filters, filter_width=filter_width,
+    # #          layers_per_level=layers_per_level, device=device,
+    # #          n_dilations=n_dilations, print_summary=False).to(device)
+    # model1 = Wave_net(device=device, **dict_training).to(device)
     #
-    # # Compute total elapsed time for training
-    # elapsed_train = time() - t0_train
-    # print("Total runtime: %.1f mins" % (elapsed_train / 60))
+    # checkpoint = torch.load(os.path.join(run_name, 'best_model.h5'), map_location=torch.device(device))
+    # model1.load_state_dict(checkpoint['model_state_dict'])
+    # model1.eval()
+    # model.eval()
     #
-    # # Save final model
-    # print('Saving final model')
-    # model.history = history_callback.history
-    # model.save(os.path.join(run_path, "final_model.h5"))
-
+    # for key in model1.state_dict().keys():
+    #     print(key, torch.equal(model.state_dict()[key], model1.state_dict()[key]))
+    #
+    # with torch.no_grad():
+    #     val_loss = 0
+    #     val_loss1 = 0
+    #     list_y = []
+    #     val_outputs = []
+    #     val_outputs1 = []
+    #     for i, data in enumerate(val_loader):
+    #         X = data[0].to(device)
+    #         y = data[1].to(device)
+    #
+    #         outputs = model(X, verbose=True)  # this gets the prediction from the network
+    #         outputs1 = model1(X, verbose=True)  # this gets the prediction from the network
+    #         val_outputs.append(outputs.cpu().numpy())
+    #         val_outputs1.append(outputs1.cpu().numpy())
+    #
+    #         val_loss += loss_function(outputs, y).item()  # MODIFIED - added [][]
+    #         val_loss1 += loss_function(outputs1, y).item()  # MODIFIED - added [][]
+    #
+    #         list_y.append(y.cpu().numpy())
+    #
+    #     array_y = np.vstack(list_y)
+    #     array_outputs = np.vstack(val_outputs)
+    #     array_outputs1 = np.vstack(val_outputs1)
+    #     rmse = np.squeeze(np.sqrt((array_y - array_outputs) ** 2))
+    #     rmse1 = np.squeeze(np.sqrt((array_y - array_outputs1) ** 2))
+    #     rmse = np.nanmean(rmse, axis=1)
+    #     rmse1 = np.nanmean(rmse1, axis=1)
+    #     print(rmse, rmse1)
+    #
+    #     for item in items:
+    #         fig, axes = plt.subplots(8, 3, figsize=(10, 10), sharey='col')
+    #         axes = axes.flatten()
+    #         for i in range(24):
+    #             axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
+    #             axes[i].plot([9], list_y[-1][item, :, i], 'o')
+    #             axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
+    #             axes[i].plot([9], val_outputs1[-1][item, :, i], 'v')
+    #
+    #         plt.suptitle(f'RMSE = {rmse[item]:.3f} - RMSE1 = {rmse1[item]:.3f}')
+    #         # plt.figure()
+    #         # plt.hist(np.vstack(list_y).flatten(), bins=50)
+    #         # plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
+    #         plt.savefig(os.path.join(run_path, f'reload_model_prediction_val_item-{item}.png'))
+    #         plt.close()
+    #     plt.figure()
+    #     plt.hist(rmse, bins=50, alpha=0.5)
+    #     plt.hist(rmse1, bins=50, alpha=0.5)
+    #     plt.yscale('log')
+    #     plt.suptitle(f'mean RMSE: {np.mean(rmse):.3f} +/- {np.std(rmse):.3f} - mean RMSE1: {np.mean(rmse1):.3f} +/- {np.std(rmse1):.3f}')
+    #     plt.savefig(os.path.join(run_path, f'reload_model_hist_val_RMSE.png'))
+    #     plt.close()
 
 if __name__ == '__main__':
 

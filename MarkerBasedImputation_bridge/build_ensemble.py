@@ -33,7 +33,7 @@ class EnsembleModel(torch.nn.Module):
                                    ensemble predictions.
         """
         super(EnsembleModel, self).__init__()
-        self.models = []
+        self.models = torch.nn.ModuleList()
 
         model_paths = [mp if mp[0] == '/' else os.path.join(basedir, mp) for mp in model_paths]
 
@@ -42,7 +42,13 @@ class EnsembleModel(torch.nn.Module):
             with open(os.path.join(os.path.dirname(model_paths[i]), "training_info.json"), 'r') as fp:
                 self.models_dict_training = json.load(fp)
             model = Wave_net(device=device, **self.models_dict_training)
-            model.load_state_dict(torch.load(model_paths[i]))
+            checkpoint = torch.load(model_paths[i], map_location=torch.device(device))
+            print(i, model_paths[i])
+            if 'model_state_dict' in checkpoint.keys():
+                model.load_state_dict(checkpoint['model_state_dict'])
+            else:
+                model.load_state_dict(checkpoint)
+
             model.eval()
             self.models.append(model)
             # models[i] = load_model(os.path.join(base_output_path,

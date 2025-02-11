@@ -10,6 +10,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import json
 
+from build_ensemble import EnsembleModel
 from models import Wave_net
 from preprocess_data import preprocess_data, unprocess_data, apply_transform, z_score_data, apply_z_score
 from utils import get_mask
@@ -71,6 +72,7 @@ def open_data_csv(filepath, dataset_path, stride=20):
 
 def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=None, markers_to_fix=None,
                     error_diff_thresh=.25, outlier_thresh=3, device=torch.device('cpu'), save_path='',
+                    save_prefix='',
                     exclude_value=-4668):
     """Imputes the position of missing markers.
 
@@ -129,7 +131,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
     preds = np.copy(processed_X)
     pred = np.zeros((X.shape[0], output_length, X.shape[2]))
 
-    member_stds = np.zeros((X.shape[0], X.shape[1], X.shape[2]))
+    # member_stds = np.zeros((X.shape[0], X.shape[1], X.shape[2]))
     # member_pred = np.zeros((X.shape[0], model.n_members, X.shape[2]))
 
     # At each step, generate a prediction, replace the predictions of
@@ -160,6 +162,8 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
             bad_frames[next_frame_id, errors] = True
 
         pred = model(torch.Tensor(processed_X_start).to(device))
+        if type(pred) == tuple:
+            pred = pred[0]
         pred = pred.detach().cpu().numpy()
 
         if ground_truth is not None:
@@ -188,7 +192,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
                         axes[i].legend()
                 if ground_truth is not None:
                     plt.suptitle(f'RMSE {rmse[item]:.3f}')
-                plt.savefig(os.path.join(save_path, f'single_pred_single_step_item-{item}.png'))
+                plt.savefig(os.path.join(save_path, f'{save_prefix}_single_pred_single_step_item-{item}.png'))
                 plt.close()
             print('stop')
 
@@ -219,7 +223,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
         plt.hist(rmse, bins=50)
         plt.yscale('log')
         plt.suptitle(f'mean RMSE: {np.mean(rmse):.3f} +/- {np.std(rmse):.3f}')
-        plt.savefig(os.path.join(save_path, 'hist_rmse_values.png'))
+        plt.savefig(os.path.join(save_path, f'{save_prefix}_hist_rmse_values.png'))
 
 
     for item in np.random.choice(preds.shape[0], 10):
@@ -236,7 +240,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
                 x[get_mask(x, exclude_value)] = np.nan
                 axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_frames_orig[item, :, i]], preds[item, bad_frames_orig[item, :, i], i], 'x')
-        plt.savefig(os.path.join(save_path, f'single_pred_item-{item}.png'))
+        plt.savefig(os.path.join(save_path, f'{save_prefix}_single_pred_item-{item}.png'))
         plt.close()
 
     transforms_dict = {}
@@ -245,11 +249,11 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
     #                    'marker_means': marker_means,
     #                    'marker_stds': marker_stds}
 
-    return preds, bad_frames_orig, member_stds, transforms_dict
+    return preds, bad_frames_orig, transforms_dict
 
 
 
-def testing(model_path, data_file, dataset_path, *,
+def testing_single_model_like_predict(model_path, data_file, dataset_path, *,
                         save_path=None, stride=1, n_folds=10, fold_id=0,
                         markers_to_fix=None, error_diff_thresh=.25,
                         model=None, device=torch.device('cpu')):
@@ -294,36 +298,74 @@ def testing(model_path, data_file, dataset_path, *,
         if not os.path.exists(save_path_direction):
             os.mkdir(save_path_direction)
 
-    preds, bad_frames, member_stds, transform_dict = predict_markers(model, dict_training, markers, bad_frames,
+    preds, bad_frames, transform_dict = predict_markers(model, dict_training, markers, bad_frames,
                                                             dataset_constants.KEYPOINTS, ground_truth,
                                                             markers_to_fix=markers_to_fix,
                                                             error_diff_thresh=error_diff_thresh,
                                                             save_path=save_path_direction,
+                                                        save_prefix='testing_single_model_like_predict',
                                                             exclude_value=exclude_value)
 
 
-    # Save predictions to a matlab file.
+
+
+    return preds
+
+
+def testing_ensemble_model_like_predict(model_path, data_file, dataset_path, *,
+                        save_path=None, stride=1, n_folds=10, fold_id=0,
+                        markers_to_fix=None, error_diff_thresh=.25,
+                        model=None, device=torch.device('cpu')):
+    """Imputes the position of missing markers.
+
+    :param model_path: Path to model to use for prediction.
+    :param data_path: Path to marker and bad_frames data. csv.
+    :param pass_direction: Direction in which to impute markers.
+                           Can be 'forward' or 'reverse'
+    :param save_path: Path to a folder in which to store the prediction chunks.
+    :param stride: stride length between frames for faster imputation.
+    :param n_folds: Number of folds across which to divide data for faster
+                    imputation.
+    :param fold_id: Fold identity for this specific session.
+    :param markers_to_fix: Markers for which to override suspicious MoCap
+                           measurements
+    :param error_diff_thresh: Z-scored difference threshold marking suspicious
+                              frames
+    :param model: Model to be used in prediction. Overrides model_path.
+    :return: preds
+    """
+
+    markers, ground_truth, dataset_constants, exclude_value, transform_dict = open_data_csv(filepath=data_file, dataset_path=dataset_path)
+    bad_frames = get_mask(markers, exclude_value) # value used by optipose to mark dropped frames
+
+    # Load model
+    if model is None:
+        logging.info(f'Loading ensemble model from {os.path.join(os.path.dirname(model_path), "training_info.json")}')
+        with open(os.path.join(os.path.dirname(model_path), "training_info.json"), 'r') as fp:
+            dict_training = json.load(fp)
+        model = EnsembleModel(device=device, **dict_training)
+        model.load_state_dict(torch.load(os.path.join(basedir, model_path)))
+        model.eval()
+
+    # print('Predicting %d frames starting at frame %d.'
+    #       % (markers.shape[1], start_frame))
+
+    # If the model can return the member predictions, do so.
+    save_path_direction = None
     if save_path is not None:
-        # file_name = '%s_fold_id_%d.mat' % (pass_direction, fold_id)
-        file_name = f'{os.path.basename(data_file).split(".csv")[0]}_testing.mat'
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
-        save_path = os.path.join(save_path, file_name)
-        logging.info(f'Saving to {save_path}')
-        output_dict = {'preds': preds,
-                        'markers': markers, # inputs to the model, z-scored
-                       'marker_names': dataset_constants.KEYPOINTS,
-                        'bad_frames': bad_frames, # original to keep track of where were the holes
-                        # 'n_folds': n_folds,
-                        # 'fold_id': fold_id,
-                       'data_file': data_file,
-                        'marker_means': transform_dict["marker_means"],
-                        'marker_stds': transform_dict["marker_stds"],
-                        'rot_angle': transform_dict["rot_angle"],
-                        'mean_position': transform_dict["mean_position"],
-                        'exclude_value': exclude_value,
-                        'ground_truth': ground_truth,
-                        'member_stds': member_stds}
-        savemat(save_path, output_dict)
+        save_path_direction = os.path.join(save_path, f'{os.path.basename(data_file).split(".npz")[0]}_testing')
+        if not os.path.exists(save_path_direction):
+            os.mkdir(save_path_direction)
+
+    preds, bad_frames, transform_dict = predict_markers(model, dict_training, markers, bad_frames,
+                                                            dataset_constants.KEYPOINTS, ground_truth,
+                                                            markers_to_fix=markers_to_fix,
+                                                            error_diff_thresh=error_diff_thresh,
+                                                            save_path=save_path_direction,
+                                                        save_prefix='testing_ensemble_model_like_predict',
+                                                        exclude_value=exclude_value)
+
+
+
 
     return preds

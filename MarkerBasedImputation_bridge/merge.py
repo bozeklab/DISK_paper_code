@@ -128,21 +128,21 @@ def merge(save_path, fold_paths):
     #     predsR[:, i] = predsR[:, i] * marker_stds[:, 0] + marker_means[:, 0]
 
     items = np.random.choice(predsF.shape[0], 10)
-    for item in items:
-        fig, axes = plt.subplots(predsF.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
-        axes = axes.flatten()
-        for i in range(predsF.shape[-1]):
-            x = markers[item, :, i]
-            x[get_mask(x, exclude_value)] = np.nan
-            t = np.arange(markers.shape[1])
-            axes[i].plot(x, 'o-')
-            axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
-            if i%3 == 0:
-                axes[i].set_ylabel(marker_names[i//3])
-        plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}.png'))
-        plt.close()
-
-    markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
+    # for item in items:
+    #     fig, axes = plt.subplots(predsF.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
+    #     axes = axes.flatten()
+    #     for i in range(predsF.shape[-1]):
+    #         x = markers[item, :, i]
+    #         x[get_mask(x, exclude_value)] = np.nan
+    #         t = np.arange(markers.shape[1])
+    #         axes[i].plot(x, 'o-')
+    #         axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
+    #         if i%3 == 0:
+    #             axes[i].set_ylabel(marker_names[i//3])
+    #     plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}.png'))
+    #     plt.close()
+    #
+    # markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
     predsF = unprocess_data(predsF, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
     predsR = unprocess_data(predsR, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
 
@@ -158,6 +158,19 @@ def merge(save_path, fold_paths):
             if i%3 == 0:
                 axes[i].set_ylabel(marker_names[i//3])
         plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}_after_unprocess.png'))
+        plt.close()
+
+        fig, axes = plt.subplots(predsR.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
+        axes = axes.flatten()
+        for i in range(predsR.shape[-1]):
+            x = markers[item, :, i]
+            x[get_mask(x, exclude_value)] = np.nan
+            t = np.arange(markers.shape[1])
+            axes[i].plot(x, 'o-')
+            axes[i].plot(t[bad_framesR[item, :, i].astype(bool)], predsR[item, bad_framesF[item, :, i].astype(bool), i], 'x')
+            if i%3 == 0:
+                axes[i].set_ylabel(marker_names[i//3])
+        plt.savefig(os.path.join(save_path, f'single_predR_pred_item-{item}_after_unprocess.png'))
         plt.close()
 
     # This is not necessarily all the error frames from
@@ -193,6 +206,20 @@ def merge(save_path, fold_paths):
                 member_stds[sample, time_ids, kp * 3: kp * 3 + 3] = np.sqrt(member_stdsF[sample, time_ids, kp * 3: kp * 3 + 3]**2 * weightF + member_stdsR[sample, time_ids, kp * 3: kp * 3 + 3]**2 * weightR)
     elapsed = datetime.datetime.now() - start
     logging.info(f'Computing average took: {elapsed} seconds')
+
+    for item in items:
+        fig, axes = plt.subplots(preds.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
+        axes = axes.flatten()
+        for i in range(preds.shape[-1]):
+            x = markers[item, :, i]
+            x[get_mask(x, exclude_value)] = np.nan
+            t = np.arange(markers.shape[1])
+            axes[i].plot(x, 'o-')
+            axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], preds[item, bad_framesF[item, :, i].astype(bool), i], 'x')
+            if i%3 == 0:
+                axes[i].set_ylabel(marker_names[i//3])
+        plt.savefig(os.path.join(save_path, f'single_predMerged_pred_item-{item}_after_unprocess.png'))
+        plt.close()
 
     # Save predictions to a matlab file.
     if save_path is not None:

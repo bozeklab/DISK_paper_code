@@ -119,9 +119,9 @@ class CustomDataset(Dataset):
         return self.X[item], self.y[item]
 
 
-def test(val_file, *, front_point='', middle_point='',
-          base_output_path="models", model_name,
-          data_name=None, net_name="wave_net", clean=False, input_length=9,
+def testing_single_model_like_training(val_file, *, front_point='', middle_point='',
+          model_name,
+          net_name="wave_net", clean=False, input_length=9,
           output_length=1,  stride=1,
           batch_size=1000,
           lossfunc='mean_squared_error',
@@ -191,16 +191,14 @@ def test(val_file, *, front_point='', middle_point='',
             with open(os.path.join(os.path.dirname(model_name), "training_info.json"), 'r') as fp:
                 dict_training = json.load(fp)
             model = Wave_net(device=device, **dict_training).to(device)
-            model.load_state_dict(torch.load(os.path.join(basedir, model_name)))
+            checkpoint = torch.load(os.path.join(basedir, model_name))
+            if 'model_state_dict' in checkpoint.keys():
+                model.load_state_dict(checkpoint['model_state_dict'])
+            else:
+                model.load_state_dict(checkpoint)
             model.eval()
 
     run_path = os.path.dirname(model_name)
-
-    # Build run name if needed
-    if data_name is None:
-        data_name = os.path.splitext(base_output_path)[0]
-
-    logging.info(f"data_name: {data_name}")
 
     # params you need to specify:
     if lossfunc == 'mean_squared_error':
@@ -255,51 +253,12 @@ def test(val_file, *, front_point='', middle_point='',
         # plt.figure()
         # plt.hist(np.vstack(list_y).flatten(), bins=50)
         # plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
-        plt.savefig(os.path.join(run_path, f'testing2_last_epoch_prediction_val_item-{item}.png'))
+        plt.savefig(os.path.join(run_path, f'testing_like_training_last_epoch_prediction_val_item-{item}.png'))
         plt.close()
     plt.figure()
     plt.hist(rmse, bins=50)
     plt.yscale('log')
     plt.suptitle(f'mean RMSE: {np.mean(rmse):.3f} +/- {np.std(rmse):.3f}')
-    plt.savefig(os.path.join(run_path, f'testing2_last_epoch_hist_val_RMSE.png'))
+    plt.savefig(os.path.join(run_path, f'testing_like_training_last_epoch_hist_val_RMSE.png'))
     plt.close()
 
-
-
-
-
-if __name__ == '__main__':
-
-    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation")
-    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
-    train_file = os.path.join(DATASETPATH, 'train_dataset_w-0-nans.npz')
-    val_file = os.path.join(DATASETPATH, 'val_dataset_w-0-nans.npz')
-    MODELFOLDER = os.path.join(BASEFOLDER, "models")
-    PREDICTIONSPATH = os.path.join(BASEFOLDER, "predictions")
-    MERGEDFILE = os.path.join(BASEFOLDER, "/fullDay_model_ensemble.h5")
-
-    # Training
-    NMODELS = 1
-    TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
-    EPOCHS = 30
-
-    # # Imputation
-    # NFOLDS = 20
-    # IMPUTESTRIDE = 5
-    # ERRORDIFFTHRESH = .5
-
-    # $1 - -base - output - path =$2 - -epochs =$3 - -stride =$4
-    # $DATASETPATH $MODELBASEOUTPUTPATH $EPOCHS $TRAINSTRIDE
-    device = torch.device('cuda:0')
-
-    for _ in range(NMODELS):
-        train(train_file, val_file, base_output_path=MODELFOLDER, run_name=None,
-              data_name=None, net_name="wave_net", clean=False, input_length=9,
-              output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
-              val_fraction=0.15, only_moving_frames=False, n_filters=512,
-              filter_width=2, layers_per_level=3, n_dilations=None,
-              latent_dim=750, epochs=EPOCHS, batch_size=1000,
-              lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
-              val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
-              reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
-              reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
