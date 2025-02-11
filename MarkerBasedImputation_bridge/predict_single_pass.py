@@ -517,6 +517,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
                         'exclude_value': exclude_value,
                         'ground_truth': ground_truth,
                         'member_stds': member_stds}
+        logging.info(f'{output_dict}')
         savemat(save_path, output_dict)
 
     return preds
