@@ -259,7 +259,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
         plt.close()
 
     for item in np.random.choice(preds.shape[0], 10):
-        figsize0 = 10 if x.shape[0] < 100 else 30
+        figsize0 = 10 if X.shape[1] < 100 else 30
         fig, axes = plt.subplots(pred.shape[-1]//3, 3, figsize=(figsize0, 10), sharey='col', sharex='all')
         axes = axes.flatten()
         for i in range(pred.shape[-1]):
