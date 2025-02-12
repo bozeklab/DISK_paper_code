@@ -44,7 +44,25 @@ from preprocess_data import preprocess_data, z_score_data, apply_z_score
 
 
 def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_point='', front_point=''):
-    """Load keypoints from DISK already processed .npz files."""
+    """
+    Load keypoints from .npz files already processed for DISK
+
+    :args filepath: full path to npz file (str)
+    :args input_length: to reshape the input data to fit the NN model input (int, default: 9)
+    :args output_length: to reshape the input data to fit the NN model output (int, default: 1)
+    :args stride: delta between two `input_length` samples from the original data (int, default: 1)
+    :args middle_point: reference point to re-align the data - should be a point matching the keypoint names from the
+                        constant file and in the middle of the animal (in DANNCE original data: SpineM)
+                        (str or list of str, no default)
+    :args front_point: reference point to re-align the data - should be a point matching the keypoint names from the
+                        constant file and in the front of the animal (in DANNCE original data: SpineF)
+                        (str or list of str, no default)
+
+    :return input_coords: np.array (Float32) with samples, shape (samples, input_length, keypoints * 2 or 3D)
+    :return output_coords:  np.array (Float32) with samples, shape (samples, output_length, keypoints * 2 or 3D)
+    :return dataset_constants: dict with dataset constants, directly loaded from the constants.pz file
+                               (with, e.g., keypoint_names)
+    """
 
     dataset_constant_file = glob(os.path.join(os.path.dirname(filepath), 'constants.py'))[0]
     dataset_constants = read_constant_file(dataset_constant_file)
@@ -54,6 +72,7 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
     bodyparts = dataset_constants.KEYPOINTS
     coords = data['X']
     if 'time' in data:
+        logging.info(f'[training/_disk_loader] Input file has time key')
         time_ = (data['time'] * dataset_constants.FREQ).astype(int)
         new_time = np.array([np.arange(np.max(time_) + 1) for _ in range(coords.shape[0])])
         new_coords = np.zeros((coords.shape[0], np.max(time_) + 1, coords.shape[2]), dtype=coords.dtype) * np.nan
@@ -93,20 +112,19 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
     #         x[get_mask(x, exclude_value)] = np.nan
     #         axes[i].plot(x, 'o-')
 
-
     ## reshape the data to match input_length, output_length
     idx = np.arange(0, z_score_coords.shape[1] - (input_length + output_length), stride)
     input_coords = np.vstack([[v[i: i + input_length][np.newaxis] for i in idx] for v in z_score_coords])
     input_coords = input_coords.reshape((input_coords.shape[0], input_length, len(bodyparts), -1))[..., :3].reshape((input_coords.shape[0], input_length, -1))
-    # mean_pos_input = np.vstack([[v[i: i + input_length] for i in idx] for v in mean_position])
+
     output_coords = np.vstack([[v[i + input_length: i + input_length + output_length][np.newaxis] for i in idx] for v in z_score_coords])
     output_coords = output_coords.reshape((output_coords.shape[0], output_length, len(bodyparts), -1))[..., :3].reshape((output_coords.shape[0], output_length, -1))
-    # mean_pos_output = np.vstack([[v[i + input_length: i + input_length + output_length] for i in idx] for v in mean_position])
 
     return input_coords.astype(np.float32), output_coords.astype(np.float32), dataset_constants
 
 
 class CustomDataset(Dataset):
+    """Ultra-simple Dataset class to hand the data to pytorch DataLoader"""
     def __init__(self, X, y):
         super(Dataset, self).__init__()
         self.X = X
@@ -183,35 +201,12 @@ def train(train_file, val_file, *, front_point='', middle_point='',
 
     # Load Data
     logging.info('Loading Data')
-    # # markers, marker_means, marker_stds, bad_frames, moving_frames = \
-    # #     load_dataset(data_path)
-    # markers, bad_frames = None, None
-    # # moving_frames = np.squeeze(moving_frames > 0)
-    # # if only_moving_frames:
-    # #     markers = markers[moving_frames, :]
-    # #     bad_frames = bad_frames[moving_frames, :]
-    # # stride is like a downsampling by picking each n frames
-    # markers = markers[::stride, :]
-    # bad_frames = bad_frames[::stride, :]
-    #
-    # # Get Ids
-    # print('Getting indices')
-    # [input_ids, target_ids] = get_ids(bad_frames, input_length,
-    #                                   output_length, True, True)
-    #
-    # # Get the training, testing, and validation trajectories by indexing into
-    # # the marker arrays
-    # n_train = np.int32(np.round(input_ids.shape[0]*train_fraction))
-    # n_val = np.int32(np.round(input_ids.shape[0]*val_fraction))
-    # X = markers[input_ids[:n_train, :], :]
-    # Y = markers[target_ids[:n_train, :], :]
-    # val_X = markers[input_ids[n_train:(n_train+n_val), :], :]
-    # val_Y = markers[target_ids[n_train:(n_train+n_val), :], :]
 
     train_input, train_output, dataset_constants = _disk_loader(train_file, input_length=input_length, output_length=output_length,
                                                                 middle_point=middle_point, front_point=front_point)
     val_input, val_output, _ = _disk_loader(val_file, input_length=input_length, output_length=output_length,
                                             stride=stride, middle_point=middle_point, front_point=front_point)
+
     train_dataset = CustomDataset(train_input, train_output)
     val_dataset = CustomDataset(val_input, val_output)
     train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
@@ -230,7 +225,7 @@ def train(train_file, val_file, *, front_point='', middle_point='',
                              n_filters=n_filters, filter_width=filter_width,
                              layers_per_level=layers_per_level, device=device,
                              n_dilations=n_dilations, print_summary=False).to(device)
-
+    # FR: not implementing the other models (lstm and wave_net_res_skip)
     # elif net_name == 'lstm_model':
     #     model = create_model(net_name, lossfunc=lossfunc, lr=lr,
     #                          input_length=input_length, n_markers=n_markers,
@@ -249,50 +244,45 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     if data_name is None:
         data_name = os.path.splitext(base_output_path)[0]
     if run_name is None:
-        run_name = "%s-%s_epochs=%d_input_%d_output_%d" \
-            % (data_name, net_name, epochs, input_length, output_length)
+        run_name = "%s-%s_epochs=%d_input_%d_output_%d" % (data_name, net_name, epochs, input_length, output_length)
     logging.info(f"data_name: {data_name}")
     logging.info(f"run_name: {run_name}")
 
     # Initialize run directories
     logging.info('Building run folders')
-    run_path = create_run_folders(run_name, base_path=base_output_path,
-                                  clean=clean)
+    run_path = create_run_folders(run_name, base_path=base_output_path, clean=clean)
 
     # Save the training information in a mat file.
     logging.info(f'Saving training info in {os.path.join(run_path, "training_info.json")}')
     with open(os.path.join(run_path, "training_info.json"), "w") as fp:
         json.dump({"data_path": train_file[len(basedir):].lstrip('/'),
-                   "base_output_path": base_output_path[len(basedir):].lstrip('/'),
-             "run_name": run_name,
-                   "data_name": data_name,
-             "net_name": net_name,
-                   "clean": clean,
-                   "stride": stride,
-             "input_length": input_length,
-                   "output_length": output_length,
-             "n_filters": n_filters,
-            "n_markers": dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
-            "epochs": epochs,
-             "batch_size": batch_size,
-                   "train_fraction": train_fraction,
-             "val_fraction": val_fraction,
-             "only_moving_frames": only_moving_frames,
-             "filter_width": filter_width,
-             "layers_per_level": layers_per_level,
-                   "n_dilations": n_dilations,
-             "batches_per_epoch": batches_per_epoch,
-             "val_batches_per_epoch": val_batches_per_epoch,
-             "reduce_lr_factor": reduce_lr_factor,
-             "reduce_lr_patience": reduce_lr_patience,
-             "reduce_lr_min_delta": reduce_lr_min_delta,
-             "reduce_lr_cooldown": reduce_lr_cooldown,
-             "reduce_lr_min_lr": reduce_lr_min_lr,
-             "save_every_epoch": save_every_epoch}, fp)
+                        "base_output_path": base_output_path[len(basedir):].lstrip('/'),
+                        "run_name": run_name,
+                        "data_name": data_name,
+                        "net_name": net_name,
+                        "clean": clean,
+                        "stride": stride,
+                        "input_length": input_length,
+                        "output_length": output_length,
+                        "n_filters": n_filters,
+                        "n_markers": dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
+                        "epochs": epochs,
+                        "batch_size": batch_size,
+                        "train_fraction": train_fraction,
+                        "val_fraction": val_fraction,
+                        "only_moving_frames": only_moving_frames,
+                        "filter_width": filter_width,
+                        "layers_per_level": layers_per_level,
+                        "n_dilations": n_dilations,
+                        "batches_per_epoch": batches_per_epoch,
+                        "val_batches_per_epoch": val_batches_per_epoch,
+                        "reduce_lr_factor": reduce_lr_factor,
+                        "reduce_lr_patience": reduce_lr_patience,
+                        "reduce_lr_min_delta": reduce_lr_min_delta,
+                        "reduce_lr_cooldown": reduce_lr_cooldown,
+                        "reduce_lr_min_lr": reduce_lr_min_lr,
+                        "save_every_epoch": save_every_epoch}, fp)
 
-
-
-    # params you need to specify:
     print_every = 1
     if lossfunc == 'mean_squared_error':
         loss_function = torch.nn.MSELoss()
@@ -302,13 +292,8 @@ def train(train_file, val_file, *, front_point='', middle_point='',
                                                     cooldown=reduce_lr_cooldown, eps=reduce_lr_min_delta,
                                                     patience=reduce_lr_patience, factor=reduce_lr_factor,
                                                     verbose=True)
-    # (monitor="val_loss",
-    #                                        factor=reduce_lr_factor,
-    #                                        patience=reduce_lr_patience,
-    #                                        verbose=1, mode="auto",
-    #                                        epsilon=reduce_lr_min_delta,
-    #                                        cooldown=reduce_lr_cooldown,
-    #                                        min_lr=reduce_lr_min_lr)
+    # from keras: (monitor="val_loss", factor=reduce_lr_factor, patience=reduce_lr_patience, verbose=1, mode="auto",
+    # epsilon=reduce_lr_min_delta, cooldown=reduce_lr_cooldown, min_lr=reduce_lr_min_lr)
 
     losses = []
     val_losses = []
@@ -343,7 +328,6 @@ def train(train_file, val_file, *, front_point='', middle_point='',
             total_loss += current_loss
 
         # ----------------- VALIDATION  -----------------
-
         if epoch >= 0 and (epoch % print_every == 0 or epoch == epochs - 1):
 
             # set model to evaluating (testing)
@@ -364,8 +348,7 @@ def train(train_file, val_file, *, front_point='', middle_point='',
                     list_y.append(y.cpu().numpy())
             scheduler.step(val_loss)
 
-
-            logging.info(f'{np.unique(np.vstack(val_outputs).flatten())}')
+            logging.debug(f'{np.unique(np.vstack(val_outputs).flatten())}')
             logging.info(f"Epoch {epoch+1}/{epochs}, training loss: {total_loss/batches:.4f}, validation loss: {val_loss/val_batches:.4f}")
             losses.append(total_loss/batches) # for plotting learning curve
             val_losses.append(val_loss/val_batches) # for plotting learning curve
@@ -384,6 +367,7 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     rmse = np.squeeze(np.sqrt((array_y - array_outputs)**2))
     rmse = np.nanmean(rmse, axis=1)
 
+    # plot some examples of predictions on the validation set
     items = np.random.randint(0, X.shape[0], 10)
     for item in items:
         fig, axes = plt.subplots(8, 3, figsize=(10, 10), sharey='col')
@@ -392,13 +376,11 @@ def train(train_file, val_file, *, front_point='', middle_point='',
             axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
             axes[i].plot([9], list_y[-1][item, :, i], 'o')
             axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
-
         plt.suptitle(f'RMSE = {rmse[item]:.3f}')
-        # plt.figure()
-        # plt.hist(np.vstack(list_y).flatten(), bins=50)
-        # plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
         plt.savefig(os.path.join(run_path, f'last_epoch_prediction_val_item-{item}.png'))
         plt.close()
+
+    # plot the histogram of RMSEs
     plt.figure()
     plt.hist(rmse, bins=50)
     plt.yscale('log')
@@ -406,6 +388,7 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     plt.savefig(os.path.join(run_path, f'last_epoch_hist_val_RMSE.png'))
     plt.close()
 
+    # plot the learning curves
     fig, ax = plt.subplots(1, 1)
     x = np.arange(0, epochs, print_every)
     ax.plot(x, losses, label='train')
@@ -415,81 +398,8 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     plt.savefig(os.path.join(run_path, f'loss_curves.png'))
     plt.close()
 
-
-
     logging.info(f"Training time: {time()-start_ts}s")
-    #
-    # logging.info(
-    #     f'Loading ensemble model from {os.path.join(run_name, "training_info.json")}')
-    # with open(os.path.join(run_name, "training_info.json"), 'r') as fp:
-    #     dict_training = json.load(fp)
-    #
-    # # model1 = Wave_net(input_length=input_length,
-    # #          output_length=output_length, n_markers=dataset_constants.N_KEYPOINTS * dataset_constants.DIVIDER,
-    # #          n_filters=n_filters, filter_width=filter_width,
-    # #          layers_per_level=layers_per_level, device=device,
-    # #          n_dilations=n_dilations, print_summary=False).to(device)
-    # model1 = Wave_net(device=device, **dict_training).to(device)
-    #
-    # checkpoint = torch.load(os.path.join(run_name, 'best_model.h5'), map_location=torch.device(device))
-    # model1.load_state_dict(checkpoint['model_state_dict'])
-    # model1.eval()
-    # model.eval()
-    #
-    # for key in model1.state_dict().keys():
-    #     print(key, torch.equal(model.state_dict()[key], model1.state_dict()[key]))
-    #
-    # with torch.no_grad():
-    #     val_loss = 0
-    #     val_loss1 = 0
-    #     list_y = []
-    #     val_outputs = []
-    #     val_outputs1 = []
-    #     for i, data in enumerate(val_loader):
-    #         X = data[0].to(device)
-    #         y = data[1].to(device)
-    #
-    #         outputs = model(X, verbose=True)  # this gets the prediction from the network
-    #         outputs1 = model1(X, verbose=True)  # this gets the prediction from the network
-    #         val_outputs.append(outputs.cpu().numpy())
-    #         val_outputs1.append(outputs1.cpu().numpy())
-    #
-    #         val_loss += loss_function(outputs, y).item()  # MODIFIED - added [][]
-    #         val_loss1 += loss_function(outputs1, y).item()  # MODIFIED - added [][]
-    #
-    #         list_y.append(y.cpu().numpy())
-    #
-    #     array_y = np.vstack(list_y)
-    #     array_outputs = np.vstack(val_outputs)
-    #     array_outputs1 = np.vstack(val_outputs1)
-    #     rmse = np.squeeze(np.sqrt((array_y - array_outputs) ** 2))
-    #     rmse1 = np.squeeze(np.sqrt((array_y - array_outputs1) ** 2))
-    #     rmse = np.nanmean(rmse, axis=1)
-    #     rmse1 = np.nanmean(rmse1, axis=1)
-    #     print(rmse, rmse1)
-    #
-    #     for item in items:
-    #         fig, axes = plt.subplots(8, 3, figsize=(10, 10), sharey='col')
-    #         axes = axes.flatten()
-    #         for i in range(24):
-    #             axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
-    #             axes[i].plot([9], list_y[-1][item, :, i], 'o')
-    #             axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
-    #             axes[i].plot([9], val_outputs1[-1][item, :, i], 'v')
-    #
-    #         plt.suptitle(f'RMSE = {rmse[item]:.3f} - RMSE1 = {rmse1[item]:.3f}')
-    #         # plt.figure()
-    #         # plt.hist(np.vstack(list_y).flatten(), bins=50)
-    #         # plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
-    #         plt.savefig(os.path.join(run_path, f'reload_model_prediction_val_item-{item}.png'))
-    #         plt.close()
-    #     plt.figure()
-    #     plt.hist(rmse, bins=50, alpha=0.5)
-    #     plt.hist(rmse1, bins=50, alpha=0.5)
-    #     plt.yscale('log')
-    #     plt.suptitle(f'mean RMSE: {np.mean(rmse):.3f} +/- {np.std(rmse):.3f} - mean RMSE1: {np.mean(rmse1):.3f} +/- {np.std(rmse1):.3f}')
-    #     plt.savefig(os.path.join(run_path, f'reload_model_hist_val_RMSE.png'))
-    #     plt.close()
+
 
 if __name__ == '__main__':
 

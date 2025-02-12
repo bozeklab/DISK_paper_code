@@ -2,9 +2,8 @@
 # import clize
 # from keras.models import Model, load_model
 # from keras.layers import Input, Lambda, concatenate
-import numpy as np
+
 import os
-from scipy.io import savemat
 import logging
 from models import Wave_net
 from utils import create_run_folders
@@ -20,17 +19,16 @@ else:
     matplotlib.use('Agg')
     basedir = '/projects/ag-bozek/france'
 
+
 class EnsembleModel(torch.nn.Module):
-    def __init__(self, model_paths, base_output_path, device=torch.device('cpu'), **kwargs):
+    def __init__(self, model_paths, device=torch.device('cpu'), **kwargs):
         """Build an ensemble of models that output the median of all members.
         Not really a model because does not learn anything
-        Note: Does not compile the ensemble.
-        :param models: List of keras models to include in the ensemble. Curently
+
+        :param model_paths: List of paths to pytorch saved models to include in the ensemble. Currently,
                        requires the same output shape.
-        :param return_member_data: If True, model will have two outputs: the
-                                   ensemble prediction and all member predictions.
-                                   Otherwise, the model will output only the
-                                   ensemble predictions.
+        :param device: to put the models on selected device
+
         """
         super(EnsembleModel, self).__init__()
         self.models = torch.nn.ModuleList()
@@ -39,11 +37,12 @@ class EnsembleModel(torch.nn.Module):
 
         for i in range(len(model_paths)):
             logging.info(f' Loading model from {os.path.join(os.path.dirname(model_paths[i]), "training_info.json")}')
+
             with open(os.path.join(os.path.dirname(model_paths[i]), "training_info.json"), 'r') as fp:
                 self.models_dict_training = json.load(fp)
             model = Wave_net(device=device, **self.models_dict_training)
             checkpoint = torch.load(model_paths[i], map_location=torch.device(device))
-            print(i, model_paths[i])
+
             if 'model_state_dict' in checkpoint.keys():
                 model.load_state_dict(checkpoint['model_state_dict'])
             else:
@@ -51,31 +50,11 @@ class EnsembleModel(torch.nn.Module):
 
             model.eval()
             self.models.append(model)
-            # models[i] = load_model(os.path.join(base_output_path,
-            #                                     models_in_ensemble[i]))
-            # models[i].name = 'model_%d' % (i)
-        # def ens_median(x):
-        #     # return tf.contrib.distributions.percentile(x, 50, axis=1)
-        #     return torch.quantile(x, 50, dim=1)
-        #
-        # def pad(x):
-        #     return x[:, None, :]
-        #
-        # Get outputs from the ensemble models, compute the median, and fix the
-        # shape.
-        self.n_members = len(self.models)
-        # member_predictions = concatenate(outputs, axis=1)
-        # ensemble_prediction = Lambda(ens_median)(member_predictions)
-        # ensemble_prediction = Lambda(pad)(ensemble_prediction)
 
-        # Return model. No compilation is necessary since there are no additional
-        # trainable parameters.
-        # if return_member_data:
-        #     model = Model(model_input,
-        #                   outputs=[ensemble_prediction, member_predictions],
-        #                   name='ensemble')
-        # else:
-        #     model = Model(model_input, ensemble_prediction, name='ensemble')
+        self.n_members = len(self.models)
+        self.input_length = self.models[0].input_length
+        self.output_length = self.models[0].output_length
+
 
     def forward(self, x):
         outputs = [model(x) for model in self.models]
@@ -91,18 +70,14 @@ def build_ensemble(base_output_path, models_in_ensemble,
     """Build an ensemble of models for marker prediction.
 
     :param base_output_path: Path to base models directory
-    :param models_in_ensemble: List of all of the models to be included in the
+    :param models_in_ensemble: List of all the paths to the models to be included in the
                                build_ensemble
-    :param return_member_data: If True, model will have two outputs: the
-                               ensemble prediction and all member predictions.
-    :param run_name: Name of the model run
+    :param run_name: Name of the model run (str, default: None)
     :param clean: If True, deletes the contents of the run output path
     """
-    # Load all of the models to be used as members of the ensemble
-
 
     # Build the ensemble
-    model_ensemble = EnsembleModel(models_in_ensemble, base_output_path)
+    model_ensemble = EnsembleModel(models_in_ensemble, device=device)
 
     # Build ensemble folder name if needed
     if run_name is None:
@@ -111,8 +86,7 @@ def build_ensemble(base_output_path, models_in_ensemble,
 
     # Initialize run directories
     logging.info('Building run folders')
-    run_path = create_run_folders(run_name, base_path=base_output_path,
-                                  clean=clean)
+    run_path = create_run_folders(run_name, base_path=base_output_path, clean=clean)
 
     # Convert list of models to objects for .mat saving
     model_paths = []
@@ -135,10 +109,3 @@ def build_ensemble(base_output_path, models_in_ensemble,
     torch.save(model_ensemble.state_dict(), os.path.join(run_path, "final_model.h5"))
     return run_path
 
-if __name__ == '__main__':
-
-    models = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation_run/models-wave_net_epochs=30_input_9_output_1*/best_model.h5'))
-    device = torch.device('cuda:0')
-
-    build_ensemble(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/'),
-                   models, run_name=None, clean=False, device=device)

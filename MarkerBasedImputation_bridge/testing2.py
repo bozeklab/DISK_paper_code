@@ -29,19 +29,6 @@ from torch.utils.data.dataset import Dataset
 from DISK.utils.utils import read_constant_file
 from preprocess_data import preprocess_data, z_score_data, apply_z_score
 
-# def create_model(net_name, **kwargs):
-#     """Initialize a network for training."""
-#     # compile_model = dict(
-#     #     wave_net=models.wave_net,
-#     #     lstm_model=models.lstm_model,
-#     #     wave_net_res_skip=models.wave_net_res_skip
-#     #     ).get(net_name)
-#     compile_model = Wave_net
-#     if compile_model is None:
-#         return None
-#
-#     return compile_model(**kwargs)
-
 
 def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_point='', front_point=''):
     """Load keypoints from DISK already processed .npz files."""
@@ -54,6 +41,7 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
     bodyparts = dataset_constants.KEYPOINTS
     coords = data['X']
     if 'time' in data:
+        logging.info(f'[testing2/_disk_loader] Input file has time key')
         time_ = (data['time'] * dataset_constants.FREQ).astype(int)
         new_time = np.array([np.arange(np.max(time_) + 1) for _ in range(coords.shape[0])])
         new_coords = np.zeros((coords.shape[0], np.max(time_) + 1, coords.shape[2]), dtype=coords.dtype) * np.nan
@@ -67,12 +55,12 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
 
     # here we can preprocess the data without precautions, because no missing data in training scenario
     transformed_coords, rot_angle, mean_position = preprocess_data(new_coords, bodyparts,
-                                                                        middle_point=middle_point,
-                                                                        front_point=front_point,
-                                                                   exclude_value=exclude_value)
+                                                                    middle_point=middle_point,
+                                                                    front_point=front_point,
+                                                                    exclude_value=exclude_value)
 
     _, marker_means, marker_stds = z_score_data(transformed_coords.reshape(1, -1, transformed_coords.shape[2]),
-                                                             exclude_value=exclude_value)
+                                                exclude_value=exclude_value)
 
     z_score_coords = apply_z_score(transformed_coords, marker_means, marker_stds, exclude_value)
     # marker_means = None
@@ -98,10 +86,9 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
     idx = np.arange(0, z_score_coords.shape[1] - (input_length + output_length), stride)
     input_coords = np.vstack([[v[i: i + input_length][np.newaxis] for i in idx] for v in z_score_coords])
     input_coords = input_coords.reshape((input_coords.shape[0], input_length, len(bodyparts), -1))[..., :3].reshape((input_coords.shape[0], input_length, -1))
-    # mean_pos_input = np.vstack([[v[i: i + input_length] for i in idx] for v in mean_position])
+
     output_coords = np.vstack([[v[i + input_length: i + input_length + output_length][np.newaxis] for i in idx] for v in z_score_coords])
     output_coords = output_coords.reshape((output_coords.shape[0], output_length, len(bodyparts), -1))[..., :3].reshape((output_coords.shape[0], output_length, -1))
-    # mean_pos_output = np.vstack([[v[i + input_length: i + input_length + output_length] for i in idx] for v in mean_position])
 
     return input_coords.astype(np.float32), output_coords.astype(np.float32), dataset_constants
 
@@ -138,41 +125,15 @@ def testing_single_model_like_training(val_file, *, front_point='', middle_point
     :param clean: If True, deletes the contents of the run output path
     :param input_length: Number of frames to input into model
     :param output_length: Number of frames model will attempt to predict
-    :param n_markers: Number of markers to use
     :param stride: Downsampling rate of training set.
-    :param train_fraction: Fraction of dataset to use as training
-    :param val_fraction: Fraction of dataset to use as validation
-    :param only_moving_frames: If True only use moving_frames.
-    :param filter_width: Width of base convolution filter
-    :param layers_per_level: Number of layers to use at each convolutional
-                             block
-    :param n_dilations: Number of dilations for wavenet filters.
-                        (See models.wave_net)
-    :param latent_dim: Number of latent dimensions (Currently just for LSTM)
-    :param n_filters: Number of filters to use as baseline (see create_model)
-    :param epochs: Number of epochs to train for
-    :param batch_size: Number of samples per batch
-    :param batches_per_epoch: Number of batches per epoch (validation is
-                              evaluated at the end of the epoch)
-    :param val_batches_per_epoch: Number of batches for validation
-    :param reduce_lr_factor: Factor to reduce the learning rate by (see
-                             ReduceLROnPlateau)
-    :param reduce_lr_patience: How many epochs to wait before reduction (see
-                               ReduceLROnPlateau)
-    :param reduce_lr_min_delta: Minimum change in error required before
-                                reducing LR (see ReduceLROnPlateau)
-    :param reduce_lr_cooldown: How many epochs to wait after reduction before
-                               LR can be reduced again (see ReduceLROnPlateau)
-    :param reduce_lr_min_lr: Minimum that the LR can be reduced down to (see
-                             ReduceLROnPlateau)
-    :param save_every_epoch: Save weights at every epoch. If False, saves only
-                             initial, final and best weights.
+
     """
 
     # Load Data
     logging.info('Loading Data')
-    val_input, val_output, dataset_constants = _disk_loader(val_file, input_length=input_length, output_length=output_length,
-                                            stride=stride, middle_point=middle_point, front_point=front_point)
+    val_input, val_output, dataset_constants = _disk_loader(val_file, input_length=input_length,
+                                                            output_length=output_length, stride=stride,
+                                                            middle_point=middle_point, front_point=front_point)
     val_dataset = CustomDataset(val_input, val_output)
     val_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size)
     logging.info(f'Data loaded, number of val samples {len(val_dataset)}')
@@ -182,7 +143,6 @@ def testing_single_model_like_training(val_file, *, front_point='', middle_point
     model = None
     if isinstance(net_name, torch.nn.Module):
         model = net_name
-        net_name = model.name
     elif net_name == 'wave_net':
 
         if model is None:
@@ -204,15 +164,9 @@ def testing_single_model_like_training(val_file, *, front_point='', middle_point
     if lossfunc == 'mean_squared_error':
         loss_function = torch.nn.MSELoss()
 
-
-    losses = []
-    val_losses = []
-
     val_batches = len(val_loader)
-    best_val_loss = np.inf
-    # loop for every epoch (training + evaluation)
 
-    # ----------------- VALIDATION  -----------------
+    # ----------------- VALIDATION ONLY  -----------------
     with torch.no_grad():
         val_loss = 0
         list_y = []
@@ -225,22 +179,16 @@ def testing_single_model_like_training(val_file, *, front_point='', middle_point
             val_outputs.append(outputs.cpu().numpy())
 
             val_loss += loss_function(outputs, y).item() # MODIFIED - added [][]
-
             list_y.append(y.cpu().numpy())
 
-
-            logging.info(f'{np.unique(np.vstack(val_outputs).flatten())}')
-            logging.info(f"Validation loss: {val_loss/val_batches:.4f}")
-            val_losses.append(val_loss/val_batches) # for plotting learning curve
-            if val_loss/val_batches < best_val_loss:
-                best_val_loss = val_loss/val_batches
-                torch.save(model.state_dict(), os.path.join(run_path, "best_model.h5"))
+        logging.info(f"Validation loss: {val_loss/val_batches:.4f}")
 
     array_y = np.vstack(list_y)
     array_outputs = np.vstack(val_outputs)
     rmse = np.squeeze(np.sqrt((array_y - array_outputs)**2))
     rmse = np.nanmean(rmse, axis=1)
 
+    # plot some examples of prediction
     for item in np.random.randint(0, X.shape[0], 10):
         fig, axes = plt.subplots(8, 3, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
@@ -250,11 +198,10 @@ def testing_single_model_like_training(val_file, *, front_point='', middle_point
             axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
 
         plt.suptitle(f'RMSE = {rmse[item]:.3f}')
-        # plt.figure()
-        # plt.hist(np.vstack(list_y).flatten(), bins=50)
-        # plt.hist(np.vstack(val_outputs).flatten(), bins=50, alpha=0.5)
         plt.savefig(os.path.join(run_path, f'testing_like_training_last_epoch_prediction_val_item-{item}.png'))
         plt.close()
+
+    # plot RMSE histogram
     plt.figure()
     plt.hist(rmse, bins=50)
     plt.yscale('log')

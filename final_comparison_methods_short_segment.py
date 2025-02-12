@@ -58,7 +58,7 @@ def evaluate_and_plots(dataset_name, folder):
             optipose_file = os.path.join(folder, 'optipose', f'test_repeat-0_sample{id_sample}_{suffix_optipose}.csv')
             kpmoseq_file = os.path.join(folder, 'kpmoseq', f'test_repeat-0_sample{id_sample}_{suffix_kpmoseq}.csv')
             DISK_file = os.path.join(folder, 'DISK', f'test_repeat-0_sample{id_sample}_{suffix_DISK}.csv')
-            mbi_file = os.path.join(folder, 'MBI', f'test_repeat-0_sample{id_sample}_{suffix_MBI}.csv')
+            mbi_file = os.path.join(basedir, 'MarkerBasedImputation_FL2/model_ensemble/test_repeat-0_merged/', f'test_repeat-0_sample{id_sample}_{suffix_MBI}.csv')
             if not os.path.exists(optipose_file):
                 continue
             original_file = os.path.join(folder, f'test_repeat-0_sample{id_sample}.csv')
@@ -77,7 +77,7 @@ def evaluate_and_plots(dataset_name, folder):
                 std_ = np.sum(np.std(np.sqrt(np.sum(np.diff(orig_values, axis=0)**2, axis=-1))))
                 sum_mask = np.sum(np.isnan(df_original.loc[:, columns].values)) / 3
                 if std_ > 1 and sum_mask > 10:
-                    fig, axes = plt.subplots(len(keypoints), num_dims, figsize=(12, 9), sharex='all')
+                    fig, axes = plt.subplots(len(keypoints), num_dims, figsize=(12, 9), sharex='all', sharey='col')
                     axes = axes.flatten()
                     for i in range(len(columns)):
                         axes[i].plot(orig_values[:, i], 'o-')
@@ -289,5 +289,5 @@ if __name__ == '__main__':
     folder = os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0')
     dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
 
-    # evaluate_and_plots(dataset, folder)
+    evaluate_and_plots(dataset_name, folder)
     plot_average(folder)

@@ -36,22 +36,13 @@ def sigmoid(x, x_0, k):
     return 1 / (1 + np.exp(-k * (x - x_0)))
 
 
-def merge(save_path, fold_paths):
+def merge(save_path, pred_path):
     """Merge the predictions from chunked passes.
 
     :param save_path: Path to .mat file where merged predictions will be saved.
     :param fold_paths: List of paths to chunked predictions to merge.
     """
-    # Order the files in the imputation path by the fold id in the filename
-    # Consider revising
-    # fold_files = [os.path.basename(s) for s in fold_paths]
-    # folds = [int(re.findall('\d+', s)[0]) for s in fold_files]
-    # sorted_indices = sorted(range(len(folds)), key=lambda k: folds[k])
-    # fold_paths = [fold_paths[i] for i in sorted_indices]
-    # print('Reorganized fold paths:')
-    # print(fold_paths)
 
-    n_folds_to_merge = len(fold_paths)
     markers = None
     bad_framesF = None
     bad_framesR = None
@@ -60,10 +51,9 @@ def merge(save_path, fold_paths):
 
     member_stdsF = None
     member_stdsR = None
-    for i in range(n_folds_to_merge):
-        # print('%d' % i, flush=True)
 
-        data = loadmat(fold_paths[i])
+    for pp in pred_path: # at least forward and reverse
+        data = loadmat(pp)
         pass_direction = data['pass_direction'][:]
         markers_single_fold = np.array(data['markers'][:])
         preds_single_fold = np.array(data['preds'][:])
@@ -120,28 +110,10 @@ def merge(save_path, fold_paths):
     logging.info(f'shape bad_framesF: {bad_framesF.shape}')
     logging.info(f'shape markers_means: {marker_means.shape}')
     logging.info(f'shape marker_stds: {marker_stds.shape}')
-    # Convert to real world coordinates
-    # for i in range(markers.shape[1]):
-    #     # looping on the time
-    #     markers[:, i] = markers[:, i] * marker_stds[:, 0] + marker_means[:, 0]
-    #     predsF[:, i] = predsF[:, i] * marker_stds[:, 0] + marker_means[:, 0]
-    #     predsR[:, i] = predsR[:, i] * marker_stds[:, 0] + marker_means[:, 0]
 
     items = np.random.choice(predsF.shape[0], 10)
-    # for item in items:
-    #     fig, axes = plt.subplots(predsF.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
-    #     axes = axes.flatten()
-    #     for i in range(predsF.shape[-1]):
-    #         x = markers[item, :, i]
-    #         x[get_mask(x, exclude_value)] = np.nan
-    #         t = np.arange(markers.shape[1])
-    #         axes[i].plot(x, 'o-')
-    #         axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
-    #         if i%3 == 0:
-    #             axes[i].set_ylabel(marker_names[i//3])
-    #     plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}.png'))
-    #     plt.close()
-    #
+
+    # markers are already saved before processing, no need to unprocess them
     # markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
     predsF = unprocess_data(predsF, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
     predsR = unprocess_data(predsR, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
@@ -181,8 +153,7 @@ def merge(save_path, fold_paths):
     for i in range(bad_frames.shape[2]):
         bad_frames[..., i] = np.any(bad_framesF[..., i * 3: i * 3 + 3] & bad_framesR[..., i * 3: i * 3 + 3], axis=2)
 
-    # Compute the weighted average of the forward and reverse predictions using
-    # a logistic function
+    # Compute the weighted average of the forward and reverse predictions using a logistic function
     logging.info('Computing weighted average')
     preds = np.zeros(predsF.shape)
     member_stds = np.zeros(member_stdsF.shape)
@@ -240,10 +211,3 @@ def merge(save_path, fold_paths):
             df['behaviour'] = np.nan
             df.to_csv(output_file_path, index=False)
     return preds
-
-if __name__ == "__main__":
-    # Wrapper for running from commandline
-    save_path = os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01/')
-    fold_paths = glob(os.path.join(basedir, 'results_behavior/MarkerBasedImputation/model_ensemble_01/test_repeat-0*.mat'))
-
-    merge(save_path, fold_paths)

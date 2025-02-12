@@ -24,7 +24,9 @@ else:
     basedir = '/projects/ag-bozek/france'
 
 
-def open_data_csv(filepath, dataset_path, stride=20):
+def open_data_csv(filepath, dataset_path, stride=20,
+                  front_point=('left_coord', 'right_coord'), middle_point=('left_hip', 'right_hip'),
+                  input_length=9, output_length=1):
     """Load data from csv file used for comparison."""
 
     dataset_constant_file = glob(os.path.join(dataset_path, 'constants.py'))[0]
@@ -33,14 +35,11 @@ def open_data_csv(filepath, dataset_path, stride=20):
 
     exclude_value = np.nan
     data = np.load(filepath)
-
     coords = data['X']
-    input_length = 9
-    output_length = 1
 
     transformed_coords, rot_angle, mean_position = preprocess_data(coords, dataset_constants.KEYPOINTS,
-                                                                   middle_point=['left_hip', 'right_hip'],
-                                                                   front_point=['left_coord', 'right_coord'],
+                                                                   middle_point=middle_point,
+                                                                   front_point=front_point,
                                                                    exclude_value=exclude_value)
 
     _, marker_means, marker_stds = z_score_data(transformed_coords.reshape(1, -1, transformed_coords.shape[2]),
@@ -58,7 +57,6 @@ def open_data_csv(filepath, dataset_path, stride=20):
         [[v[i: i + input_length + output_length][np.newaxis] for i in idx] for v in z_score_coords])
     ground_truth = ground_truth.reshape((ground_truth.shape[0], input_length + output_length, n_keypoints, -1))[...,
                     :3].reshape((ground_truth.shape[0], input_length + output_length, -1))
-
 
     transforms_dict = {'rot_angle': rot_angle,
                        'mean_position': mean_position,
@@ -106,33 +104,10 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
     startpoint = np.clip(startpoint - input_length, a_min=-input_length - 1, a_max=X.shape[1] - 1)
     mask = next_frame_id > 0 # only consider the samples needing imputation
 
-    # if ground_truth is not None:
-    #     processed_ground_truth, rot_angle_GT, mean_position_GT = preprocess_data(ground_truth,
-    #                                                                              keypoints,
-    #                                                                              middle_point=['right_hip', 'left_hip'],
-    #                                                                              front_point=['right_coord', 'left_coord'],
-    #                                                                              exclude_value=exclude_value)
-    #
-    # processed_X, rot_angle, mean_position = preprocess_data(X,
-    #                                                               keypoints,
-    #                                                               middle_point=['right_hip', 'left_hip'],
-    #                                                               front_point=['right_coord', 'left_coord'],
-    #                                                               exclude_value=exclude_value)
-    #
-    # _, marker_means, marker_stds = z_score_data(processed_X.reshape(1, -1, processed_X.shape[2]), exclude_value=exclude_value)
-    #
-    # if ground_truth is not None:
-    #     processed_ground_truth = apply_z_score(processed_ground_truth, marker_means, marker_stds, exclude_value=exclude_value)
-
-    processed_X = np.copy(X)
-    processed_ground_truth = np.copy(ground_truth)
-
     # Preallocate
-    preds = np.copy(processed_X)
+    processed_ground_truth = np.copy(ground_truth)
+    preds = np.copy(X)
     pred = np.zeros((X.shape[0], output_length, X.shape[2]))
-
-    # member_stds = np.zeros((X.shape[0], X.shape[1], X.shape[2]))
-    # member_pred = np.zeros((X.shape[0], model.n_members, X.shape[2]))
 
     # At each step, generate a prediction, replace the predictions of
     # markers you do not want to predict with the ground truth, and append
@@ -141,15 +116,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
         # print(set(zip(startpoint, next_frame_id)))
 
         # if first missing value before input_length, then pad before with first value
-        X_start = np.vstack([x[np.array([max(0, t) for t in range(s, s + input_length)])][np.newaxis] for (x, s) in zip(preds[mask], startpoint[mask])])
-
-        processed_X_start = np.copy(X_start)
-        # processed_X_start, rot_angle, mean_position = preprocess_data(X_start,
-        #                                                         keypoints,
-        #                                                         middle_point=['right_hip', 'left_hip'],
-        #                                                         front_point=['right_coord', 'left_coord'],
-        #                                                         exclude_value=exclude_value)
-        # processed_X_start = apply_z_score(processed_X_start, marker_means, marker_stds, exclude_value=-4668)
+        processed_X_start = np.vstack([x[np.array([max(0, t) for t in range(s, s + input_length)])][np.newaxis] for (x, s) in zip(preds[mask], startpoint[mask])])
 
         # If there is a marker prediction that is greater than the
         # difference threshold above, mark it as a bad frame.
@@ -162,7 +129,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
             bad_frames[next_frame_id, errors] = True
 
         pred = model(torch.Tensor(processed_X_start).to(device))
-        if type(pred) == tuple:
+        if type(pred) == tuple: # this is the case if ensemble model
             pred = pred[0]
         pred = pred.detach().cpu().numpy()
 
@@ -170,7 +137,6 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
             rmse = np.sqrt((pred[:, 0] - processed_ground_truth[mask, next_frame_id[mask]])**2)
             rmse[~bad_frames[mask, next_frame_id[mask]]] = np.nan
             rmse = np.nanmean(rmse, axis=1)
-
 
         if len(np.where(startpoint[mask] > 0)[0]) > 0:
             for item in np.random.choice(np.where(startpoint[mask] > 0)[0], 1):
@@ -194,8 +160,6 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
                     plt.suptitle(f'RMSE {rmse[item]:.3f}')
                 plt.savefig(os.path.join(save_path, f'{save_prefix}_single_pred_single_step_item-{item}.png'))
                 plt.close()
-            print('stop')
-
 
         # Only use the predictions for the bad markers. Take the
         # predictions and append to the end of X_start for future
@@ -236,26 +200,21 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
                 axes[i].plot(t, processed_ground_truth[item, :, i], 'o-')
                 plt.suptitle(f'RMSE = {rmse[item]:.3f}')
             else:
-                x = processed_X[item, :, i]
+                x = X[item, :, i]
                 x[get_mask(x, exclude_value)] = np.nan
                 axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_frames_orig[item, :, i]], preds[item, bad_frames_orig[item, :, i], i], 'x')
         plt.savefig(os.path.join(save_path, f'{save_prefix}_single_pred_item-{item}.png'))
         plt.close()
 
-    transforms_dict = {}
-    # {'rot_angle': rot_angle,
-    #                    'mean_position': mean_position,
-    #                    'marker_means': marker_means,
-    #                    'marker_stds': marker_stds}
+    transforms_dict = {} # no transforms, done in the loading phase
 
     return preds, bad_frames_orig, transforms_dict
 
 
 
 def testing_single_model_like_predict(model_path, data_file, dataset_path, *,
-                        save_path=None, stride=1, n_folds=10, fold_id=0,
-                        markers_to_fix=None, error_diff_thresh=.25,
+                        save_path=None, front_point='', middle_point='',
                         model=None, device=torch.device('cpu')):
     """Imputes the position of missing markers.
 
@@ -275,9 +234,6 @@ def testing_single_model_like_predict(model_path, data_file, dataset_path, *,
     :param model: Model to be used in prediction. Overrides model_path.
     :return: preds
     """
-
-    markers, ground_truth, dataset_constants, exclude_value, transform_dict = open_data_csv(filepath=data_file, dataset_path=dataset_path)
-    bad_frames = get_mask(markers, exclude_value) # value used by optipose to mark dropped frames
 
     # Load model
     if model is None:
@@ -287,11 +243,17 @@ def testing_single_model_like_predict(model_path, data_file, dataset_path, *,
         model = Wave_net(device=device, **dict_training)
         model.load_state_dict(torch.load(os.path.join(basedir, model_path)))
         model.eval()
+    else:
+        raise ValueError(f'[testing_single_model_like_predict] model is None')
 
-    # print('Predicting %d frames starting at frame %d.'
-    #       % (markers.shape[1], start_frame))
+    markers, ground_truth, dataset_constants, exclude_value, transform_dict = open_data_csv(filepath=data_file,
+                                                                                            dataset_path=dataset_path,
+                                                                                            middle_point=middle_point,
+                                                                                            front_point=front_point,
+                                                                                            input_length=model.input_length,
+                                                                                            output_length=model.output_length)
+    bad_frames = get_mask(markers, exclude_value) # value used by optipose to mark dropped frames
 
-    # If the model can return the member predictions, do so.
     save_path_direction = None
     if save_path is not None:
         save_path_direction = os.path.join(save_path, f'{os.path.basename(data_file).split(".npz")[0]}_testing')
@@ -299,22 +261,16 @@ def testing_single_model_like_predict(model_path, data_file, dataset_path, *,
             os.mkdir(save_path_direction)
 
     preds, bad_frames, transform_dict = predict_markers(model, dict_training, markers, bad_frames,
-                                                            dataset_constants.KEYPOINTS, ground_truth,
-                                                            markers_to_fix=markers_to_fix,
-                                                            error_diff_thresh=error_diff_thresh,
-                                                            save_path=save_path_direction,
+                                                        dataset_constants.KEYPOINTS, ground_truth,
+                                                        save_path=save_path_direction,
                                                         save_prefix='testing_single_model_like_predict',
-                                                            exclude_value=exclude_value)
-
-
-
+                                                        exclude_value=exclude_value)
 
     return preds
 
 
 def testing_ensemble_model_like_predict(model_path, data_file, dataset_path, *,
-                        save_path=None, stride=1, n_folds=10, fold_id=0,
-                        markers_to_fix=None, error_diff_thresh=.25,
+                        save_path=None, middle_point='', front_point='',
                         model=None, device=torch.device('cpu')):
     """Imputes the position of missing markers.
 
@@ -335,9 +291,6 @@ def testing_ensemble_model_like_predict(model_path, data_file, dataset_path, *,
     :return: preds
     """
 
-    markers, ground_truth, dataset_constants, exclude_value, transform_dict = open_data_csv(filepath=data_file, dataset_path=dataset_path)
-    bad_frames = get_mask(markers, exclude_value) # value used by optipose to mark dropped frames
-
     # Load model
     if model is None:
         logging.info(f'Loading ensemble model from {os.path.join(os.path.dirname(model_path), "training_info.json")}')
@@ -346,11 +299,18 @@ def testing_ensemble_model_like_predict(model_path, data_file, dataset_path, *,
         model = EnsembleModel(device=device, **dict_training)
         model.load_state_dict(torch.load(os.path.join(basedir, model_path)))
         model.eval()
+    else:
+        raise ValueError(f'[testing_ensemble_model_like_predict] model is None')
 
-    # print('Predicting %d frames starting at frame %d.'
-    #       % (markers.shape[1], start_frame))
+    markers, ground_truth, dataset_constants, exclude_value, transform_dict = open_data_csv(filepath=data_file,
+                                                                                            dataset_path=dataset_path,
+                                                                                            middle_point=middle_point,
+                                                                                            front_point=front_point,
+                                                                                            input_length=model.input_length,
+                                                                                            output_length=model.output_length
+                                                                                            )
+    bad_frames = get_mask(markers, exclude_value) # value used by optipose to mark dropped frames
 
-    # If the model can return the member predictions, do so.
     save_path_direction = None
     if save_path is not None:
         save_path_direction = os.path.join(save_path, f'{os.path.basename(data_file).split(".npz")[0]}_testing')
@@ -358,14 +318,9 @@ def testing_ensemble_model_like_predict(model_path, data_file, dataset_path, *,
             os.mkdir(save_path_direction)
 
     preds, bad_frames, transform_dict = predict_markers(model, dict_training, markers, bad_frames,
-                                                            dataset_constants.KEYPOINTS, ground_truth,
-                                                            markers_to_fix=markers_to_fix,
-                                                            error_diff_thresh=error_diff_thresh,
-                                                            save_path=save_path_direction,
+                                                        dataset_constants.KEYPOINTS, ground_truth,
+                                                        save_path=save_path_direction,
                                                         save_prefix='testing_ensemble_model_like_predict',
                                                         exclude_value=exclude_value)
-
-
-
 
     return preds
