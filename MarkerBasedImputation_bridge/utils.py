@@ -114,8 +114,8 @@ def create_run_folders(run_name, base_path="models", clean=False):
         shutil.rmtree(run_path)
 
     os.makedirs(run_path)
-    os.makedirs(os.path.join(run_path, "weights"))
-    os.makedirs(os.path.join(run_path, "viz"))
+    # os.makedirs(os.path.join(run_path, "weights"))
+    # os.makedirs(os.path.join(run_path, "viz"))
     print("Created folder:", run_path)
 
     return run_path
