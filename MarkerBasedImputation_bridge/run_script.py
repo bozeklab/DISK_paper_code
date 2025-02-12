@@ -46,15 +46,15 @@ def write_logging():
 
 
 if __name__ == '__main__':
-    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_FL2/")
+    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DANNCE/")
     # BASEFOLDER = os.path.join('/home/france/Documents', "MarkerBasedImputation_FL2")
     if not os.path.exists(BASEFOLDER):
         os.mkdir(BASEFOLDER)
-    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10')
-    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
+    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10')
+    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
     # DATASETPATH = os.path.join('/home/france/Documents', 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
-    front_point = ['left_coord', 'right_coord'] #'SpineF'
-    middle_point = ['left_hip', 'right_hip'] #'SpineM'
+    front_point = 'SpineF'# ['left_coord', 'right_coord'] #'SpineF'
+    middle_point = 'SpineM' #['left_hip', 'right_hip'] #'SpineM'
     train_file = os.path.join(DATASETPATH, 'train_dataset_w-0-nans.npz')
     val_file = os.path.join(DATASETPATH, 'val_dataset_w-0-nans.npz')
     MODELFOLDER = os.path.join(BASEFOLDER, "models")
@@ -81,18 +81,18 @@ if __name__ == '__main__':
     write_logging()
 
     # TRAINING
-    # for _ in range(NMODELS):
-    #     train(train_file, val_file, front_point=front_point, middle_point=middle_point,
-    #           base_output_path=MODELFOLDER, run_name=None,
-    #           data_name=None, net_name="wave_net", clean=False, input_length=9,
-    #           output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
-    #           val_fraction=0.15, only_moving_frames=False, n_filters=512,
-    #           filter_width=2, layers_per_level=3, n_dilations=None,
-    #           latent_dim=750, epochs=EPOCHS, batch_size=1000,
-    #           lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
-    #           val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
-    #           reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
-    #           reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
+    for _ in range(NMODELS):
+        train(train_file, val_file, front_point=front_point, middle_point=middle_point,
+              base_output_path=MODELFOLDER, run_name=None,
+              data_name=None, net_name="wave_net", clean=False, input_length=9,
+              output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
+              val_fraction=0.15, only_moving_frames=False, n_filters=512,
+              filter_width=2, layers_per_level=3, n_dilations=None,
+              latent_dim=750, epochs=EPOCHS, batch_size=1000,
+              lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
+              val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
+              reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
+              reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
 
     t_after_training = time()
     logging.info(f'Time training: {t_after_training - t_after_import}')
@@ -103,8 +103,8 @@ if __name__ == '__main__':
         logging.info(f"no models found at {os.path.join(BASEFOLDER, f'models-wave_net_epochs={EPOCHS}_input_9_output_1*/best_model.h5')}")
         sys.exit(1)
 
-    # save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
-    save_path = os.path.join(BASEFOLDER, 'model_ensemble')
+    save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
+    # save_path = os.path.join(BASEFOLDER, 'model_ensemble')
     model_ensemble_path = os.path.join(save_path, 'final_model.h5')
     logging.info(f'SAVEPATH = {save_path}')
 
@@ -112,21 +112,21 @@ if __name__ == '__main__':
 
     # ON DATA LIKE SEEN IN TRAINING
     # data_file = os.path.join(DATASETPATH, 'val_dataset_w-0-nans.npz')
-    # data_file = os.path.join(DATASETPATH, 'test_dataset_w-0-nans.npz')
-    # logging.info(f'datafile = {data_file}')
-    # testing_single_model_like_training(data_file, front_point=front_point, middle_point=middle_point,
-    #                 model_name=models[0],
-    #                 net_name="wave_net", clean=False, input_length=9,
-    #                 output_length=1, stride=1,
-    #                 batch_size=1000,
-    #                 lossfunc='mean_squared_error',
-    #                 device=torch.device('cpu'))
-    # testing_single_model_like_predict(models[0], data_file, DATASETPATH,
-    #         save_path = os.path.dirname(models[0]), front_point=front_point, middle_point=middle_point,
-    #         model = None, device = torch.device('cpu'))
-    # testing_ensemble_model_like_predict(model_ensemble_path, data_file, DATASETPATH,
-    #         save_path = save_path, front_point=front_point, middle_point=middle_point,
-    #         model = None, device = torch.device('cpu'))
+    data_file = os.path.join(DATASETPATH, 'test_dataset_w-0-nans.npz')
+    logging.info(f'datafile = {data_file}')
+    testing_single_model_like_training(data_file, front_point=front_point, middle_point=middle_point,
+                    model_name=models[0],
+                    net_name="wave_net", clean=False, input_length=9,
+                    output_length=1, stride=1,
+                    batch_size=1000,
+                    lossfunc='mean_squared_error',
+                    device=torch.device('cpu'))
+    testing_single_model_like_predict(models[0], data_file, DATASETPATH,
+            save_path = os.path.dirname(models[0]), front_point=front_point, middle_point=middle_point,
+            model = None, device = torch.device('cpu'))
+    testing_ensemble_model_like_predict(model_ensemble_path, data_file, DATASETPATH,
+            save_path = save_path, front_point=front_point, middle_point=middle_point,
+            model = None, device = torch.device('cpu'))
 
     # ON SHORT SEQUENCES WITH GROUND TRUTH
     # data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
@@ -148,23 +148,23 @@ if __name__ == '__main__':
     #
     # t_after_merge = time()
     # logging.info(f'Time predict: {t_after_merge - t_after_predict}')
-
-
-    # ON ORIGINAL FILES FOR REAL-SCENARIO IMPUTATION
-    for data_file in glob(os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')):
-        if 'model_10_5_1' in data_file:
-            continue
-        logging.info(f'datafile = {data_file}')
-
-        save_path_tmp = os.path.join(save_path, f'{os.path.basename(data_file).split(".")[0]}_merged')
-        if not os.path.exists(save_path_tmp):
-            os.mkdir(save_path_tmp)
-
-        for pass_direction in ['reverse', 'forward']:
-            predict_single_pass(model_ensemble_path, data_file, DATASETPATH, pass_direction,
-                                front_point=front_point, middle_point=middle_point,
-                                save_path=save_path_tmp, stride=impute_stride,
-                                model=None)
-
-        pred_paths = glob(os.path.join(save_path_tmp, f'{os.path.basename(data_file).split(".csv")[0]}*.mat'))
-        merge(save_path_tmp, pred_paths)
+    #
+    #
+    # # ON ORIGINAL FILES FOR REAL-SCENARIO IMPUTATION
+    # for data_file in glob(os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')):
+    #     if 'model_10_5_1' in data_file:
+    #         continue
+    #     logging.info(f'datafile = {data_file}')
+    #
+    #     save_path_tmp = os.path.join(save_path, f'{os.path.basename(data_file).split(".")[0]}_merged')
+    #     if not os.path.exists(save_path_tmp):
+    #         os.mkdir(save_path_tmp)
+    #
+    #     for pass_direction in ['reverse', 'forward']:
+    #         predict_single_pass(model_ensemble_path, data_file, DATASETPATH, pass_direction,
+    #                             front_point=front_point, middle_point=middle_point,
+    #                             save_path=save_path_tmp, stride=impute_stride,
+    #                             model=None)
+    #
+    #     pred_paths = glob(os.path.join(save_path_tmp, f'{os.path.basename(data_file).split(".csv")[0]}*.mat'))
+    #     merge(save_path_tmp, pred_paths)
