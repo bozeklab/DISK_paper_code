@@ -64,6 +64,9 @@ To build the ensemble model, I also copied the original code.
 
 ### Conda environment
 
+cf `OPTIPOSE_conda_env_2025-02.yml` - uses tensorflow and is different from DISK conda environment.
+(base) 09:43:28 frose1@cheops31101~/DISK_paper_code$ conda activate OPTIPOSE
+
 ### Prepare the files
 
 The `optipose_bridge/create_csv_for_optipose.py` script converts the npz DISK dataset files (with all the holes) into csv files. 
@@ -74,5 +77,11 @@ I only select holes that are smaller than the considered segment length of 60 fr
 The config file will be used not only for the training but also reconstruction.
 
 ### Train
+
+```
+conda activate OPTIPOSE
+cd ~/DISK_paper_code/optipose_bridge/
+python ~/DISK_paper_code/optipose_bridge/train_optipose_for_disk.py DANNCE 15 5 4 3.1e-4
+```
 
 ### Run inference
