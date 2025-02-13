@@ -63,10 +63,10 @@ if __name__ == '__main__':
     # min_length = 60
     # n_keypoints = 6
 
-    #dataset_name = 'MABE_task1_60stride60'
-    #min_length = 60
-    #n_keypoints = 14
-    #_3D = False
+    dataset_name = 'MABE_task1_60stride60'
+    min_length = 60
+    n_keypoints = 14
+    _3D = False
     #
     # dataset_name = 'Mocap_keypoints_60_stride30_new'
     # min_length = 60
@@ -83,10 +83,10 @@ if __name__ == '__main__':
     # n_keypoints = 8
     # _3D = True
     #
-    dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
-    min_length = 60
-    n_keypoints = 20
-    _3D = True
+    # dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
+    # min_length = 60
+    # n_keypoints = 20
+    # _3D = True
     #
     # dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
     # min_length = 60

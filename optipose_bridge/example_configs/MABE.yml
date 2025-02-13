@@ -15,3 +15,6 @@ OptiPose:
 
 Reconstruction:
   framerate: 60
+
+train_file: '/projects/ag-bozek/france/results_behavior/datasets/MABE_task1_60stride60/for_optipose/_MABE_train_60_20000.csv'
+test_file: '/projects/ag-bozek/france/results_behavior/datasets/MABE_task1_60stride60/for_optipose/_MABE_val_60_2000_test.csv'
