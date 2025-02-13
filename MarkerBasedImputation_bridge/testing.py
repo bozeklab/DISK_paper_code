@@ -241,7 +241,11 @@ def testing_single_model_like_predict(model_path, data_file, dataset_path, *,
         with open(os.path.join(os.path.dirname(model_path), "training_info.json"), 'r') as fp:
             dict_training = json.load(fp)
         model = Wave_net(device=device, **dict_training)
-        model.load_state_dict(torch.load(os.path.join(basedir, model_path)))
+        checkpoint = torch.load(os.path.join(basedir, model_path))
+        if 'model_state_dict' in checkpoint:
+            model.load_state_dict(checkpoint['model_state_dict'])
+        else:
+            model.load_state_dict(checkpoint)
         model.eval()
     else:
         raise ValueError(f'[testing_single_model_like_predict] model is None')
