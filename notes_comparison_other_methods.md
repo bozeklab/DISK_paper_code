@@ -92,3 +92,8 @@ When setting the learning rate "too high", I experienced an explosion of the los
 I lowered consequently the learning rate to avoid this behavior (to 1e-4)
 
 ### Run inference
+
+
+## Keypoint-Moseq
+
+
