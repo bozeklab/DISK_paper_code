@@ -83,7 +83,7 @@ if __name__ == '__main__':
     # n_keypoints = 8
     # _3D = True
     #
-    dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
+    dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10'
     min_length = 60
     n_keypoints = 20
     _3D = True
