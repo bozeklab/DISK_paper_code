@@ -65,7 +65,11 @@ To build the ensemble model, I also copied the original code.
 ### Conda environment
 
 cf `OPTIPOSE_conda_env_2025-02.yml` - uses tensorflow and is different from DISK conda environment.
-(base) 09:43:28 frose1@cheops31101~/DISK_paper_code$ conda activate OPTIPOSE
+You can use the yml file to install the environment using `conda env create --file OPTIPOSE_conda_env_2025-02.yml`
+I could not make it work on our setup with GPU, making the training quite slow.
+
+For DISK environment installation and usage see `github.com/DISK`
+
 
 ### Prepare the files
 
@@ -74,7 +78,7 @@ I only select holes that are smaller than the considered segment length of 60 fr
 
 ### Config
 
-The config file will be used not only for the training but also reconstruction.
+The config file (in folder `example_configs`) will be used not only for the training but also reconstruction.
 
 ### Train
 
@@ -83,5 +87,8 @@ conda activate OPTIPOSE
 cd ~/DISK_paper_code/optipose_bridge/
 python ~/DISK_paper_code/optipose_bridge/train_optipose_for_disk.py DANNCE 15 5 4 3.1e-4
 ```
+
+When setting the learning rate "too high", I experienced an explosion of the loss leading to NaNs.
+I lowered consequently the learning rate to avoid this behavior (to 1e-4)
 
 ### Run inference
