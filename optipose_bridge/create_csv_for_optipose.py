@@ -100,31 +100,31 @@ if __name__ == '__main__':
         os.mkdir(output_dir)
 
 
-    # for part, f in np_dataset_files:
-    #     count = 0
-    #     if not os.path.exists(os.path.join(output_dir, part)):
-    #         os.mkdir(os.path.join(output_dir, part))
-    #     dataset = np.load(f)
-    #     X = dataset['X']
-    #     columns = []
-    #     for k in range(n_keypoints):
-    #         if _3D:
-    #             columns.extend([f'{k}_1', f'{k}_2', f'{k}_3'])
-    #         else:
-    #             columns.extend([f'{k}_1', f'{k}_2'])
-    #     print(X.shape)
-    #     for x in tqdm(X):
-    #         # look for "holes" without any nans
-    #         out = find_holes(mask=np.any(np.isnan(x), axis=1)[:, np.newaxis],
-    #                          keypoints=['all'],
-    #                          target_val=False,
-    #                          min_size_hole=min_length)
-    #         for start, length, _ in out:
-    #             df = pd.DataFrame(columns=columns, data=x[start:start+length])
-    #             df.loc[:, 'behaviour'] = np.nan
-    #             df.to_csv(os.path.join(output_dir, part, f'{dataset_name}_{count:03d}.csv'), index=False)
-    #             count += 1
-    #
+    for part, f in np_dataset_files:
+        count = 0
+        if not os.path.exists(os.path.join(output_dir, part)):
+            os.mkdir(os.path.join(output_dir, part))
+        dataset = np.load(f)
+        X = dataset['X']
+        columns = []
+        for k in range(n_keypoints):
+            if _3D:
+                columns.extend([f'{k}_1', f'{k}_2', f'{k}_3'])
+            else:
+                columns.extend([f'{k}_1', f'{k}_2'])
+        print(X.shape)
+        for x in tqdm(X):
+            # look for "holes" without any nans
+            out = find_holes(mask=np.any(np.isnan(x), axis=1)[:, np.newaxis],
+                             keypoints=['all'],
+                             target_val=False,
+                             min_size_hole=min_length)
+            for start, length, _ in out:
+                df = pd.DataFrame(columns=columns, data=x[start:start+length])
+                df.loc[:, 'behaviour'] = np.nan
+                df.to_csv(os.path.join(output_dir, part, f'{dataset_name}_{count:03d}.csv'), index=False)
+                count += 1
+
 
 
     # test file
