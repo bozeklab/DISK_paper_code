@@ -59,10 +59,6 @@ def find_holes(mask, keypoints, target_val=1, indep=True, min_size_hole=60):
 
 if __name__ == '__main__':
 
-    dataset_name = 'Fish_v3_60stride120'
-    min_length = 60
-    n_keypoints = 6
-
     # dataset_name = 'Fish_v3_60stride120'
     # min_length = 60
     # n_keypoints = 6
@@ -87,17 +83,15 @@ if __name__ == '__main__':
     # n_keypoints = 8
     # _3D = True
     #
-    # # Done: CLB, Fish, DANNCE, FL2
-    #
-    # dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
-    # min_length = 60
-    # n_keypoints = 20
-    # _3D = True
-    #
-    dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
+    dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
     min_length = 60
-    n_keypoints = 8
+    n_keypoints = 20
     _3D = True
+    #
+    # dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
+    # min_length = 60
+    # n_keypoints = 8
+    # _3D = True
 
     np_dataset_files = [('train', os.path.join(basedir, f'results_behavior/datasets/{dataset_name}/train_fulllength_dataset_w-all-nans.npz')),
                         ('val', os.path.join(basedir, f'results_behavior/datasets/{dataset_name}/val_fulllength_dataset_w-all-nans.npz'))]

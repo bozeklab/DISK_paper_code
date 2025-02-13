@@ -2,6 +2,27 @@
 --
 Author: France ROSE, February 2025
 
+## Overall strategy
+
+- For each dataset the different methods (Keypoint-Moseq, OptiPose, MarkerBasedImputation, DISK) are trained on the same data (training data without keypoints missing).
+- For MarkerBasedImputation, I had to reimplement the code as I could not run the codebase with old keras dependencies (see below).
+- For Keypoint-Moseq and Optipose, I used the original implementation.
+
+### Testing
+
+To compare the performance of MarkerBasedImputation and DISK. 
+I generated short sequences (60 frames) and random gaps with the DISK testing script and save them in a csv file (DISK repo branch optipose).
+These sequences are then preprocessed for the MBI approach (centering, rotation, and z-scoring). 
+To avoid leakage between the input sequences and the corresponding ground truth, the preprocessing is computed on the masked segments directly.
+
+The metrics (PCK, RMSE, MPJPE) are computed on original coordinates, as each method can have a different preprocessing and normalization technique.
+
+### Inference
+
+I also ran the methods on the real gaps in the data. Here metrics cannot be computed but imputed trajectories can be visualized.
+The preprocessing was also done according to the chosen method.
+
+
 ## MarkerBasedImputation
 
 - I based my re-implementation on the repo and the CAPTURE paper
@@ -37,4 +58,21 @@ I kept the other (hyper)parameters similar to the original ones.
 
 To build the ensemble model, I also copied the original code.
 
-### Testing
+
+
+## Optipose
+
+### Conda environment
+
+### Prepare the files
+
+The `optipose_bridge/create_csv_for_optipose.py` script converts the npz DISK dataset files (with all the holes) into csv files. 
+I only select holes that are smaller than the considered segment length of 60 frames (for testing purposes).
+
+### Config
+
+The config file will be used not only for the training but also reconstruction.
+
+### Train
+
+### Run inference
