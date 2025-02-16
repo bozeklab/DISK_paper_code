@@ -76,6 +76,8 @@ For DISK environment installation and usage see `github.com/DISK`
 The `optipose_bridge/create_csv_for_optipose.py` script converts the npz DISK dataset files (with all the holes) into csv files. 
 I only select holes that are smaller than the considered segment length of 60 frames (for testing purposes).
 
+T
+
 ### Config
 
 The config file (in folder `example_configs`) will be used not only for the training but also reconstruction.
