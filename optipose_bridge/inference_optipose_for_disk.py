@@ -33,17 +33,21 @@ model = SequentialPosturalAutoEncoder(config_, 60, n_pcm, n_cm, n_heads, overlap
 model.PRINT = False
 
 test_files = glob(os.path.join(test_folder, 'test_*_sample*.csv'))
+output_dir = os.path.join(test_folder, 'optipose_pred')
+if not os.path.exists(output_dir):
+    os.mkdir(output_dir)
+
 for f in test_files:
     print(f)
     pred = FlattenedDataStore(config_.body_parts, f)
     model.process(pred)
-    pred.save_file(os.path.join(test_folder, 'optipose', f'{os.path.basename(f).split(".")[0]}_model_{n_pcm}_{n_cm}_{n_heads}.csv'))
+    pred.save_file(os.path.join(output_dir, f'{os.path.basename(f).split(".")[0]}_model_{n_pcm}_{n_cm}_{n_heads}.csv'))
 
 test_files = glob(os.path.join(test_folder, 'test_w-all-nans_file*.csv'))
 for f in test_files:
     print(f)
     pred = FlattenedDataStore(config_.body_parts, f)
     model.process(pred)
-    pred.save_file(os.path.join(test_folder, 'optipose', f'{os.path.basename(f).split(".")[0]}_model_{n_pcm}_{n_cm}_{n_heads}.csv'))
+    pred.save_file(os.path.join(output_dir, f'{os.path.basename(f).split(".")[0]}_model_{n_pcm}_{n_cm}_{n_heads}.csv'))
 
 
