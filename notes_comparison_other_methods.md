@@ -96,6 +96,16 @@ It contains the following keys:
 - train_file: path to training file, e.g. '.../_FL2_train_60_20000.csv'
 - test_file: path to evaluation file, e.g. '.../_FL2_val_60_2000_test.csv'
 
+### Small changes to OptiPose code
+
+In `cvkit/pose_estimation/config.py`:
+
+- at the end of the __init__ method of class `PoseEstimationConfig`:
+```python
+        self.train_file = self.data_dictionary['train_file']
+        self.val_file = self.data_dictionary['val_file']
+        self.test_files = self.data_dictionary['test_files']
+```
 
 ### Train
 
