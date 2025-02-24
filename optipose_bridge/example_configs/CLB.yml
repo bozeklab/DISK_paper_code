@@ -18,3 +18,4 @@ Reconstruction:
 
 train_file: '/projects/ag-bozek/france/results_behavior/datasets/INH_CLB_keypoints_1_60_stride0.5/for_optipose/_CLB_train_60_20000.csv'
 val_file: '/projects/ag-bozek/france/results_behavior/datasets/INH_CLB_keypoints_1_60_stride0.5/for_optipose/_CLB_val_60_2000_test.csv'
+val_path: '/projects/ag-bozek/france/results_behavior/datasets/INH_CLB_keypoints_1_60_stride0.5/for_optipose/val'
