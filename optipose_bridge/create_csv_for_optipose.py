@@ -83,35 +83,35 @@ if __name__ == '__main__':
     # min_length = 60
     # n_keypoints = 8
     #
-    # np_dataset_files = [('train', os.path.join(basedir, f'results_behavior/datasets/{dataset_name}/train_fulllength_dataset_w-all-nans.npz')),
-    #                     ('val', os.path.join(basedir, f'results_behavior/datasets/{dataset_name}/val_fulllength_dataset_w-all-nans.npz'))]
+    np_dataset_files = [('train', os.path.join(basedir, f'results_behavior/datasets/{dataset_name}/train_fulllength_dataset_w-all-nans.npz')),
+                        ('val', os.path.join(basedir, f'results_behavior/datasets/{dataset_name}/val_fulllength_dataset_w-all-nans.npz'))]
     output_dir = os.path.join(basedir, f'results_behavior/datasets/{dataset_name}/for_optipose/')
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
 
-    #
-    # for part, f in np_dataset_files:
-    #     count = 0
-    #     if not os.path.exists(os.path.join(output_dir, part)):
-    #         os.mkdir(os.path.join(output_dir, part))
-    #     dataset = np.load(f)
-    #     X = dataset['X']
-    #     columns = []
-    #     for k in range(n_keypoints):
-    #         columns.extend([f'{k}_1', f'{k}_2', f'{k}_3'])
-    #
-    #     print(X.shape)
-    #     for x in tqdm(X):
-    #         # look for "holes" without any nans
-    #         out = find_holes(mask=np.any(np.isnan(x), axis=1)[:, np.newaxis],
-    #                          keypoints=['all'],
-    #                          target_val=False,
-    #                          min_size_hole=min_length)
-    #         for start, length, _ in out:
-    #             df = pd.DataFrame(columns=columns, data=x[start:start+length])
-    #             df.loc[:, 'behaviour'] = np.nan
-    #             df.to_csv(os.path.join(output_dir, part, f'{dataset_name}_{count:03d}.csv'), index=False)
-    #             count += 1
+
+    for part, f in np_dataset_files:
+        count = 0
+        if not os.path.exists(os.path.join(output_dir, part)):
+            os.mkdir(os.path.join(output_dir, part))
+        dataset = np.load(f)
+        X = dataset['X']
+        columns = []
+        for k in range(n_keypoints):
+            columns.extend([f'{k}_1', f'{k}_2', f'{k}_3'])
+
+        print(X.shape)
+        for x in tqdm(X):
+            # look for "holes" without any nans
+            out = find_holes(mask=np.any(np.isnan(x), axis=1)[:, np.newaxis],
+                             keypoints=['all'],
+                             target_val=False,
+                             min_size_hole=min_length)
+            for start, length, _ in out:
+                df = pd.DataFrame(columns=columns, data=x[start:start+length])
+                df.loc[:, 'behaviour'] = np.nan
+                df.to_csv(os.path.join(output_dir, part, f'{dataset_name}_{count:03d}.csv'), index=False)
+                count += 1
 
 
     # test file
