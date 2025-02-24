@@ -38,5 +38,5 @@ if not os.path.exists(output_path):
 for test_file in glob(os.path.join(config_.test_files, '*.csv')):
     pred = FlattenedDataStore(config_.body_parts, test_file)
     model.process(pred)
-    pred.save_file(os.path.join(output_path, f'{os.path.basename(pred.base_file_path)}_model_{n_pcm}_{n_cm}_{n_heads}.csv')
+    pred.save_file(os.path.join(output_path, f'{os.path.basename(pred.base_file_path)}_model_{n_pcm}_{n_cm}_{n_heads}.csv'))
 
