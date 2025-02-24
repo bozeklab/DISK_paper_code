@@ -29,7 +29,7 @@ n_heads = int(eval(n_heads.split('_')[0] if '_' in n_heads else n_heads))
 
 model = SequentialPosturalAutoEncoder(config_, 60, n_pcm, n_cm, n_heads, overlap=overlap, output_dim=output_dims,
                                       weights=model_folder_path)
-model.PRINT = True
+model.PRINT = False
 
 output_path = os.path.join(os.path.dirname(model_folder_path), 'val')
 if not os.path.exists(output_path):

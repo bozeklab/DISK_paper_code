@@ -33,6 +33,9 @@ Additional scripts to reproduce analyses from the DISK paper.
 
 ## Comparison with other published methods
 
+See [Note file](notes_comparison_other_methods.md) for the description of the comparison and step by step pipeline.
+
+Links to external github repositories:
 - [Optipose](https://github.com/mahir1010/OptiPose)
 - [Keypoint-moseq](https://github.com/dattalab/keypoint-moseq)
 - [MarkerBasedImputation](https://github.com/diegoaldarondo/MarkerBasedImputation)
