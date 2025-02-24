@@ -17,4 +17,4 @@ Reconstruction:
   framerate: 60
 
 train_file: '/projects/ag-bozek/france/results_behavior/datasets/Fish_v3_60stride120/for_optipose/_Fish_train_60_20000.csv'
-test_file: '/projects/ag-bozek/france/results_behavior/datasets/Fish_v3_60stride120/for_optipose/_Fish_val_60_2000_test.csv'
+val_file: '/projects/ag-bozek/france/results_behavior/datasets/Fish_v3_60stride120/for_optipose/_Fish_val_60_2000_test.csv'

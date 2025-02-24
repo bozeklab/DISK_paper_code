@@ -53,7 +53,7 @@ metrics = ["mae", build_pck_metric(n_kps, 0.05), build_pck_metric(n_kps, 0.1), b
 dataset = {'input': [], 'label': []}
 vdataset = {'input': [], 'label': []}
 reader = csv.reader(open(config.train_file), delimiter='|')
-reader1 = csv.reader(open(config.test_file), delimiter='|')
+reader1 = csv.reader(open(config.val_file), delimiter='|')
 
 next(reader)
 next(reader1)

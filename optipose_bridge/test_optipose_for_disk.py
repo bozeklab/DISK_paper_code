@@ -31,8 +31,12 @@ model = SequentialPosturalAutoEncoder(config_, 60, n_pcm, n_cm, n_heads, overlap
                                       weights=model_folder_path)
 model.PRINT = True
 
-test_file = config_.test_file
-pred = FlattenedDataStore(config_.body_parts, test_file)
-model.process(pred)
-pred.save_file(f'{pred.base_file_path}_model_{n_pcm}_{n_cm}_{n_heads}.csv')
+output_path = os.path.join(os.path.dirname(model_folder_path), 'test')
+if not os.path.exists(output_path):
+    os.mkdir(output_path)
+
+for test_file in glob(os.path.join(config_.test_files, '*.csv')):
+    pred = FlattenedDataStore(config_.body_parts, test_file)
+    model.process(pred)
+    pred.save_file(os.path.join(output_path, f'{os.path.basename(pred.base_file_path)}_model_{n_pcm}_{n_cm}_{n_heads}.csv')
 

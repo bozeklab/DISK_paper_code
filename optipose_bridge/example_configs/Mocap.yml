@@ -17,4 +17,4 @@ Reconstruction:
   framerate: 60
 
 train_file: '/projects/ag-bozek/france/results_behavior/datasets/Mocap_keypoints_60_stride30_new/for_optipose/_Mocap_train_60_20000.csv'
-test_file: '/projects/ag-bozek/france/results_behavior/datasets/Mocap_keypoints_60_stride30_new/for_optipose/_Mocap_val_60_2000_test.csv'
+val_file: '/projects/ag-bozek/france/results_behavior/datasets/Mocap_keypoints_60_stride30_new/for_optipose/_Mocap_val_60_2000_test.csv'
