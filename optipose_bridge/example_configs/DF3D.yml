@@ -18,3 +18,4 @@ Reconstruction:
 
 train_file: '/projects/ag-bozek/france/results_behavior/datasets/DF3D_keypoints_60stride5_new/for_optipose/_DF3D_train_60_20000.csv'
 val_file: '/projects/ag-bozek/france/results_behavior/datasets/DF3D_keypoints_60stride5_new/for_optipose/_DF3D_val_60_2000_test.csv'
+val_path: '/projects/ag-bozek/france/results_behavior/datasets/DF3D_keypoints_60stride5_new/for_optipose/val'
