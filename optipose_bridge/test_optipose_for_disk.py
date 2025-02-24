@@ -6,11 +6,19 @@ import os
 import sys
 from glob import glob
 
+#######################################################################################################################
+## Awaits 3 arguments:
 print('ARGS', sys.argv)
+
+# dataset name (matching the config file)
 dataset_name = sys.argv[1]
+# overlap between sequences, between 0 and sequence_length
 overlap = int(sys.argv[2])
+# path to model folder
 model_folder_path = sys.argv[3]
-#test_folder = sys.argv[4]
+
+#test_folder = sys.argv[4] # loaded from config file later
+#######################################################################################################################
 
 config_ = PoseEstimationConfig(f'./example_configs/{dataset_name}.yml')
 output_dims = 120

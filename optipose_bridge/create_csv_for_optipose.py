@@ -59,39 +59,29 @@ def find_holes(mask, keypoints, target_val=1, indep=True, min_size_hole=60):
 
 if __name__ == '__main__':
 
-    # dataset_name = 'Fish_v3_60stride120'
-    # min_length = 60
-    # n_keypoints = 6
-
-    dataset_name = 'MABE_task1_60stride60'
+    dataset_name = 'Fish_v3_60stride120'
     min_length = 60
-    n_keypoints = 14
-    _3D = False
+    n_keypoints = 6
     #
     # dataset_name = 'Mocap_keypoints_60_stride30_new'
     # min_length = 60
     # n_keypoints = 20
-    # _3D = True
     #
     # dataset_name = 'DF3D_keypoints_60stride5_new'
     # min_length = 60
     # n_keypoints = 38
-    # _3D = True
     #
     # dataset_name = 'INH_CLB_keypoints_1_60_stride0.5'
     # min_length = 60
     # n_keypoints = 8
-    # _3D = True
     #
     # dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
     # min_length = 60
     # n_keypoints = 20
-    # _3D = True
     #
     # dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
     # min_length = 60
     # n_keypoints = 8
-    # _3D = True
 
     np_dataset_files = [('train', os.path.join(basedir, f'results_behavior/datasets/{dataset_name}/train_fulllength_dataset_w-all-nans.npz')),
                         ('val', os.path.join(basedir, f'results_behavior/datasets/{dataset_name}/val_fulllength_dataset_w-all-nans.npz'))]
@@ -108,10 +98,8 @@ if __name__ == '__main__':
         X = dataset['X']
         columns = []
         for k in range(n_keypoints):
-            if _3D:
-                columns.extend([f'{k}_1', f'{k}_2', f'{k}_3'])
-            else:
-                columns.extend([f'{k}_1', f'{k}_2'])
+            columns.extend([f'{k}_1', f'{k}_2', f'{k}_3'])
+
         print(X.shape)
         for x in tqdm(X):
             # look for "holes" without any nans
@@ -126,17 +114,14 @@ if __name__ == '__main__':
                 count += 1
 
 
-
     # test file
     test_file = os.path.join(basedir, f'results_behavior/datasets/{dataset_name}/test_fulllength_dataset_w-all-nans.npz')
     dataset = np.load(test_file)
     X = dataset['X']
     columns = []
     for k in range(n_keypoints):
-        if _3D:
-            columns.extend([f'{k}_1', f'{k}_2', f'{k}_3'])
-        else:
-            columns.extend([f'{k}_1', f'{k}_2'])
+        columns.extend([f'{k}_1', f'{k}_2', f'{k}_3'])
+
     for i_x, x in tqdm(enumerate(X)):
         df = pd.DataFrame(columns=columns, data=x)
         df.to_csv(os.path.join(output_dir, f'{os.path.basename(test_file).split(".")[0]}_file-{i_x:03d}.csv'), index=False)

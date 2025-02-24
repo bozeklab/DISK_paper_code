@@ -16,7 +16,8 @@ for is_val in [True, False]:
                              ['MABE', 'MABE_task1_60stride60'],
                              ['Mocap', 'Mocap_keypoints_60_stride30_new'],
                              ['DF3D', 'DF3D_keypoints_60stride5_new'],
-                             ['Fish', 'Fish_v3_60stride120']]:
+                             ['Fish', 'Fish_v3_60stride120']
+    ]:
 
         # these .yaml files need to be written for each dataset
         config = PoseEstimationConfig(f'./example_configs/{name}.yml')
