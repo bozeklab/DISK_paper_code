@@ -22,6 +22,7 @@ else:
 
 from preprocess_data import unprocess_data
 from utils import get_mask
+from DISK.utils.utils import read_constant_file
 
 
 def sigmoid(x, x_0, k):
@@ -36,12 +37,15 @@ def sigmoid(x, x_0, k):
     return 1 / (1 + np.exp(-k * (x - x_0)))
 
 
-def merge(save_path, pred_path):
+def merge(save_path, pred_path, dataset_path):
     """Merge the predictions from chunked passes.
 
     :param save_path: Path to .mat file where merged predictions will be saved.
     :param fold_paths: List of paths to chunked predictions to merge.
     """
+    dataset_constant_file = glob(dataset_path, 'constants.py')[0]
+    dataset_constants = read_constant_file(dataset_constant_file)
+    divider = dataset_constants.DIVIDER
 
     markers = None
     bad_framesF = None
@@ -115,7 +119,7 @@ def merge(save_path, pred_path):
 
     # markers are already saved before processing, no need to unprocess them
     # markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
-    divider = len(marker_stds)
+    divider =
     predsF = unprocess_data(predsF, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
     predsR = unprocess_data(predsR, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
 

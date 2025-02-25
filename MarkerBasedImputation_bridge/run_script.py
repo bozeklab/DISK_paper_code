@@ -199,7 +199,7 @@ if __name__ == '__main__':
     save_path = os.path.join(save_path, f'{os.path.basename(short_seq_datafile).split(".")[0]}_merged')
     if not os.path.exists(save_path):
         os.mkdir(save_path)
-    merge(save_path, pred_paths)
+    merge(save_path, pred_paths, DATASETPATH)
 
     t_after_merge = time()
     logging.info(f'Time predict: {t_after_merge - t_after_predict}')
@@ -222,4 +222,4 @@ if __name__ == '__main__':
                                 model=None)
 
         pred_paths = glob(os.path.join(save_path_tmp, f'{os.path.basename(data_file).split(".csv")[0]}*.mat'))
-        merge(save_path_tmp, pred_paths)
+        merge(save_path_tmp, pred_paths, DATASETPATH)
