@@ -124,8 +124,8 @@ if __name__ == '__main__':
     ## Fish
     BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_Fish/")
     DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/Fish_v3_60stride120')
-    front_point = ['0', '3']
-    middle_point = ['2', '5']
+    front_point = ['fish1_head', 'fish2_head']
+    middle_point = ['fish1_tail', 'fish2_tail']
     TRAINSTRIDE = 50  # FL2 is a smaller dataset than they had (25 million frames for training)
 
     short_seq_datafile = os.path.join(basedir,
