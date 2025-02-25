@@ -119,7 +119,6 @@ def merge(save_path, pred_path, dataset_path):
 
     # markers are already saved before processing, no need to unprocess them
     # markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
-    divider =
     predsF = unprocess_data(predsF, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
     predsR = unprocess_data(predsR, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
 
