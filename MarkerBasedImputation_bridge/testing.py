@@ -38,6 +38,7 @@ def open_data_csv(filepath, dataset_path, stride=20,
     coords = data['X']
 
     transformed_coords, rot_angle, mean_position = preprocess_data(coords, dataset_constants.KEYPOINTS,
+                                                                   dataset_constants.DIVIDER,
                                                                    middle_point=middle_point,
                                                                    front_point=front_point,
                                                                    exclude_value=exclude_value)

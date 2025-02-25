@@ -83,12 +83,14 @@ def open_data_csv(filepath, dataset_path, stride=20, front_point='', middle_poin
     if ground_truth is not None:
         processed_ground_truth, rot_angle_GT, mean_position_GT = preprocess_data(ground_truth,
                                                                                  dataset_constants.KEYPOINTS,
+                                                                                 dataset_constants.DIVIDER,
                                                                                  middle_point=middle_point,
                                                                                  front_point=front_point,
                                                                                  exclude_value=exclude_value)
 
     processed_X, rot_angle, mean_position = preprocess_data(input,
                                                                   dataset_constants.KEYPOINTS,
+                                                            dataset_constants.DIVIDER,
                                                                   middle_point=middle_point,
                                                                   front_point=front_point,
                                                                   exclude_value=exclude_value)

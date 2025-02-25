@@ -55,6 +55,7 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
 
     # here we can preprocess the data without precautions, because no missing data in training scenario
     transformed_coords, rot_angle, mean_position = preprocess_data(new_coords, bodyparts,
+                                                                   dataset_constants.DIVIDER,
                                                                     middle_point=middle_point,
                                                                     front_point=front_point,
                                                                     exclude_value=exclude_value)
