@@ -85,28 +85,28 @@ if __name__ == '__main__':
     #                                        'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
     ## CLB
-    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_CLB/")
-    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_CLB_keypoints_1_60_stride0.5')
-    # front_point = ['left_coord', 'right_coord']
-    # middle_point = ['left_hip', 'right_hip']
-    # TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
-    #
-    # short_seq_datafile = os.path.join(basedir,
-    #                                   'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
-    # long_seq_datafiles = glob(os.path.join(basedir,
-    #                                        'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
-
-    ## MABe
-    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_MABe/")
-    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/MABE_task1_60stride60')
-    front_point = ['kp3_animal0', 'kp3_animal1']
-    middle_point = ['kp6_animal0', 'kp6_animal1']
+    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_CLB/")
+    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_CLB_keypoints_1_60_stride0.5')
+    front_point = ['left_coord', 'right_coord']
+    middle_point = ['left_hip', 'right_hip']
     TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
 
     short_seq_datafile = os.path.join(basedir,
-                                      'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+                                      'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
     long_seq_datafiles = glob(os.path.join(basedir,
-                                           'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+                                           'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+
+    ## MABe
+    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_MABe/")
+    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/MABE_task1_60stride60')
+    # front_point = ['kp3_animal0', 'kp3_animal1']
+    # middle_point = ['kp6_animal0', 'kp6_animal1']
+    # TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
+    #
+    # short_seq_datafile = os.path.join(basedir,
+    #                                   'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+    # long_seq_datafiles = glob(os.path.join(basedir,
+    #                                        'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
     ###################################################################################################################
 

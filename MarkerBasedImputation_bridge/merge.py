@@ -43,7 +43,7 @@ def merge(save_path, pred_path, dataset_path):
     :param save_path: Path to .mat file where merged predictions will be saved.
     :param fold_paths: List of paths to chunked predictions to merge.
     """
-    dataset_constant_file = glob(dataset_path, 'constants.py')[0]
+    dataset_constant_file = glob(os.path.join(dataset_path, 'constants.py'))[0]
     dataset_constants = read_constant_file(dataset_constant_file)
     divider = dataset_constants.DIVIDER
 
