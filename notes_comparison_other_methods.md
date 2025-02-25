@@ -58,7 +58,9 @@ I kept the other (hyper)parameters similar to the original ones.
 
 To build the ensemble model, I also copied the original code.
 
+### Script
 
+The `run_script.py` in `MarkerBasedImputation_bridge` is running all the steps from the 10 models training to the ensemble model and test.
 
 ## Optipose
 

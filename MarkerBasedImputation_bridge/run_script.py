@@ -44,25 +44,54 @@ def write_logging():
                  # f'errordiff_th = {errordiff_th}\n'
                  f'device = {device}\n')
 
+def check_exist(*args):
+    print(args)
+    for el in args:
+        if type(el) == str:
+            if not os.path.exists(el):
+                if '.csv' in el:
+                    raise ValueError(f'File {el} not found')
+                else:
+                    os.mkdir(el)
+        elif type(el) == list:
+            check_exist(*el)
+    return
 
 if __name__ == '__main__':
-    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DANNCE/")
+    ###################################################################################################################
+    ## PARAMETERS TO CHANGE FOR THE RUN
+
+    ## FL2
     # BASEFOLDER = os.path.join('/home/france/Documents', "MarkerBasedImputation_FL2")
-    if not os.path.exists(BASEFOLDER):
-        os.mkdir(BASEFOLDER)
-    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
     # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
-    # DATASETPATH = os.path.join('/home/france/Documents', 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
-    front_point = 'SpineF'# ['left_coord', 'right_coord'] #'SpineF'
-    middle_point = 'SpineM' #['left_hip', 'right_hip'] #'SpineM'
+    # front_point = ['left_coord', 'right_coord']
+    # middle_point = ['left_hip', 'right_hip']
+    # TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
+    # data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+    # short_seq_datafile =
+    # long_seq_datafile_pattern = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')
+
+    ## DANNCE
+    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DANNCE/")
+    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
+    front_point = 'SpineF'
+    middle_point = 'SpineM'
+    TRAINSTRIDE = 5 # FL2 is a smaller dataset than they had (25 million frames for training)
+
+    short_seq_datafile = os.path.join(basedir, 'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+    long_seq_datafiles = glob(os.path.join(basedir,
+                                           'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+    ###################################################################################################################
+
+    check_exist(BASEFOLDER, DATASETPATH, short_seq_datafile, long_seq_datafiles)
+
     train_file = os.path.join(DATASETPATH, 'train_dataset_w-0-nans.npz')
     val_file = os.path.join(DATASETPATH, 'val_dataset_w-0-nans.npz')
     MODELFOLDER = os.path.join(BASEFOLDER, "models")
 
     # Training
     NMODELS = 10
-    TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
-    EPOCHS = 30 #30
+    EPOCHS = 30
 
     # Imputation
     impute_stride = 1 #5
@@ -81,19 +110,19 @@ if __name__ == '__main__':
     write_logging()
 
     # TRAINING
-    # for _ in range(NMODELS):
-    #     train(train_file, val_file, front_point=front_point, middle_point=middle_point,
-    #           base_output_path=MODELFOLDER, run_name=None,
-    #           data_name=None, net_name="wave_net", clean=False, input_length=9,
-    #           output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
-    #           val_fraction=0.15, only_moving_frames=False, n_filters=512,
-    #           filter_width=2, layers_per_level=3, n_dilations=None,
-    #           latent_dim=750, epochs=EPOCHS, batch_size=1000,
-    #           lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
-    #           val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
-    #           reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
-    #           reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
-    #
+    for _ in range(NMODELS):
+        train(train_file, val_file, front_point=front_point, middle_point=middle_point,
+              base_output_path=MODELFOLDER, run_name=None,
+              data_name=None, net_name="wave_net", clean=False, input_length=9,
+              output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
+              val_fraction=0.15, only_moving_frames=False, n_filters=512,
+              filter_width=2, layers_per_level=3, n_dilations=None,
+              latent_dim=750, epochs=EPOCHS, batch_size=1000,
+              lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
+              val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
+              reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
+              reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
+
     t_after_training = time()
     logging.info(f'Time training: {t_after_training - t_after_import}')
 
@@ -111,30 +140,28 @@ if __name__ == '__main__':
     # EVALUATION
 
     # ON DATA LIKE SEEN IN TRAINING
-    # data_file = os.path.join(DATASETPATH, 'val_dataset_w-0-nans.npz')
-    data_file = os.path.join(DATASETPATH, 'test_dataset_w-0-nans.npz')
-    logging.info(f'datafile = {data_file}')
-    testing_single_model_like_training(data_file, front_point=front_point, middle_point=middle_point,
+    test_file_like_training = os.path.join(DATASETPATH, 'test_dataset_w-0-nans.npz')
+    logging.info(f'datafile = {test_file_like_training}')
+    testing_single_model_like_training(test_file_like_training, front_point=front_point, middle_point=middle_point,
                     model_name=models[0],
                     net_name="wave_net", clean=False, input_length=9,
                     output_length=1, stride=1,
                     batch_size=1000,
                     lossfunc='mean_squared_error',
                     device=torch.device('cpu'))
-    testing_single_model_like_predict(models[0], data_file, DATASETPATH,
+    testing_single_model_like_predict(models[0], test_file_like_training, DATASETPATH,
             save_path = os.path.dirname(models[0]), front_point=front_point, middle_point=middle_point,
             model = None, device = torch.device('cpu'))
-    testing_ensemble_model_like_predict(model_ensemble_path, data_file, DATASETPATH,
+    testing_ensemble_model_like_predict(model_ensemble_path, test_file_like_training, DATASETPATH,
             save_path = save_path, front_point=front_point, middle_point=middle_point,
             model = None, device = torch.device('cpu'))
 
     # ON SHORT SEQUENCES WITH GROUND TRUTH
-    # data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
-    data_file = os.path.join(basedir, 'results_behavior/outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/test_repeat-0.csv')
-    logging.info(f'datafile = {data_file}')
+
+    logging.info(f'datafile = {short_seq_datafile}')
 
     for pass_direction in ['forward', 'reverse']:
-        predict_single_pass(model_ensemble_path, data_file, DATASETPATH, pass_direction,
+        predict_single_pass(model_ensemble_path, short_seq_datafile, DATASETPATH, pass_direction,
                             save_path=save_path, stride=impute_stride,
                             model=None, front_point=front_point, middle_point=middle_point)
 
@@ -142,7 +169,7 @@ if __name__ == '__main__':
     logging.info(f'Time predict: {t_after_predict - t_after_training}')
 
     pred_paths = glob(os.path.join(save_path, 'test_repeat-0*.mat'))
-    save_path = os.path.join(save_path, f'{os.path.basename(data_file).split(".")[0]}_merged')
+    save_path = os.path.join(save_path, f'{os.path.basename(short_seq_datafile).split(".")[0]}_merged')
     if not os.path.exists(save_path):
         os.mkdir(save_path)
     merge(save_path, pred_paths)
@@ -152,10 +179,8 @@ if __name__ == '__main__':
 
 
     # ON ORIGINAL FILES FOR REAL-SCENARIO IMPUTATION
-    # for data_file in glob(os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')):
-    for data_file in glob(os.path.join(basedir,
-                                           'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new/for_optipose/test_fulllength_dataset_w-all-nans_file-*.csv')):
-        if 'model_10_5_1' in data_file:
+    for data_file in long_seq_datafiles:
+        if 'model_10_5_1' in data_file or 'model_15_5_1' in data_file:
             continue
         logging.info(f'datafile = {data_file}')
 
