@@ -371,9 +371,8 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     # plot some examples of predictions on the validation set
     items = np.random.randint(0, X.shape[0], 10)
     for item in items:
-        fig, axes = plt.subplots(8, dataset_constants.DIVIDER, figsize=(10, 10), sharey='col')
+        fig, axes = plt.subplots(len(dataset_constants.KEYPOINTS), dataset_constants.DIVIDER, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
-        print(X.detach().cpu().numpy().shape, dataset_constants.NUM_FEATURES, item)
         for i in range(dataset_constants.NUM_FEATURES):
             axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
             axes[i].plot([9], list_y[-1][item, :, i], 'o')

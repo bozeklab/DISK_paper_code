@@ -191,7 +191,7 @@ def testing_single_model_like_training(val_file, *, front_point='', middle_point
 
     # plot some examples of prediction
     for item in np.random.randint(0, X.shape[0], 10):
-        fig, axes = plt.subplots(8, dataset_constants.DIVIDER, figsize=(10, 10), sharey='col')
+        fig, axes = plt.subplots(len(dataset_constants.KEYPOINTS), dataset_constants.DIVIDER, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
         for i in range(dataset_constants.NUM_FEATURES):
             axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
