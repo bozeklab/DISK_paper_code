@@ -373,6 +373,7 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     for item in items:
         fig, axes = plt.subplots(8, dataset_constants.DIVIDER, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
+        print(X.shape, dataset_constants.NUM_FEATURES)
         for i in range(dataset_constants.NUM_FEATURES):
             axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
             axes[i].plot([9], list_y[-1][item, :, i], 'o')
