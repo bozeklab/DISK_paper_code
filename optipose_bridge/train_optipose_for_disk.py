@@ -2,7 +2,7 @@
 # Usage python model_train_df3d.py n_cm k n_heads
 
 import csv
-csv.field_size_limit(1e9)
+csv.field_size_limit(1_000_000_000)
 import json
 import pickle
 import os
