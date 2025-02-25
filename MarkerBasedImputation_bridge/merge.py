@@ -115,11 +115,12 @@ def merge(save_path, pred_path):
 
     # markers are already saved before processing, no need to unprocess them
     # markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
-    predsF = unprocess_data(predsF, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
-    predsR = unprocess_data(predsR, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
+    divider = len(marker_stds)
+    predsF = unprocess_data(predsF, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value, divider)
+    predsR = unprocess_data(predsR, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value, divider)
 
     for item in items:
-        fig, axes = plt.subplots(predsF.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
+        fig, axes = plt.subplots(predsF.shape[-1]//divider, divider, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
         for i in range(predsF.shape[-1]):
             x = markers[item, :, i]
@@ -127,12 +128,12 @@ def merge(save_path, pred_path):
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
-            if i%3 == 0:
-                axes[i].set_ylabel(marker_names[i//3])
+            if i%divider == 0:
+                axes[i].set_ylabel(marker_names[i//divider])
         plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}_after_unprocess.png'))
         plt.close()
 
-        fig, axes = plt.subplots(predsR.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
+        fig, axes = plt.subplots(predsR.shape[-1]//divider, divider, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
         for i in range(predsR.shape[-1]):
             x = markers[item, :, i]
@@ -140,18 +141,18 @@ def merge(save_path, pred_path):
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_framesR[item, :, i].astype(bool)], predsR[item, bad_framesF[item, :, i].astype(bool), i], 'x')
-            if i%3 == 0:
-                axes[i].set_ylabel(marker_names[i//3])
+            if i%divider == 0:
+                axes[i].set_ylabel(marker_names[i//divider])
         plt.savefig(os.path.join(save_path, f'single_predR_pred_item-{item}_after_unprocess.png'))
         plt.close()
 
     # This is not necessarily all the error frames from
     # multiple_predict_recording_with_replacement, but if they overlap,
     # we would just take the weighted average.
-    bad_frames = np.zeros((bad_framesF.shape[0], bad_framesF.shape[1], np.round(bad_framesF.shape[2] / 3).astype('int32')))
+    bad_frames = np.zeros((bad_framesF.shape[0], bad_framesF.shape[1], np.round(bad_framesF.shape[2] / divider).astype('int32')))
     # 3 because 3D?
     for i in range(bad_frames.shape[2]):
-        bad_frames[..., i] = np.any(bad_framesF[..., i * 3: i * 3 + 3] & bad_framesR[..., i * 3: i * 3 + 3], axis=2)
+        bad_frames[..., i] = np.any(bad_framesF[..., i * divider: i * divider + divider] & bad_framesR[..., i * divider: i * divider + divider], axis=2)
 
     # Compute the weighted average of the forward and reverse predictions using a logistic function
     logging.info('Computing weighted average')
@@ -166,20 +167,20 @@ def merge(save_path, pred_path):
             CC = measure.label(is_bad[:, kp], background=0)
             num_CC = len(np.unique(CC)) - 1
             # initialize to forward prediction
-            preds[sample, ..., 3 * kp: 3 * kp + 3] = predsF[sample, ..., 3 * kp: 3 * kp +3]
+            preds[sample, ..., divider * kp: divider * kp + divider] = predsF[sample, ..., divider * kp: divider * kp +divider]
             for j in range(num_CC):
                 time_ids = np.where(CC == j + 1)[0]
                 length_CC = len(time_ids)
                 x_0 = np.round(length_CC / 2)
                 weightR = sigmoid(np.arange(length_CC), x_0, k)[:, np.newaxis]
                 weightF = 1 - weightR
-                preds[sample, time_ids, kp * 3: kp * 3 + 3] = predsF[sample, time_ids, kp * 3: kp * 3 + 3] * weightF + predsR[sample, time_ids, kp * 3: kp * 3 + 3] * weightR
-                member_stds[sample, time_ids, kp * 3: kp * 3 + 3] = np.sqrt(member_stdsF[sample, time_ids, kp * 3: kp * 3 + 3]**2 * weightF + member_stdsR[sample, time_ids, kp * 3: kp * 3 + 3]**2 * weightR)
+                preds[sample, time_ids, kp * divider: kp * divider + divider] = predsF[sample, time_ids, kp * divider: kp * divider + divider] * weightF + predsR[sample, time_ids, kp * divider: kp * divider + divider] * weightR
+                member_stds[sample, time_ids, kp * divider: kp * divider + divider] = np.sqrt(member_stdsF[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightF + member_stdsR[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightR)
     elapsed = datetime.datetime.now() - start
     logging.info(f'Computing average took: {elapsed} seconds')
 
     for item in items:
-        fig, axes = plt.subplots(preds.shape[-1]//3, 3, figsize=(10, 10), sharey='col')
+        fig, axes = plt.subplots(preds.shape[-1]//divider, divider, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
         for i in range(preds.shape[-1]):
             x = markers[item, :, i]
@@ -187,8 +188,8 @@ def merge(save_path, pred_path):
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
             axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], preds[item, bad_framesF[item, :, i].astype(bool), i], 'x')
-            if i%3 == 0:
-                axes[i].set_ylabel(marker_names[i//3])
+            if i%divider == 0:
+                axes[i].set_ylabel(marker_names[i//divider])
         plt.savefig(os.path.join(save_path, f'single_predMerged_pred_item-{item}_after_unprocess.png'))
         plt.close()
 
@@ -204,7 +205,7 @@ def merge(save_path, pred_path):
             f.create_dataset("member_stds", data=member_stds) # should be 0 where no prediction, else a float giving the divergence of the ensemble models (std)
 
         # save it in the same csv format as the other methods, so it is easier to compare
-        cols = [f'{i//3}_{i%3 + 1}' for i in range(preds.shape[2])]
+        cols = [f'{i//divider}_{i%divider + 1}' for i in range(preds.shape[2])]
         for i_sample in range(preds.shape[0]):
             output_file_path = os.path.join(save_path, f'{os.path.basename(original_data_file).split(".csv")[0]}_sample{i_sample}_MBI.csv')
             df = pd.DataFrame(columns=cols, data = preds[i_sample])

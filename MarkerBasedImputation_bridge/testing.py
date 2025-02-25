@@ -56,7 +56,7 @@ def open_data_csv(filepath, dataset_path, stride=20,
     ground_truth = np.vstack(
         [[v[i: i + input_length + output_length][np.newaxis] for i in idx] for v in z_score_coords])
     ground_truth = ground_truth.reshape((ground_truth.shape[0], input_length + output_length, n_keypoints, -1))[...,
-                    :3].reshape((ground_truth.shape[0], input_length + output_length, -1))
+                    :dataset_constants.DIVIDER].reshape((ground_truth.shape[0], input_length + output_length, -1))
 
     transforms_dict = {'rot_angle': rot_angle,
                        'mean_position': mean_position,
@@ -68,7 +68,7 @@ def open_data_csv(filepath, dataset_path, stride=20,
 
 
 
-def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=None, markers_to_fix=None,
+def predict_markers(model, dict_model, X, bad_frames, keypoints, divider, ground_truth=None, markers_to_fix=None,
                     error_diff_thresh=.25, outlier_thresh=3, device=torch.device('cpu'), save_path='',
                     save_prefix='',
                     exclude_value=-4668):
@@ -140,7 +140,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
 
         if len(np.where(startpoint[mask] > 0)[0]) > 0:
             for item in np.random.choice(np.where(startpoint[mask] > 0)[0], 1):
-                fig, axes = plt.subplots(pred.shape[-1] // 3, 3, figsize=(10, 10), sharey='col')
+                fig, axes = plt.subplots(pred.shape[-1] // divider, divider, figsize=(10, 10), sharey='col')
                 axes = axes.flatten()
                 for i in range(pred.shape[-1]):
                     t = np.arange(9)
@@ -152,8 +152,8 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
                         axes[i].plot(9, pred[item, 0, i], 'v', c= 'red', label='pred wo missing data')
                     else:
                         axes[i].plot(9, pred[item, 0, i], 'v', c='cyan', label='pred w missing data')
-                    if i%3 == 0:
-                        axes[i].set_ylabel(keypoints[i//3])
+                    if i%divider == 0:
+                        axes[i].set_ylabel(keypoints[i//divider])
                     if i==2:
                         axes[i].legend()
                 if ground_truth is not None:
@@ -192,7 +192,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
 
     for item in np.random.choice(preds.shape[0], 10):
 
-        fig, axes = plt.subplots(pred.shape[-1]//3, 3, figsize=(10, 10), sharey='col', sharex='all')
+        fig, axes = plt.subplots(pred.shape[-1]//divider, divider, figsize=(10, 10), sharey='col', sharex='all')
         axes = axes.flatten()
         for i in range(pred.shape[-1]):
             t = np.arange(X.shape[1])
@@ -265,7 +265,8 @@ def testing_single_model_like_predict(model_path, data_file, dataset_path, *,
             os.mkdir(save_path_direction)
 
     preds, bad_frames, transform_dict = predict_markers(model, dict_training, markers, bad_frames,
-                                                        dataset_constants.KEYPOINTS, ground_truth,
+                                                        dataset_constants.KEYPOINTS,
+                                                        dataset_constants.DIVIDER, ground_truth,
                                                         save_path=save_path_direction,
                                                         save_prefix='testing_single_model_like_predict',
                                                         exclude_value=exclude_value)
@@ -322,7 +323,9 @@ def testing_ensemble_model_like_predict(model_path, data_file, dataset_path, *,
             os.mkdir(save_path_direction)
 
     preds, bad_frames, transform_dict = predict_markers(model, dict_training, markers, bad_frames,
-                                                        dataset_constants.KEYPOINTS, ground_truth,
+                                                        dataset_constants.KEYPOINTS,
+                                                        dataset_constants.DIVIDER,
+                                                        ground_truth,
                                                         save_path=save_path_direction,
                                                         save_prefix='testing_ensemble_model_like_predict',
                                                         exclude_value=exclude_value)

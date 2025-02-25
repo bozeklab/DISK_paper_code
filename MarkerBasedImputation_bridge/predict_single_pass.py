@@ -28,6 +28,7 @@ def open_data_csv(filepath, dataset_path, stride=20, front_point='', middle_poin
 
     dataset_constant_file = glob(os.path.join(dataset_path, 'constants.py'))[0]
     dataset_constants = read_constant_file(dataset_constant_file)
+    divider = dataset_constants.DIVIDER
     n_keypoints = len(dataset_constants.KEYPOINTS)
     if 'npz' in filepath:
         exclude_value = np.nan
@@ -49,14 +50,14 @@ def open_data_csv(filepath, dataset_path, stride=20, front_point='', middle_poin
 
         idx = np.arange(0, coords.shape[1] - (input_length + output_length), stride)
         input = np.vstack([[v[i: i + input_length + 1] for i in idx] for v in coords])
-        input = input.reshape((input.shape[0], input_length + output_length, n_keypoints, -1))[..., :3].reshape(
+        input = input.reshape((input.shape[0], input_length + output_length, n_keypoints, -1))[..., :divider].reshape(
             (input.shape[0], input_length + output_length, -1))
         input[:, -1] = exclude_value
 
         ground_truth = np.vstack(
             [[v[i: i + input_length + output_length][np.newaxis] for i in idx] for v in coords])
         ground_truth = ground_truth.reshape((ground_truth.shape[0], input_length + output_length, n_keypoints, -1))[...,
-                        :3].reshape((ground_truth.shape[0], input_length + output_length, -1))
+                        :divider].reshape((ground_truth.shape[0], input_length + output_length, -1))
 
     else:
         if 'repeat' in os.path.basename(filepath):
@@ -111,7 +112,7 @@ def open_data_csv(filepath, dataset_path, stride=20, front_point='', middle_poin
     return data, dataset_constants, exclude_value, transforms_dict
 
 
-def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=None,
+def predict_markers(model, dict_model, X, bad_frames, keypoints, divider, ground_truth=None,
                     device=torch.device('cpu'), save_path='',
                     exclude_value=-4668):
     """Imputes the position of missing markers.
@@ -182,7 +183,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
             for item in np.random.choice(len(startpoint), 5):
                 if startpoint[item] > 0:
                     index_inside_mask = np.cumsum(mask[:item])[-1] if item > 0 else 0
-                    fig, axes = plt.subplots(pred.shape[-1] // 3, 3, figsize=(10, 10), sharey='col')
+                    fig, axes = plt.subplots(pred.shape[-1] // divider, divider, figsize=(10, 10), sharey='col')
                     axes = axes.flatten()
                     for i in range(pred.shape[-1]):
                         t = np.arange(9)
@@ -197,8 +198,8 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
                             axes[i].plot(9, pred[index_inside_mask, 0, i], 'v', c= 'red', label='pred wo missing data')
                         else:
                             axes[i].plot(9, pred[index_inside_mask, 0, i], 'v', c='cyan', label='pred w missing data')
-                        if i%3 == 0:
-                            axes[i].set_ylabel(keypoints[i//3])
+                        if i%divider == 0:
+                            axes[i].set_ylabel(keypoints[i//divider])
                         if i==2:
                             axes[i].legend()
                     if ground_truth is not None:
@@ -214,7 +215,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
         member_std = np.nanstd(member_pred, axis=1)
 
         if np.all(np.isnan(member_std)):
-            logging.info(f'NANs: {bad_frames[mask, next_frame_id[mask]][::3].shape}, {np.any(bad_frames[mask, next_frame_id[mask]][::3], axis=-1)}')
+            logging.info(f'NANs: {bad_frames[mask, next_frame_id[mask]][::divider].shape}, {np.any(bad_frames[mask, next_frame_id[mask]][::divider], axis=-1)}')
 
         for item in np.where(mask)[0]:
             index_inside_mask = np.cumsum(mask[:item])[-1] if item > 0 else 0
@@ -260,7 +261,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, ground_truth=No
 
     for item in np.random.choice(preds.shape[0], 10):
         figsize0 = 10 if X.shape[1] < 100 else 30
-        fig, axes = plt.subplots(pred.shape[-1]//3, 3, figsize=(figsize0, 10), sharey='col', sharex='all')
+        fig, axes = plt.subplots(pred.shape[-1]//divider, divider, figsize=(figsize0, 10), sharey='col', sharex='all')
         axes = axes.flatten()
         for i in range(pred.shape[-1]):
             t = np.arange(X.shape[1])
@@ -345,7 +346,9 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
             os.mkdir(save_path_direction)
 
     preds, bad_frames, member_stds = predict_markers(model, dict_training, markers, bad_frames,
-                                                            dataset_constants.KEYPOINTS, ground_truth,
+                                                            dataset_constants.KEYPOINTS,
+                                                     dataset_constants.DIVIDER,
+                                                     ground_truth,
                                                             # markers_to_fix=markers_to_fix,
                                                             # error_diff_thresh=error_diff_thresh,
                                                             save_path=save_path_direction,

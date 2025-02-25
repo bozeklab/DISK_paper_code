@@ -8,17 +8,17 @@ from scipy.signal import medfilt
 from utils import get_mask
 
 
-def get_ref_point(X, marker_names, point):
+def get_ref_point(X, marker_names, point, divider):
     if type(point) == list:
         if len(point) > 1:
             point_index = [marker_names.index(kp) for kp in point]
-            return np.mean([X[:, :, p * 3: p * 3 + 3] for p in point_index], axis=0)
+            return np.mean([X[:, :, p * divider: p * divider + divider] for p in point_index], axis=0)
         else:
             point_index = marker_names.index(point[0])
-            return X[:, :, point_index * 3: point_index * 3 + 3]
+            return X[:, :, point_index * divider: point_index * divider + divider]
     elif type(point) == str:
         point_index = marker_names.index(point)
-        return X[:, :, point_index * 3: point_index * 3 + 3]
+        return X[:, :, point_index * divider: point_index * divider + divider]
 
     else:
         raise ValueError(f'point is expected to be either a list or a string, got type {type(point)} with value {point}')
@@ -68,7 +68,7 @@ def apply_z_score(input, marker_means, marker_stds, exclude_value=-4668):
     return z_score_input
 
 
-def preprocess_data(X, marker_names, front_point, middle_point, exclude_value):
+def preprocess_data(X, marker_names, divider, front_point, middle_point, exclude_value):
     """
     Preprocess frame by frame for every sample
 
@@ -89,17 +89,20 @@ def preprocess_data(X, marker_names, front_point, middle_point, exclude_value):
 
     # 2. egocentric frame transformation
     ## 2.1 get the marker rotation matrix
-    X_front_point = get_ref_point(filt_X, marker_names, front_point)
-    X_middle_point = get_ref_point(filt_X, marker_names, middle_point)
+    X_front_point = get_ref_point(filt_X, marker_names, front_point, divider)
+    X_middle_point = get_ref_point(filt_X, marker_names, middle_point, divider)
 
     # rot_angle = np.arctan2( - (X_front_point[..., 1] - X_middle_point[..., 1]),
     #                           (X_front_point[..., 0] - X_middle_point[..., 0]))
-    first_axis = np.array([1, 0, 0])
+    if divider == 3:
+        first_axis = np.array([1, 0, 0])
+    else:
+        first_axis = np.array([1, 0])
     vectx = X_front_point[..., 0] - X_middle_point[..., 0], X_front_point[..., 1] - X_middle_point[..., 1]
     rot_angle = np.arctan2(first_axis[1], first_axis[0]) - np.arctan2(vectx[1], vectx[0])
 
     ## 2.2 subtract the mean and rotate
-    ego_X = filt_X.reshape(filt_X.shape[0], filt_X.shape[1], len(marker_names), 3) - X_middle_point[:, :, np.newaxis]
+    ego_X = filt_X.reshape(filt_X.shape[0], filt_X.shape[1], len(marker_names), divider) - X_middle_point[:, :, np.newaxis]
     rot_X = np.copy(ego_X)
 
     # modify the x coordinates
@@ -112,7 +115,7 @@ def preprocess_data(X, marker_names, front_point, middle_point, exclude_value):
 
     return rot_X, rot_angle, X_middle_point
 
-def apply_transform(X, rot_angle, mean_position, marker_means, marker_stds, exclude_value):
+def apply_transform(X, divider, rot_angle, mean_position, marker_means, marker_stds, exclude_value):
     X[get_mask(X, exclude_value)] = np.nan
     filt_X = np.zeros_like(X)
     for i in range(X.shape[0]):
@@ -122,7 +125,7 @@ def apply_transform(X, rot_angle, mean_position, marker_means, marker_stds, excl
 
     # 2. egocentric frame transformation
     ## 2.2 subtract the mean and rotate
-    ego_X = filt_X.reshape(filt_X.shape[0], filt_X.shape[1], -1, 3) - mean_position[:, :, np.newaxis]
+    ego_X = filt_X.reshape(filt_X.shape[0], filt_X.shape[1], -1, divider) - mean_position[:, :, np.newaxis]
 
     rot_X = np.copy(ego_X)
     # modify the x coordinates
@@ -150,7 +153,7 @@ def fill_nan_forward(arr):
         raise ValueError(f'support only arr with 2 and 3 dimensions')
     return out
 
-def unprocess_data(X, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value):
+def unprocess_data(X, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value):
     # undo the z-score
     if np.any(np.isnan(marker_means)):
         marker_means = fill_nan_forward(marker_means)
@@ -166,7 +169,7 @@ def unprocess_data(X, rot_angle, mean_position, marker_means, marker_stds, marke
 
     # undo the z-scoring
     unz_X = X * marker_stds + marker_means
-    unz_X = unz_X.reshape(X.shape[0], X.shape[1], len(marker_names), 3)
+    unz_X = unz_X.reshape(X.shape[0], X.shape[1], len(marker_names), divider)
     # unz_X = np.copy(X).reshape(X.shape[0], X.shape[1], len(marker_names), 3)
 
     # undo the rotation

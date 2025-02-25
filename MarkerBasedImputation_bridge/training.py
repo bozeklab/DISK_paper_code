@@ -66,6 +66,7 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
 
     dataset_constant_file = glob(os.path.join(os.path.dirname(filepath), 'constants.py'))[0]
     dataset_constants = read_constant_file(dataset_constant_file)
+    divider = dataset_constants.DIVIDER
 
     data = np.load(filepath)
 
@@ -85,7 +86,7 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
     exclude_value = np.nan
 
     # here we can preprocess the data without precautions, because no missing data in training scenario
-    transformed_coords, rot_angle, mean_position = preprocess_data(new_coords, bodyparts,
+    transformed_coords, rot_angle, mean_position = preprocess_data(new_coords, bodyparts, dataset_constants.DIVIDER,
                                                                         middle_point=middle_point,
                                                                         front_point=front_point,
                                                                    exclude_value=exclude_value)
@@ -115,10 +116,10 @@ def _disk_loader(filepath, input_length=9, output_length=1, stride=1, middle_poi
     ## reshape the data to match input_length, output_length
     idx = np.arange(0, z_score_coords.shape[1] - (input_length + output_length), stride)
     input_coords = np.vstack([[v[i: i + input_length][np.newaxis] for i in idx] for v in z_score_coords])
-    input_coords = input_coords.reshape((input_coords.shape[0], input_length, len(bodyparts), -1))[..., :3].reshape((input_coords.shape[0], input_length, -1))
+    input_coords = input_coords.reshape((input_coords.shape[0], input_length, len(bodyparts), -1))[..., :divider].reshape((input_coords.shape[0], input_length, -1))
 
     output_coords = np.vstack([[v[i + input_length: i + input_length + output_length][np.newaxis] for i in idx] for v in z_score_coords])
-    output_coords = output_coords.reshape((output_coords.shape[0], output_length, len(bodyparts), -1))[..., :3].reshape((output_coords.shape[0], output_length, -1))
+    output_coords = output_coords.reshape((output_coords.shape[0], output_length, len(bodyparts), -1))[..., :divider].reshape((output_coords.shape[0], output_length, -1))
 
     return input_coords.astype(np.float32), output_coords.astype(np.float32), dataset_constants
 
@@ -370,9 +371,9 @@ def train(train_file, val_file, *, front_point='', middle_point='',
     # plot some examples of predictions on the validation set
     items = np.random.randint(0, X.shape[0], 10)
     for item in items:
-        fig, axes = plt.subplots(8, 3, figsize=(10, 10), sharey='col')
+        fig, axes = plt.subplots(8, dataset_constants.DIVIDER, figsize=(10, 10), sharey='col')
         axes = axes.flatten()
-        for i in range(24):
+        for i in range(dataset_constants.NUM_FEATURES):
             axes[i].plot(X.detach().cpu().numpy()[item, :, i], 'o-')
             axes[i].plot([9], list_y[-1][item, :, i], 'o')
             axes[i].plot([9], val_outputs[-1][item, :, i], 'x')
