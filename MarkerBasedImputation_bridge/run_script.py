@@ -59,6 +59,7 @@ def check_exist(*args):
             check_exist(*el)
     return
 
+
 if __name__ == '__main__':
     ###################################################################################################################
     ## PARAMETERS TO CHANGE FOR THE RUN
@@ -107,6 +108,18 @@ if __name__ == '__main__':
     #                                   'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
     # long_seq_datafiles = glob(os.path.join(basedir,
     #                                        'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+
+    ## DF3D
+    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DF3D/")
+    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DF3D_keypoints_60stride5_new')
+    front_point = ['15', '34'] # cf image on https://github.com/NeLy-EPFL/DeepFly3D
+    middle_point = ['16', '35']
+    TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
+
+    short_seq_datafile = os.path.join(basedir,
+                                      'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+    long_seq_datafiles = glob(os.path.join(basedir,
+                                           'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
     ###################################################################################################################
 
@@ -161,9 +174,11 @@ if __name__ == '__main__':
         logging.info(f"no models found at {os.path.join(BASEFOLDER, f'models-wave_net_epochs={EPOCHS}_input_9_output_1*/best_model.h5')}")
         sys.exit(1)
 
-    save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
-    # save_path = os.path.join(BASEFOLDER, 'model_ensemble')
+    save_path = os.path.join(BASEFOLDER, 'model_ensemble')
     model_ensemble_path = os.path.join(save_path, 'final_model.h5')
+    if not os.path.exists(model_ensemble_path):
+        save_path = build_ensemble(BASEFOLDER, models, run_name=None, clean=False, device=device)
+        model_ensemble_path = os.path.join(save_path, 'final_model.h5')
     logging.info(f'SAVEPATH = {save_path}')
 
     # EVALUATION
