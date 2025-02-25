@@ -110,16 +110,28 @@ if __name__ == '__main__':
     #                                        'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
     ## DF3D
-    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DF3D/")
-    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DF3D_keypoints_60stride5_new')
-    front_point = ['15', '34'] # cf image on https://github.com/NeLy-EPFL/DeepFly3D
-    middle_point = ['16', '35']
-    TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
+    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DF3D/")
+    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DF3D_keypoints_60stride5_new')
+    # front_point = ['15', '34'] # cf image on https://github.com/NeLy-EPFL/DeepFly3D
+    # middle_point = ['16', '35']
+    # TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
+    #
+    # short_seq_datafile = os.path.join(basedir,
+    #                                   'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+    # long_seq_datafiles = glob(os.path.join(basedir,
+    #                                        'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+
+    ## Fish
+    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_Fish/")
+    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/Fish_v3_60stride120')
+    front_point = ['0', '3']
+    middle_point = ['2', '5']
+    TRAINSTRIDE = 50  # FL2 is a smaller dataset than they had (25 million frames for training)
 
     short_seq_datafile = os.path.join(basedir,
-                                      'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+                                      'results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/test_repeat-0.csv')
     long_seq_datafiles = glob(os.path.join(basedir,
-                                           'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+                                           'results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
     ###################################################################################################################
 
