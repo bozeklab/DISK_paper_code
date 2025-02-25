@@ -85,28 +85,28 @@ if __name__ == '__main__':
     #                                        'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
     ## CLB
-    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_CLB/")
-    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_CLB_keypoints_1_60_stride0.5')
-    front_point = ['left_coord', 'right_coord']
-    middle_point = ['left_hip', 'right_hip']
-    TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
-
-    short_seq_datafile = os.path.join(basedir,
-                                      'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
-    long_seq_datafiles = glob(os.path.join(basedir,
-                                           'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
-
-    ## MABe
-    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_MABe/")
-    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/MABE_task1_60stride60')
-    # front_point = ['kp3_animal0', 'kp3_animal1']
-    # middle_point = ['kp6_animal0', 'kp6_animal1']
+    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_CLB/")
+    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_CLB_keypoints_1_60_stride0.5')
+    # front_point = ['left_coord', 'right_coord']
+    # middle_point = ['left_hip', 'right_hip']
     # TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
     #
     # short_seq_datafile = os.path.join(basedir,
-    #                                   'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+    #                                   'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
     # long_seq_datafiles = glob(os.path.join(basedir,
-    #                                        'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+    #                                        'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+
+    ## MABe
+    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_MABe/")
+    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/MABE_task1_60stride60')
+    front_point = ['kp3_animal0', 'kp3_animal1']
+    middle_point = ['kp6_animal0', 'kp6_animal1']
+    TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
+
+    short_seq_datafile = os.path.join(basedir,
+                                      'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+    long_seq_datafiles = glob(os.path.join(basedir,
+                                           'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
     ###################################################################################################################
 
@@ -137,18 +137,18 @@ if __name__ == '__main__':
     write_logging()
 
     # TRAINING
-    # for _ in range(NMODELS):
-    #     train(train_file, val_file, front_point=front_point, middle_point=middle_point,
-    #           base_output_path=MODELFOLDER, run_name=None,
-    #           data_name=None, net_name="wave_net", clean=False, input_length=9,
-    #           output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
-    #           val_fraction=0.15, only_moving_frames=False, n_filters=512,
-    #           filter_width=2, layers_per_level=3, n_dilations=None,
-    #           latent_dim=750, epochs=EPOCHS, batch_size=1000,
-    #           lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
-    #           val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
-    #           reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
-    #           reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
+    for _ in range(NMODELS):
+        train(train_file, val_file, front_point=front_point, middle_point=middle_point,
+              base_output_path=MODELFOLDER, run_name=None,
+              data_name=None, net_name="wave_net", clean=False, input_length=9,
+              output_length=1, stride=TRAINSTRIDE, train_fraction=.85,
+              val_fraction=0.15, only_moving_frames=False, n_filters=512,
+              filter_width=2, layers_per_level=3, n_dilations=None,
+              latent_dim=750, epochs=EPOCHS, batch_size=1000,
+              lossfunc='mean_squared_error', lr=1e-4, batches_per_epoch=0,
+              val_batches_per_epoch=0, reduce_lr_factor=0.5, reduce_lr_patience=3,
+              reduce_lr_min_delta=1e-5, reduce_lr_cooldown=0,
+              reduce_lr_min_lr=1e-10, save_every_epoch=False, device=device)
 
     t_after_training = time()
     logging.info(f'Time training: {t_after_training - t_after_import}')
