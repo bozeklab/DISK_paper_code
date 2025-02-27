@@ -69,7 +69,7 @@ if __name__ == '__main__':
     dataset_constants = read_constant_file(dataset_constant_file)
     bodyparts = dataset_constants.KEYPOINTS
     skeleton_file = glob(os.path.join(input_dir, 'skeleton.py'))[0]
-    skeleton = read_skeleton_file(skeleton_file)
+    skeleton = read_skeleton_file(skeleton_file, bodyparts)
 
     config = lambda: kpms.load_config(project_dir)
 
