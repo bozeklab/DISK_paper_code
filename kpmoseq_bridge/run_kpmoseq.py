@@ -114,8 +114,8 @@ if __name__ == '__main__':
     if cs[-1] < f_pca:
         latent_dim = len(cs)
     else:
-        latent_dim = (cs>f_pca).nonzero()[0].min()+1
-    print(latent_dim)
+        latent_dim = int((cs>f_pca).nonzero()[0].min()+1)
+    print(type(latent_dim), latent_dim)
 
     # kpms.plot_scree(pca, project_dir=project_dir)
     # kpms.plot_pcs(pca, project_dir=project_dir, **config())
