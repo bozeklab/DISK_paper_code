@@ -75,15 +75,15 @@ if __name__ == '__main__':
     # long_seq_datafile_pattern = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')
 
     ## DANNCE
-    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DANNCE/")
-    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
-    front_point = 'SpineF'
-    middle_point = 'SpineM'
-    TRAINSTRIDE = 5 # FL2 is a smaller dataset than they had (25 million frames for training)
-
-    short_seq_datafile = os.path.join(basedir, 'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
-    long_seq_datafiles = glob(os.path.join(basedir,
-                                           'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DANNCE/")
+    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
+    # front_point = 'SpineF'
+    # middle_point = 'SpineM'
+    # TRAINSTRIDE = 5 # FL2 is a smaller dataset than they had (25 million frames for training)
+    #
+    # short_seq_datafile = os.path.join(basedir, 'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+    # long_seq_datafiles = glob(os.path.join(basedir,
+    #                                        'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
     ## CLB
     # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_CLB/")
@@ -122,16 +122,28 @@ if __name__ == '__main__':
     #                                        'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
     ## Fish
-    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_Fish/")
-    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/Fish_v3_60stride120')
-    front_point = ['fish1_head', 'fish2_head']
-    middle_point = ['fish1_tail', 'fish2_tail']
-    TRAINSTRIDE = 50  # FL2 is a smaller dataset than they had (25 million frames for training)
+    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_Fish/")
+    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/Fish_v3_60stride120')
+    # front_point = ['fish1_head', 'fish2_head']
+    # middle_point = ['fish1_tail', 'fish2_tail']
+    # TRAINSTRIDE = 50  # FL2 is a smaller dataset than they had (25 million frames for training)
+    #
+    # short_seq_datafile = os.path.join(basedir,
+    #                                   'results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/test_repeat-0.csv')
+    # long_seq_datafiles = glob(os.path.join(basedir,
+    #                                        'results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+
+    ## Mocap
+    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_Mocap/")
+    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/Mocap_keypoints_60_stride30_new')
+    front_point = '01'
+    middle_point = '00'
+    TRAINSTRIDE = 1
 
     short_seq_datafile = os.path.join(basedir,
-                                      'results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/test_repeat-0.csv')
+                                      'results_behavior/outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
     long_seq_datafiles = glob(os.path.join(basedir,
-                                           'results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+                                           'results_behavior/outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
     ###################################################################################################################
 
