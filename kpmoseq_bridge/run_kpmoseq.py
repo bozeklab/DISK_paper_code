@@ -57,7 +57,7 @@ if __name__ == '__main__':
     ## ARGUMENTS TO SET
     project_dir = 'kpmoseq_FL2'
     input_dir = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
-    latent_dim = 11
+    # latent_dim = 11
 
     anterior_bodyparts = ['left_back']
     posterior_bodyparts = ['left_knee']
@@ -105,7 +105,14 @@ if __name__ == '__main__':
     pca = kpms.fit_pca(**data, **config())
     kpms.save_pca(pca, project_dir)
 
-    kpms.print_dims_to_explain_variance(pca, 0.9)
+    f_pca = 0.9
+    kpms.print_dims_to_explain_variance(pca, f_pca)
+    cs = np.cumsum(pca.explained_variance_ratio_)
+    if cs[-1] < f_pca:
+        latent_dim = len(cs)
+    else:
+        latent_dim = (cs>f_pca).nonzero()[0].min()+1
+
     # kpms.plot_scree(pca, project_dir=project_dir)
     # kpms.plot_pcs(pca, project_dir=project_dir, **config())
 
