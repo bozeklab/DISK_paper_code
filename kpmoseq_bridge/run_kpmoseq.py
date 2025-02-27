@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     ################## TRAIN #################
     ## load data (e.g. from DeepLabCut)
-    keypoint_data_path = os.path.join(input_dir, 'train_dataset_w-1-nans.npz')  # can be a file, a directory, or a list of files
+    keypoint_data_path = os.path.join(input_dir, 'train_fulllength_dataset_w-1-nans.npz')  # can be a file, a directory, or a list of files
     coordinates, confidences, bodyparts = kpms.load_keypoints(keypoint_data_path, 'disk')
     # transforms = init_transforms(viewinvariant=True, normalizecube=True, divider=3, outputdir=project_dir, length_input_seq=60)
     # coordinates = {}
