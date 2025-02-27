@@ -57,14 +57,14 @@ def read_skeleton_file(skeleton_file, keypoints):
 if __name__ == '__main__':
     ##########################################################################################################
     ## ARGUMENTS TO SET
-    project_dir = 'kpmoseq_FL2'
-    input_dir = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
+    project_dir = 'kpmoseq_CLB'
+    input_dir = os.path.join(basedir, 'results_behavior/datasets/INH_CLB_keypoints_1_60_stride0.5')
     # latent_dim = 11
 
     anterior_bodyparts = ['left_back']
     posterior_bodyparts = ['left_knee']
 
-    test_dir = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/')
+    test_dir = os.path.join(basedir, 'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/')
 
     ##########################################################################################################
     dataset_constant_file = glob(os.path.join(input_dir, 'constants.py'))[0]
