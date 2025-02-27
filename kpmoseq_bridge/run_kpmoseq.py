@@ -99,7 +99,7 @@ if __name__ == '__main__':
     #     coordinates[k] = transform_x(raw_coordinates[k], transforms)[0]
 
     ## format data for modeling
-    print(coordinates.item()[0].shape)
+    print(coordinates)
     data, metadata = kpms.format_data(coordinates, confidences, **config())
     print('-- Initial data', data[list(data.keys())[0]].shape)
 
