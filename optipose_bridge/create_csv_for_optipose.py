@@ -59,13 +59,13 @@ def find_holes(mask, keypoints, target_val=1, indep=True, min_size_hole=60):
 
 if __name__ == '__main__':
 
-    dataset_name = 'Fish_v3_60stride120'
-    min_length = 60
-    n_keypoints = 6
-    #
-    # dataset_name = 'Mocap_keypoints_60_stride30_new'
+    # dataset_name = 'Fish_v3_60stride120'
     # min_length = 60
-    # n_keypoints = 20
+    # n_keypoints = 6
+    #
+    dataset_name = 'Mocap_keypoints_60_stride30_new'
+    min_length = 60
+    n_keypoints = 20
     #
     # dataset_name = 'DF3D_keypoints_60stride5_new'
     # min_length = 60

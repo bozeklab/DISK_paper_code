@@ -14,8 +14,8 @@ for is_val in [True, False]:
         #                      ['CLB', 'INH_CLB_keypoints_1_60_stride0.5'],
         #                      ['DANNCE', 'DANNCE_seq_keypoints_60_stride30_fill10_new'],
         #                      ['MABE', 'MABE_task1_60stride60'],
-        #                      ['Mocap', 'Mocap_keypoints_60_stride30_new'],
-                             ['DF3D', 'DF3D_keypoints_60stride5_new'],
+                             ['Mocap', 'Mocap_keypoints_60_stride30_new'],
+                             # ['DF3D', 'DF3D_keypoints_60stride5_new'],
                              # ['Fish', 'Fish_v3_60stride120']
     ]:
 
