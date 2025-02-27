@@ -11,13 +11,7 @@ import matplotlib.pyplot as plt
 import jax.numpy as jnp
 from jax_moseq.utils import unbatch
 from jax_moseq.models.keypoint_slds import estimate_coordinates
-import tensorflow as tf
 
-print("executing TF bug workaround")
-config = tf.compat.v1.ConfigProto(gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.8) )
-config.gpu_options.allow_growth = True
-session = tf.compat.v1.Session(config=config)
-tf.compat.v1.keras.backend.set_session(session)
 
 import pandas as pd
 import logging
