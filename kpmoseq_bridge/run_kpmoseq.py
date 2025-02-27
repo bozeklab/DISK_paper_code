@@ -239,7 +239,7 @@ if __name__ == '__main__':
     # project back to original space?
     coordinates_est = unbatch(Y_est, *metadata)
 
-    for k in list(coordinates.keys()):
+    for k in list(coordinates_est.keys()):
         to_save = pd.DataFrame(data=coordinates_est[k].reshape(-1, 24), columns=to_save_columns)
         to_save.to_csv(os.path.join(test_dir, 'kpmoseq', f'test_repeat-0_sample{k.split("track")[1]}_kpmoseq.csv'),
                        index=False)
