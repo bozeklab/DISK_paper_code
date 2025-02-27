@@ -47,9 +47,9 @@ def read_skeleton_file(skeleton_file, keypoints):
     for i in range(len(skeleton_inputs.neighbor_links)):
         if type(skeleton_inputs.neighbor_links[i][0]) == tuple:
             for nn in skeleton_inputs.neighbor_links[i]:
-                neighbor_link.extend([keypoints[nn[0]], keypoints[nn[1]]])
+                neighbor_link.append([keypoints[nn[0]], keypoints[nn[1]]])
         else:
-            neighbor_link.extend([keypoints[skeleton_inputs.neighbor_links[i][0]],
+            neighbor_link.append([keypoints[skeleton_inputs.neighbor_links[i][0]],
                                   keypoints[skeleton_inputs.neighbor_links[i][1]]])
     return neighbor_link
 
