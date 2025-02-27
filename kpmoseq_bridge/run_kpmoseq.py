@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
     ################## TRAIN #################
     ## load data (e.g. from DeepLabCut)
-    keypoint_data_path = os.path.join(input_dir, 'train_dataset_w-all-nans.npz')  # can be a file, a directory, or a list of files
+    keypoint_data_path = os.path.join(input_dir, 'train_fulllength_dataset_w-all-nans.npz')  # can be a file, a directory, or a list of files
     coordinates, confidences, bodyparts = kpms.load_keypoints(keypoint_data_path, 'disk')
     # transforms = init_transforms(viewinvariant=True, normalizecube=True, divider=3, outputdir=project_dir, length_input_seq=60)
     # coordinates = {}
@@ -99,7 +99,6 @@ if __name__ == '__main__':
     #     coordinates[k] = transform_x(raw_coordinates[k], transforms)[0]
 
     ## format data for modeling
-    print(coordinates[list(coordinates.keys())[0]].shape)
     data, metadata = kpms.format_data(coordinates, confidences, **config())
     print('-- Initial data', data[list(data.keys())[0]].shape)
 
@@ -116,6 +115,7 @@ if __name__ == '__main__':
         latent_dim = len(cs)
     else:
         latent_dim = (cs>f_pca).nonzero()[0].min()+1
+    print(latent_dim)
 
     # kpms.plot_scree(pca, project_dir=project_dir)
     # kpms.plot_pcs(pca, project_dir=project_dir, **config())
