@@ -183,11 +183,14 @@ if __name__ == '__main__':
     coordinates_est = unbatch(Y_est, *metadata)
     #
     name = 'test'
+    output_dir = os.path.join(test_dir, 'kpmoseq')
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
     f = glob(os.path.join(test_dir, f'test_repeat-0_sample0.csv'))[0]
     to_save_columns = pd.read_csv(f).columns
     for k in list(coordinates.keys()):
         to_save = pd.DataFrame(data=coordinates_est[k].reshape(-1, 24), columns=to_save_columns)
-        to_save.to_csv(os.path.join(test_dir, 'kpmoseq', f'test_repeat-0_file{k.split("track")[1]}_kpmoseq.csv'),
+        to_save.to_csv(os.path.join(output_dir, f'test_repeat-0_file{k.split("track")[1]}_kpmoseq.csv'),
                        index=False)
 
 
@@ -239,9 +242,7 @@ if __name__ == '__main__':
     # project back to original space?
     coordinates_est = unbatch(Y_est, *metadata)
 
-    output_dir = os.path.join(test_dir, 'kpmoseq')
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+
     for k in list(coordinates_est.keys()):
         to_save = pd.DataFrame(data=coordinates_est[k].reshape(-1, 24), columns=to_save_columns)
         to_save.to_csv(os.path.join(output_dir, f'test_repeat-0_sample{k.split("track")[1]}_kpmoseq.csv'),
