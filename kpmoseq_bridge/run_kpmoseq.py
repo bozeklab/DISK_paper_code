@@ -71,7 +71,8 @@ if __name__ == '__main__':
     bodyparts = dataset_constants.KEYPOINTS
     skeleton_file = glob(os.path.join(input_dir, 'skeleton.py'))[0]
     skeleton = read_skeleton_file(skeleton_file, bodyparts)
-    print(bodyparts, skeleton)
+    print('bodypart:', bodyparts)
+    print('skeleton:', skeleton)
 
     config = lambda: kpms.load_config(project_dir)
 
@@ -98,6 +99,7 @@ if __name__ == '__main__':
     #     coordinates[k] = transform_x(raw_coordinates[k], transforms)[0]
 
     ## format data for modeling
+    print(coordinates.shape)
     data, metadata = kpms.format_data(coordinates, confidences, **config())
     print('-- Initial data', data[list(data.keys())[0]].shape)
 
