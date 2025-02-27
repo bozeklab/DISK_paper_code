@@ -52,7 +52,8 @@ def read_skeleton_file(skeleton_file, keypoints):
                 neighbor_link.extend([keypoints[nn[0]], keypoints[nn[1]]])
         else:
             print('other')
-            neighbor_link.append(skeleton_inputs.neighbor_links[i])
+            neighbor_link.append([keypoints[skeleton_inputs.neighbor_links[i][0]],
+                                  keypoints[skeleton_inputs.neighbor_links[i][1]]])
     return neighbor_link
 
 if __name__ == '__main__':
