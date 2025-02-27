@@ -136,8 +136,8 @@ if __name__ == '__main__':
     ## Mocap
     BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_Mocap/")
     DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/Mocap_keypoints_60_stride30_new')
-    front_point = '01'
-    middle_point = '00'
+    front_point = 'arm1_1' # names got shuffled
+    middle_point = 'arm1_0'
     TRAINSTRIDE = 1
 
     short_seq_datafile = os.path.join(basedir,
