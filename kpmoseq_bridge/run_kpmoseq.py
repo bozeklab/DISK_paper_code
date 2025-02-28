@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt
 import jax.numpy as jnp
 from jax_moseq.utils import unbatch
 from jax_moseq.models.keypoint_slds import estimate_coordinates
+from jax_moseq.utils import set_mixed_map_iters
+set_mixed_map_iters(4)
+import jax
+jax.config.update('jax_enable_x64', False)
 
 import argparse
 import pandas as pd
@@ -194,7 +198,7 @@ if __name__ == '__main__':
 
     _, model_name = kpms.fit_model(
         model, data, metadata, project_dir,
-        ar_only=True, num_iters=num_ar_iters)
+        ar_only=True, num_iters=num_ar_iters, parallel_message_passing=False)
 
     ## load model checkpoint
     model, data, metadata, current_iter = kpms.load_checkpoint(
