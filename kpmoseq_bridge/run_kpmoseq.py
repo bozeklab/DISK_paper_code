@@ -64,6 +64,7 @@ if __name__ == '__main__':
     # anterior_bodyparts = ['left_back']
     # posterior_bodyparts = ['left_knee']
     # test_dir = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/')
+    # train_file = 'train_fulllength_dataset_w-all-nans.npz'
 
     ## DANNCE
     project_dir = 'kpmoseq_DANNCE'
@@ -71,7 +72,7 @@ if __name__ == '__main__':
     anterior_bodyparts = ['SpineF']
     posterior_bodyparts = ['SpineM']
     test_dir = os.path.join(basedir, 'results_behavior/outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/')
-
+    train_file = 'train_fulllength_dataset_w-1-nans.npz'
     ## CLB
     ##########################################################################################################
     dataset_constant_file = glob(os.path.join(input_dir, 'constants.py'))[0]
@@ -99,7 +100,7 @@ if __name__ == '__main__':
 
     ################## TRAIN #################
     ## load data (e.g. from DeepLabCut)
-    keypoint_data_path = os.path.join(input_dir, 'train_fulllength_dataset_w-all-nans.npz')  # can be a file, a directory, or a list of files
+    keypoint_data_path = os.path.join(input_dir, train_file)  # can be a file, a directory, or a list of files
     coordinates, confidences, bodyparts = kpms.load_keypoints(keypoint_data_path, 'disk')
     # transforms = init_transforms(viewinvariant=True, normalizecube=True, divider=3, outputdir=project_dir, length_input_seq=60)
     # coordinates = {}
