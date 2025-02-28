@@ -57,15 +57,22 @@ def read_skeleton_file(skeleton_file, keypoints):
 if __name__ == '__main__':
     ##########################################################################################################
     ## ARGUMENTS TO SET
-    project_dir = 'kpmoseq_FL2'
-    input_dir = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
-    # latent_dim = 11
 
-    anterior_bodyparts = ['left_back']
-    posterior_bodyparts = ['left_knee']
+    # ## FL2
+    # project_dir = 'kpmoseq_FL2'
+    # input_dir = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
+    # anterior_bodyparts = ['left_back']
+    # posterior_bodyparts = ['left_knee']
+    # test_dir = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/')
 
-    test_dir = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/')
+    ## DANNCE
+    project_dir = 'kpmoseq_DANNCE'
+    input_dir = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
+    anterior_bodyparts = ['SpineF']
+    posterior_bodyparts = ['SpineM']
+    test_dir = os.path.join(basedir, 'results_behavior/outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/')
 
+    ## CLB
     ##########################################################################################################
     dataset_constant_file = glob(os.path.join(input_dir, 'constants.py'))[0]
     dataset_constants = read_constant_file(dataset_constant_file)
