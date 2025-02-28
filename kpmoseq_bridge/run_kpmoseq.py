@@ -16,7 +16,7 @@ from jax_moseq.models.keypoint_slds import estimate_coordinates
 from jax_moseq.utils import set_mixed_map_iters
 set_mixed_map_iters(4) ## batch size
 import jax
-jax.config.update('jax_enable_x64') # double precision
+jax.config.read('jax_enable_x64') # double precision
 
 import matplotlib
 if os.uname().nodename == 'france-XPS':
