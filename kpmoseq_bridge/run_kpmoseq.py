@@ -12,7 +12,7 @@ import jax.numpy as jnp
 from jax_moseq.utils import unbatch
 from jax_moseq.models.keypoint_slds import estimate_coordinates
 
-
+import argparse
 import pandas as pd
 import logging
 import importlib
@@ -55,36 +55,77 @@ def read_skeleton_file(skeleton_file, keypoints):
     return neighbor_link
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='')
+
+    parser.add_argument('dataset', type=str,
+                        help='dataset name', choices=['FL2', 'CLB', 'DANNCE', 'Mocap', 'DF3D', 'Fish', 'MABe'])
+
+    args = parser.parse_args()
     ##########################################################################################################
     ## ARGUMENTS TO SET
 
-    # ## FL2
-    # project_dir = 'kpmoseq_FL2'
-    # input_dir = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
-    # anterior_bodyparts = ['left_back']
-    # posterior_bodyparts = ['left_knee']
-    # test_dir = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/')
-    # train_file = 'train_fulllength_dataset_w-all-nans.npz'
+    ## FL2
+    if args.dataset == 'FL2':
+        project_dir = 'kpmoseq_FL2'
+        input_dir = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
+        anterior_bodyparts = ['left_back']
+        posterior_bodyparts = ['left_knee']
+        test_dir = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/')
+        _2D = False
 
     ## DANNCE
-    # project_dir = 'kpmoseq_DANNCE'
-    # input_dir = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
-    # anterior_bodyparts = ['SpineF']
-    # posterior_bodyparts = ['SpineM']
-    # test_dir = os.path.join(basedir, 'results_behavior/outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/')
-    # train_file = 'train_fulllength_dataset_w-all-nans.npz'
-    # _2D = False
+    elif args.dataset == 'DANNCE':
+        project_dir = 'kpmoseq_DANNCE'
+        input_dir = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
+        anterior_bodyparts = ['SpineF']
+        posterior_bodyparts = ['SpineM']
+        test_dir = os.path.join(basedir, 'results_behavior/outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/')
+        _2D = False
 
     ## CLB
+    elif args.dataset == 'CLB':
+        project_dir = 'kpmoseq_CLB'
+        input_dir = os.path.join(basedir, 'results_behavior/datasets/INH_CLB_keypoints_1_60_stride0.5')
+        anterior_bodyparts = ['left_back']
+        posterior_bodyparts = ['left_knee']
+        test_dir = os.path.join(basedir, 'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/')
+        _2D = False
 
     ## Mocap
-    project_dir = 'kpmoseq_Mocap'
-    input_dir = os.path.join(basedir, 'results_behavior/datasets/Mocap_keypoints_60_stride30_new')
-    anterior_bodyparts = ['arm1_1']
-    posterior_bodyparts = ['arm1_0']
-    test_dir = os.path.join(basedir, 'results_behavior/outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/')
-    train_file = 'train_fulllength_dataset_w-all-nans.npz'
-    _2D = False
+    elif args.dataset == 'Mocap':
+        project_dir = 'kpmoseq_Mocap'
+        input_dir = os.path.join(basedir, 'results_behavior/datasets/Mocap_keypoints_60_stride30_new')
+        anterior_bodyparts = ['arm1_1']
+        posterior_bodyparts = ['arm1_0']
+        test_dir = os.path.join(basedir, 'results_behavior/outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/')
+        _2D = False
+
+    elif args.dataset == 'Fish':
+        project_dir = 'kpmoseq_Fish'
+        input_dir = os.path.join(basedir, 'results_behavior/datasets/Fish_v3_60stride120')
+        anterior_bodyparts = ['fish1_head']
+        posterior_bodyparts = ['fish2_tail']
+        test_dir = os.path.join(basedir, 'results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/')
+        _2D = False
+
+    elif args.dataset == 'MABe':
+        project_dir = 'kpmoseq_MABe'
+        input_dir = os.path.join(basedir, 'results_behavior/datasets/MABE_task1_60stride60')
+        anterior_bodyparts = ['kp3_animal0']
+        posterior_bodyparts = ['kp6_animal1']
+        test_dir = os.path.join(basedir,
+                                'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/')
+        _2D = True
+
+    elif args.dataset == 'DF3D':
+        project_dir = 'kpmoseq_DF3D'
+        input_dir = os.path.join(basedir, 'results_behavior/datasets/DF3D_keypoints_60stride5_new')
+        anterior_bodyparts = ['15']
+        posterior_bodyparts = ['35']
+        test_dir = os.path.join(basedir,
+                                'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/')
+        _2D = False
+
 
     ##########################################################################################################
     dataset_constant_file = glob(os.path.join(input_dir, 'constants.py'))[0]
@@ -112,6 +153,7 @@ if __name__ == '__main__':
 
     ################## TRAIN #################
     ## load data (e.g. from DeepLabCut)
+    train_file = 'train_fulllength_dataset_w-all-nans.npz'
     keypoint_data_path = os.path.join(input_dir, train_file)  # can be a file, a directory, or a list of files
     coordinates, confidences, bodyparts = kpms.load_keypoints(keypoint_data_path, 'disk')
     # transforms = init_transforms(viewinvariant=True, normalizecube=True, divider=3, outputdir=project_dir, length_input_seq=60)
