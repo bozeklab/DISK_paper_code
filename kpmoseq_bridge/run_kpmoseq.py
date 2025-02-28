@@ -73,6 +73,7 @@ if __name__ == '__main__':
     posterior_bodyparts = ['SpineM']
     test_dir = os.path.join(basedir, 'results_behavior/outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/')
     train_file = 'train_fulllength_dataset_w-1-nans.npz'
+    
     ## CLB
     ##########################################################################################################
     dataset_constant_file = glob(os.path.join(input_dir, 'constants.py'))[0]
