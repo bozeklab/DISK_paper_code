@@ -1,25 +1,22 @@
-import keypoint_moseq as kpms
-import os, sys
-import numpy as np
+import sys
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from glob import glob
 import os
-import h5py
 import numpy as np
-import matplotlib.pyplot as plt
-import jax.numpy as jnp
-from jax_moseq.utils import unbatch
-from jax_moseq.models.keypoint_slds import estimate_coordinates
-from jax_moseq.utils import set_mixed_map_iters
-set_mixed_map_iters(4)
-import jax
-jax.config.update('jax_enable_x64', False)
-
 import argparse
 import pandas as pd
 import logging
 import importlib
+
+import keypoint_moseq as kpms
+import jax.numpy as jnp
+from jax_moseq.utils import unbatch
+from jax_moseq.models.keypoint_slds import estimate_coordinates
+from jax_moseq.utils import set_mixed_map_iters
+set_mixed_map_iters(4) ## batch size
+import jax
+jax.config.update('jax_enable_x64', False) # single precision
 
 import matplotlib
 if os.uname().nodename == 'france-XPS':
@@ -28,6 +25,7 @@ if os.uname().nodename == 'france-XPS':
 else:
     matplotlib.use('Agg')
     basedir = '/projects/ag-bozek/france'
+
 
 def read_constant_file(constant_file):
     """import constant file as a python file from its path"""
@@ -44,6 +42,7 @@ def read_constant_file(constant_file):
     return constants
 
 def read_skeleton_file(skeleton_file, keypoints):
+    """read skeleton file and returns skeleton well formatted"""
     spec = importlib.util.spec_from_file_location("module.name", skeleton_file)
     skeleton_inputs = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(skeleton_inputs)
@@ -58,15 +57,19 @@ def read_skeleton_file(skeleton_file, keypoints):
                                   keypoints[skeleton_inputs.neighbor_links[i][1]]])
     return neighbor_link
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='')
 
+if __name__ == '__main__':
+
+    ##########################################################################################################
+    ### CHOOSE DATASET BY SUPPLYING THE COMMANDLINE ARGUMENT
+    parser = argparse.ArgumentParser(description='')
     parser.add_argument('dataset', type=str,
                         help='dataset name', choices=['FL2', 'CLB', 'DANNCE', 'Mocap', 'DF3D', 'Fish', 'MABe'])
 
     args = parser.parse_args()
+
     ##########################################################################################################
-    ## ARGUMENTS TO SET
+    ## ARGUMENTS FOR EACH DATASET
 
     ## FL2
     if args.dataset == 'FL2':
@@ -256,7 +259,7 @@ if __name__ == '__main__':
     f = glob(os.path.join(test_dir, f'test_repeat-0_sample0.csv'))[0]
     to_save_columns = pd.read_csv(f).columns
     for k in list(coordinates.keys()):
-        to_save = pd.DataFrame(data=coordinates_est[k].reshape(-1, 24), columns=to_save_columns)
+        to_save = pd.DataFrame(data=coordinates_est[k].reshape(-1, len(dataset_constants.KEYPOINTS) * dataset_constants.DIVIDER), columns=to_save_columns)
         to_save.to_csv(os.path.join(output_dir, f'test_repeat-0_file{k.split("track")[1]}_kpmoseq.csv'),
                        index=False)
 
@@ -311,6 +314,6 @@ if __name__ == '__main__':
 
 
     for k in list(coordinates_est.keys()):
-        to_save = pd.DataFrame(data=coordinates_est[k].reshape(-1, 24), columns=to_save_columns)
+        to_save = pd.DataFrame(data=coordinates_est[k].reshape(-1, len(dataset_constants.KEYPOINTS) * dataset_constants.DIVIDER), columns=to_save_columns)
         to_save.to_csv(os.path.join(output_dir, f'test_repeat-0_sample{k.split("track")[1]}_kpmoseq.csv'),
                        index=False)
