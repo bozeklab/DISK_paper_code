@@ -1168,24 +1168,26 @@ def _disk_loader(filepath, name, dataset_constants):
     data = np.load(filepath)
 
     bodyparts = dataset_constants.KEYPOINTS
+    freq = dataset_constants.FREQ
     coords = data['X']
     if 'time' in data:
-        time =  (data['time'] * 60).astype(int)
+        time =  (data['time'] * freq).astype(int)
+        time -= np.min(time)
         new_time = np.array([np.arange(np.max(time) + 1) for _ in range(coords.shape[0])])   
-        new_coords = np.zeros((coords.shape[0], np.max(time) + 1, coords.shape[2]), dtype=coords.dtype) * np.nan
+        new_coords = np.zeros((coords.shape[0], np.max(time)  + 1, coords.shape[2]), dtype=coords.dtype) * np.nan
         for i in range(len(time)):
             print(new_coords[i].shape, (time[i][time[i] >= 0]).dtype, (time[i][time[i] >= 0]).shape, coords[i].shape)
             new_coords[i, time[i][time[i] >= 0]] = coords[i][time[i] >= 0]
     else:
         new_coords = coords
-
+    
     coords = new_coords.reshape((new_coords.shape[0], new_coords.shape[1], len(bodyparts), -1))[..., :3]
-    confs = (~np.isnan(new_coords[..., 0])).astype('float')
+    confs = (~np.isnan(coords[..., 0])).astype('float')
     
     coordinates = {}
     confidences = {}
     for i in range(len(coords)):
-        coordinates.update({f"{name}_track{i}": new_coords[i]})
+        coordinates.update({f"{name}_track{i}": coords[i]})
         confidences.update({f"{name}_track{i}": confs[i]})
     # else:
     #     coordinates = {f"{name}_track{i}": coords[i].T for i in range(coords.shape[0])}
