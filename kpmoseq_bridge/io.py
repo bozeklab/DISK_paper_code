@@ -1170,25 +1170,34 @@ def _disk_loader(filepath, name, dataset_constants):
     bodyparts = dataset_constants.KEYPOINTS
     freq = dataset_constants.FREQ
     coords = data['X']
-    if 'time' in data:
-        time =  (data['time'] * freq).astype(int)
-        time -= np.min(time)
-        new_time = np.array([np.arange(np.max(time) + 1) for _ in range(coords.shape[0])])   
-        new_coords = np.zeros((coords.shape[0], np.max(time)  + 1, coords.shape[2]), dtype=coords.dtype) * np.nan
-        for i in range(len(time)):
-            print(new_coords[i].shape, (time[i][time[i] >= 0]).dtype, (time[i][time[i] >= 0]).shape, coords[i].shape)
-            new_coords[i, time[i][time[i] >= 0]] = coords[i][time[i] >= 0]
-    else:
-        new_coords = coords
-    
-    coords = new_coords.reshape((new_coords.shape[0], new_coords.shape[1], len(bodyparts), -1))[..., :3]
-    confs = (~np.isnan(coords[..., 0])).astype('float')
     
     coordinates = {}
     confidences = {}
-    for i in range(len(coords)):
-        coordinates.update({f"{name}_track{i}": coords[i]})
-        confidences.update({f"{name}_track{i}": confs[i]})
+
+    if 'time' in data:
+        orig_time = data['time']
+        time = (orig_time * freq).astype(int)
+        
+        for i in range(len(time)):
+            t = time[i]
+            t -= np.min(t[t > -1]) 
+            t[orig_time[i] == -1] = -1
+            
+            new_coords = np.zeros((np.max(t)  + 1, coords[i].shape[1]), dtype=coords.dtype) * np.nan
+            new_coords[t[t >= 0]] = coords[i][t >= 0]
+
+            #print(new_coords.shape, len(bodyparts), dataset_constants.DIVIDER)
+            new_coords = new_coords.reshape((new_coords.shape[0], len(bodyparts), -1))[..., :dataset_constants.DIVIDER]
+            coordinates.update({f'{name}_track{i}': new_coords})
+            confidences.update({f'{name}_track{i}': (~np.isnan(new_coords[..., 0])).astype('float')})
+    else:
+        new_coords = coords
+        coords = new_coords.reshape((new_coords.shape[0], new_coords.shape[1], len(bodyparts), -1))[..., :dataset_constants.DIVIDER]
+        confs = (~np.isnan(coords[..., 0])).astype('float')
+   
+        for i in range(len(coords)):
+            coordinates.update({f"{name}_track{i}": coords[i]})
+            confidences.update({f"{name}_track{i}": confs[i]})
     # else:
     #     coordinates = {f"{name}_track{i}": coords[i].T for i in range(coords.shape[0])}
     #     confidences = {f"{name}_track{i}": confs[i].T for i in range(coords.shape[0])}
