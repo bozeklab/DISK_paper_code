@@ -67,14 +67,25 @@ if __name__ == '__main__':
     # train_file = 'train_fulllength_dataset_w-all-nans.npz'
 
     ## DANNCE
-    project_dir = 'kpmoseq_DANNCE'
-    input_dir = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
-    anterior_bodyparts = ['SpineF']
-    posterior_bodyparts = ['SpineM']
-    test_dir = os.path.join(basedir, 'results_behavior/outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/')
-    train_file = 'train_fulllength_dataset_w-all-nans.npz'
+    # project_dir = 'kpmoseq_DANNCE'
+    # input_dir = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
+    # anterior_bodyparts = ['SpineF']
+    # posterior_bodyparts = ['SpineM']
+    # test_dir = os.path.join(basedir, 'results_behavior/outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/')
+    # train_file = 'train_fulllength_dataset_w-all-nans.npz'
+    # _2D = False
 
     ## CLB
+
+    ## Mocap
+    project_dir = 'kpmoseq_Mocap'
+    input_dir = os.path.join(basedir, 'results_behavior/datasets/Mocap_keypoints_60_stride30_new')
+    anterior_bodyparts = ['arm1_1']
+    posterior_bodyparts = ['arm1_0']
+    test_dir = os.path.join(basedir, 'results_behavior/outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/')
+    train_file = 'train_fulllength_dataset_w-all-nans.npz'
+    _2D = False
+
     ##########################################################################################################
     dataset_constant_file = glob(os.path.join(input_dir, 'constants.py'))[0]
     dataset_constants = read_constant_file(dataset_constant_file)
@@ -113,7 +124,8 @@ if __name__ == '__main__':
     print('-- Initial data', data[list(data.keys())[0]].shape)
 
     ## only for 2D
-    # kpms.noise_calibration(project_dir, coordinates, confidences, **config())
+    if _2D:
+        kpms.noise_calibration(project_dir, coordinates, confidences, **config())
 
     pca = kpms.fit_pca(**data, **config())
     kpms.save_pca(pca, project_dir)
