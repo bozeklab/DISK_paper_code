@@ -75,6 +75,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
                     axes[i].plot(orig_values[:, i], 'o-')
                     mask = ~np.isnan(df_original.loc[:, columns[i]].values)
                     for i_method in range(len(methods)):
+                        print(methods[i_method])
                         values = np.array(list_df[i_method].loc[:, columns[i]].values)
                         values[mask] = np.nan
                         axes[i].plot(values, 'o-', c=colors[i_method], label=methods[i_method], ms=4)
