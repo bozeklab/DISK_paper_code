@@ -281,7 +281,7 @@ if __name__ == '__main__':
     for i in range(len(gt_df)):
         coordinates_gt.update({f"{name}_track{i}": np.array(eval(gt_df.loc[i, 'label']))})
         f = glob(os.path.join(test_dir, f'test_repeat-0_sample{i}.csv'))[0]
-        coords = pd.read_csv(f).values.reshape(-1, 8, 3)
+        coords = pd.read_csv(f).values.reshape(-1, len(dataset_constants.KEYPOINTS), dataset_constants.DIVIDER)
         confs = (~np.isnan(coords[..., 0])).astype('float')
         coordinates.update({f"{name}_track{i}": coords})
         confidences.update({f"{name}_track{i}": confs})
