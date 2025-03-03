@@ -322,6 +322,7 @@ if __name__ == '__main__':
 
 
     for k in list(coordinates_est.keys()):
+        print(coordinates_est[k].reshape(-1, len(dataset_constants.KEYPOINTS) * dataset_constants.DIVIDER))
         to_save = pd.DataFrame(data=coordinates_est[k].reshape(-1, len(dataset_constants.KEYPOINTS) * dataset_constants.DIVIDER), columns=to_save_columns)
         to_save.to_csv(os.path.join(output_dir, f'test_repeat-0_sample{k.split("track")[1]}_kpmoseq.csv'),
                        index=False)

@@ -51,7 +51,6 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
     while True:
         try:
             files = [glob(os.path.join(input_folders[m], f'test_repeat-0_sample{id_sample}*.csv'))[0] for m in methods]
-            print(files)
         except IndexError:
             print(f'No sample found with id {id_sample}. Stopping the iteration')
             break
@@ -75,7 +74,6 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
                     axes[i].plot(orig_values[:, i], 'o-')
                     mask = ~np.isnan(df_original.loc[:, columns[i]].values)
                     for i_method in range(len(methods)):
-                        print(methods[i_method])
                         values = np.array(list_df[i_method].loc[:, columns[i]].values)
                         values[mask] = np.nan
                         axes[i].plot(values, 'o-', c=colors[i_method], label=methods[i_method], ms=4)
@@ -111,7 +109,6 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
         values = [df.loc[:, columns].values.reshape(-1, len(keypoints), dataset_constants.DIVIDER) for df in list_df]
 
         full_data_np = np.array(eval(big_df.loc[id_sample, 'label']))
-        print(full_data_np.shape, [val.shape for val in values])
         mask_holes_np = np.isnan(data_with_holes_np).astype(int)  #np.ones(data_with_holes_np.shape, dtype=int)#np.isnan(data_with_holes_np).astype(int)  # 1 is gap, 0 is non missing
         n_missing = np.sum(mask_holes_np[..., 0])
 
