@@ -229,27 +229,27 @@ if __name__ == '__main__':
     # EVALUATION
 
     # ON DATA LIKE SEEN IN TRAINING
-    test_file_like_training = os.path.join(DATASETPATH, 'test_dataset_w-0-nans.npz')
-    logging.info(f'datafile = {test_file_like_training}')
-    testing_single_model_like_training(test_file_like_training, front_point=front_point, middle_point=middle_point,
-                    model_name=models[0],
-                    net_name="wave_net", clean=False, input_length=9,
-                    output_length=1, stride=1,
-                    batch_size=1000,
-                    lossfunc='mean_squared_error',
-                    device=torch.device('cpu'))
-    testing_single_model_like_predict(models[0], test_file_like_training, DATASETPATH,
-            save_path = os.path.dirname(models[0]), front_point=front_point, middle_point=middle_point,
-            model = None, device = torch.device('cpu'))
-    testing_ensemble_model_like_predict(model_ensemble_path, test_file_like_training, DATASETPATH,
-            save_path = save_path, front_point=front_point, middle_point=middle_point,
-            model = None, device = torch.device('cpu'))
+    # test_file_like_training = os.path.join(DATASETPATH, 'test_dataset_w-0-nans.npz')
+    # logging.info(f'datafile = {test_file_like_training}')
+    # testing_single_model_like_training(test_file_like_training, front_point=front_point, middle_point=middle_point,
+    #                 model_name=models[0],
+    #                 net_name="wave_net", clean=False, input_length=9,
+    #                 output_length=1, stride=1,
+    #                 batch_size=1000,
+    #                 lossfunc='mean_squared_error',
+    #                 device=torch.device('cpu'))
+    # testing_single_model_like_predict(models[0], test_file_like_training, DATASETPATH,
+    #         save_path = os.path.dirname(models[0]), front_point=front_point, middle_point=middle_point,
+    #         model = None, device = torch.device('cpu'))
+    # testing_ensemble_model_like_predict(model_ensemble_path, test_file_like_training, DATASETPATH,
+    #         save_path = save_path, front_point=front_point, middle_point=middle_point,
+    #         model = None, device = torch.device('cpu'))
 
     # ON SHORT SEQUENCES WITH GROUND TRUTH
 
     logging.info(f'datafile = {short_seq_datafile}')
 
-    for pass_direction in ['forward', 'reverse']:
+    for pass_direction in ['reverse', 'forward']:
         predict_single_pass(model_ensemble_path, short_seq_datafile, DATASETPATH, pass_direction,
                             save_path=save_path, stride=impute_stride,
                             model=None, front_point=front_point, middle_point=middle_point)
