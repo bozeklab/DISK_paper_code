@@ -335,6 +335,7 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
         markers = data['processed_X'][:, ::-1, :]
         ground_truth = data['processed_ground_truth'][:, ::-1, :] if data['processed_ground_truth'] is not None else None
         bad_frames = bad_frames[:, ::-1, :]
+        print(markers.shape, ground_truth.shape, bad_frames.shape)
     else:
         markers = data['processed_X']
         ground_truth = data['processed_ground_truth'] if data['processed_ground_truth'] is not None else None
@@ -364,6 +365,8 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
         preds = preds[:, ::-1, :]
         bad_frames = bad_frames[:, ::-1, :]
         member_stds = member_stds[:, ::-1, :]
+        print(preds.shape, member_stds.shape, bad_frames.shape)
+
 
     # Save predictions to a matlab file.
     if save_path is not None:

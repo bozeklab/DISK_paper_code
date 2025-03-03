@@ -4,7 +4,7 @@ t0 = time()
 import os, sys
 import tqdm
 from glob import glob
-
+import argparse
 import numpy as np
 import pandas as pd
 from skimage.io import imread, imsave
@@ -61,89 +61,109 @@ def check_exist(*args):
 
 
 if __name__ == '__main__':
+
+    ##########################################################################################################
+    ### CHOOSE DATASET BY SUPPLYING THE COMMANDLINE ARGUMENT
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('dataset', type=str,
+                        help='dataset name', choices=['FL2', 'CLB', 'DANNCE', 'Mocap', 'DF3D', 'Fish', 'MABe'])
+
+    parser.add_argument('--train', '-t', action='store_true', default=False,
+                        help='retrain')
+
+    args = parser.parse_args()
     ###################################################################################################################
     ## PARAMETERS TO CHANGE FOR THE RUN
 
-    ## FL2
-    # BASEFOLDER = os.path.join('/home/france/Documents', "MarkerBasedImputation_FL2")
-    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
-    # front_point = ['left_coord', 'right_coord']
-    # middle_point = ['left_hip', 'right_hip']
-    # TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
-    # data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
-    # short_seq_datafile =
-    # long_seq_datafile_pattern = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')
+    if args.dataset == 'FL2':
+        # FL2
+        BASEFOLDER = os.path.join('/home/france/Documents', "MarkerBasedImputation_FL2")
+        DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
+        front_point = ['left_coord', 'right_coord']
+        middle_point = ['left_hip', 'right_hip']
+        TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
+        data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+        # short_seq_datafile =
+        long_seq_datafile_pattern = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')
 
-    ## DANNCE
-    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DANNCE/")
-    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
-    # front_point = 'SpineF'
-    # middle_point = 'SpineM'
-    # TRAINSTRIDE = 5 # FL2 is a smaller dataset than they had (25 million frames for training)
-    #
-    # short_seq_datafile = os.path.join(basedir, 'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
-    # long_seq_datafiles = glob(os.path.join(basedir,
-    #                                        'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+    elif args.dataset == 'DANNCE':
+        # DANNCE
+        BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DANNCE/")
+        DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
+        front_point = 'SpineF'
+        middle_point = 'SpineM'
+        TRAINSTRIDE = 5 # FL2 is a smaller dataset than they had (25 million frames for training)
 
-    ## CLB
-    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_CLB/")
-    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_CLB_keypoints_1_60_stride0.5')
-    # front_point = ['left_coord', 'right_coord']
-    # middle_point = ['left_hip', 'right_hip']
-    # TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
-    #
-    # short_seq_datafile = os.path.join(basedir,
-    #                                   'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
-    # long_seq_datafiles = glob(os.path.join(basedir,
-    #                                        'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+        short_seq_datafile = os.path.join(basedir, 'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+        long_seq_datafiles = glob(os.path.join(basedir,
+                                               'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
-    ## MABe
-    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_MABe/")
-    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/MABE_task1_60stride60')
-    # front_point = ['kp3_animal0', 'kp3_animal1']
-    # middle_point = ['kp6_animal0', 'kp6_animal1']
-    # TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
-    #
-    # short_seq_datafile = os.path.join(basedir,
-    #                                   'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
-    # long_seq_datafiles = glob(os.path.join(basedir,
-    #                                        'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+    elif args.dataset == 'CLB':
+        # CLB
+        BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_CLB/")
+        DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_CLB_keypoints_1_60_stride0.5')
+        front_point = ['left_coord', 'right_coord']
+        middle_point = ['left_hip', 'right_hip']
+        TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
 
-    ## DF3D
-    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DF3D/")
-    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DF3D_keypoints_60stride5_new')
-    # front_point = ['15', '34'] # cf image on https://github.com/NeLy-EPFL/DeepFly3D
-    # middle_point = ['16', '35']
-    # TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
-    #
-    # short_seq_datafile = os.path.join(basedir,
-    #                                   'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
-    # long_seq_datafiles = glob(os.path.join(basedir,
-    #                                        'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+        short_seq_datafile = os.path.join(basedir,
+                                          'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+        long_seq_datafiles = glob(os.path.join(basedir,
+                                               'results_behavior/outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
-    ## Fish
-    # BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_Fish/")
-    # DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/Fish_v3_60stride120')
-    # front_point = ['fish1_head', 'fish2_head']
-    # middle_point = ['fish1_tail', 'fish2_tail']
-    # TRAINSTRIDE = 50  # FL2 is a smaller dataset than they had (25 million frames for training)
-    #
-    # short_seq_datafile = os.path.join(basedir,
-    #                                   'results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/test_repeat-0.csv')
-    # long_seq_datafiles = glob(os.path.join(basedir,
-    #                                        'results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+    elif args.dataset == 'MABe':
+        # MABe
+        BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_MABe/")
+        DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/MABE_task1_60stride60')
+        front_point = ['kp3_animal0', 'kp3_animal1']
+        middle_point = ['kp6_animal0', 'kp6_animal1']
+        TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
 
-    ## Mocap
-    BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_Mocap/")
-    DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/Mocap_keypoints_60_stride30_new')
-    front_point = 'arm1_1' # names got shuffled
-    middle_point = 'arm1_0'
-    TRAINSTRIDE = 1
+        short_seq_datafile = os.path.join(basedir,
+                                          'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+        long_seq_datafiles = glob(os.path.join(basedir,
+                                               'results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
 
-    short_seq_datafile = os.path.join(basedir,
-                                      'results_behavior/outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
-    long_seq_datafiles = glob(os.path.join(basedir,
-                                           'results_behavior/outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+    elif args.dataset == 'DF3D':
+        # DF3D
+        BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_DF3D/")
+        DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/DF3D_keypoints_60stride5_new')
+        front_point = ['15', '34'] # cf image on https://github.com/NeLy-EPFL/DeepFly3D
+        middle_point = ['16', '35']
+        TRAINSTRIDE = 1  # FL2 is a smaller dataset than they had (25 million frames for training)
+
+        short_seq_datafile = os.path.join(basedir,
+                                          'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+        long_seq_datafiles = glob(os.path.join(basedir,
+                                               'results_behavior/outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+    elif args.dataset == 'Fish':
+        # Fish
+        BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_Fish/")
+        DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/Fish_v3_60stride120')
+        front_point = ['fish1_head', 'fish2_head']
+        middle_point = ['fish1_tail', 'fish2_tail']
+        TRAINSTRIDE = 50  # FL2 is a smaller dataset than they had (25 million frames for training)
+
+        short_seq_datafile = os.path.join(basedir,
+                                          'results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/test_repeat-0.csv')
+        long_seq_datafiles = glob(os.path.join(basedir,
+                                               'results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+
+    elif args.dataset == 'Mocap':
+        ## Mocap
+        BASEFOLDER = os.path.join(basedir, "results_behavior/MarkerBasedImputation_Mocap/")
+        DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/Mocap_keypoints_60_stride30_new')
+        front_point = 'arm1_1' # names got shuffled, spine0
+        middle_point = 'arm1_0'# spine1
+        TRAINSTRIDE = 1
+
+        short_seq_datafile = os.path.join(basedir,
+                                          'results_behavior/outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
+        long_seq_datafiles = glob(os.path.join(basedir,
+                                               'results_behavior/outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/test_fulllength_dataset_w-all-nans_file-*.csv'))
+
+    else:
+        sys.exit(1)
 
     ###################################################################################################################
 
@@ -176,6 +196,7 @@ if __name__ == '__main__':
     # TRAINING
     models = glob(os.path.join(BASEFOLDER, f'models-wave_net_epochs={EPOCHS}_input_9_output_1*/best_model.h5'))
 
+    # only train the number of missing models
     for _ in range(NMODELS - len(models)):
         train(train_file, val_file, front_point=front_point, middle_point=middle_point,
               base_output_path=MODELFOLDER, run_name=None,
