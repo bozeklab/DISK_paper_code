@@ -66,6 +66,9 @@ if __name__ == '__main__':
     parser.add_argument('dataset', type=str,
                         help='dataset name', choices=['FL2', 'CLB', 'DANNCE', 'Mocap', 'DF3D', 'Fish', 'MABe'])
 
+    parser.add_argument('--train', '-t', action='store_true', default=False,
+                        help='retrain')
+
     args = parser.parse_args()
 
     ##########################################################################################################
@@ -167,54 +170,58 @@ if __name__ == '__main__':
     # coordinates = {}
     # for k in raw_coordinates.keys():
     #     coordinates[k] = transform_x(raw_coordinates[k], transforms)[0]
-
-    ## format data for modeling
-    data, metadata = kpms.format_data(coordinates, confidences, **config())
-    print('-- Initial data', data[list(data.keys())[0]].shape)
-
-    ## only for 2D
-    if _2D:
-        kpms.noise_calibration(project_dir, coordinates, confidences, **config())
-
-    pca = kpms.fit_pca(**data, **config())
-    kpms.save_pca(pca, project_dir)
-
-    f_pca = 0.9
-    kpms.print_dims_to_explain_variance(pca, f_pca)
-    cs = np.cumsum(pca.explained_variance_ratio_)
-    if cs[-1] < f_pca:
-        latent_dim = len(cs)
-    else:
-        latent_dim = int((cs>f_pca).nonzero()[0].min()+1)
-    print(type(latent_dim), latent_dim)
-
-    # kpms.plot_scree(pca, project_dir=project_dir)
-    # kpms.plot_pcs(pca, project_dir=project_dir, **config())
-
-    kpms.update_config(project_dir, latent_dim=latent_dim)
-
-    ## initialize the model
-    model = kpms.init_model(data, pca=pca, **config())
-
     num_ar_iters = 50
-    # model_name = '2024_09_26-14_57_06'
 
-    _, model_name = kpms.fit_model(
-        model, data, metadata, project_dir,
-        ar_only=True, num_iters=num_ar_iters, parallel_message_passing=False)
+    if args.train:
+        ## format data for modeling
+        data, metadata = kpms.format_data(coordinates, confidences, **config())
+        print('-- Initial data', data[list(data.keys())[0]].shape)
 
-    ## load model checkpoint
-    model, data, metadata, current_iter = kpms.load_checkpoint(
-        project_dir, model_name, iteration=num_ar_iters)
+        ## only for 2D
+        if _2D:
+            kpms.noise_calibration(project_dir, coordinates, confidences, **config())
 
-    ## modify kappa to maintain the desired syllable time-scale
-    model = kpms.update_hypparams(model, kappa=1e4)
+        pca = kpms.fit_pca(**data, **config())
+        kpms.save_pca(pca, project_dir)
 
-    ## run fitting for an additional 500 iters
-    model = kpms.fit_model(
-        model, data, metadata, project_dir, model_name, ar_only=False,
-        start_iter=current_iter, num_iters=current_iter + 500,
-        parallel_message_passing=False)[0]
+        f_pca = 0.9
+        kpms.print_dims_to_explain_variance(pca, f_pca)
+        cs = np.cumsum(pca.explained_variance_ratio_)
+        if cs[-1] < f_pca:
+            latent_dim = len(cs)
+        else:
+            latent_dim = int((cs>f_pca).nonzero()[0].min()+1)
+        print(type(latent_dim), latent_dim)
+
+        # kpms.plot_scree(pca, project_dir=project_dir)
+        # kpms.plot_pcs(pca, project_dir=project_dir, **config())
+
+        kpms.update_config(project_dir, latent_dim=latent_dim)
+
+        ## initialize the model
+        model = kpms.init_model(data, pca=pca, **config())
+
+        _, model_name = kpms.fit_model(
+            model, data, metadata, project_dir,
+            ar_only=True, num_iters=num_ar_iters, parallel_message_passing=False)
+
+        ## modify kappa to maintain the desired syllable time-scale
+        model = kpms.update_hypparams(model, kappa=1e4)
+
+        model, data, metadata, current_iter = kpms.load_checkpoint(
+            project_dir, model_name, iteration=num_ar_iters)
+
+        ## run fitting for an additional 500 iters
+        model = kpms.fit_model(
+            model, data, metadata, project_dir, model_name, ar_only=False,
+            start_iter=current_iter, num_iters=current_iter + 500,
+            parallel_message_passing=False)[0]
+    else:
+        model_name_list = glob(os.path.join(project_dir, '2025_*'))
+        model_name = os.path.basename(max(model_name_list, key=os.path.getctime))
+        ## load model checkpoint
+        model, data, metadata, current_iter = kpms.load_checkpoint(
+            project_dir, model_name, iteration=500 + num_ar_iters)
 
     Y_est = estimate_coordinates(
         jnp.array(model['states']['x']),
@@ -296,6 +303,7 @@ if __name__ == '__main__':
     # # data['mask'] is of shape (10, 3630)
     #
     # # apply saved model to new data
+    data, metadata = kpms.format_data(coordinates, confidences, keys=None, **config())
     results, applied_model = kpms.apply_model(model, data, metadata, project_dir, model_name, **config(),
                                               parallel_message_passing=False, return_model=True)
 
