@@ -160,7 +160,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, divider, ground
     # markers you do not want to predict with the ground truth, and append
     # the resulting vector to the end of the next input chunk.
     print(save_path)
-    print(np.sum(mask), startpoint[mask])
+    print(np.sum(mask), startpoint, np.unique(bad_frames))
     n_iteration = 0
     while np.sum(mask) > 0 and np.max(startpoint[mask]) > - input_length:
         # if first missing value before input_length, then pad before with first value
