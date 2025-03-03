@@ -160,7 +160,7 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, divider, ground
     # markers you do not want to predict with the ground truth, and append
     # the resulting vector to the end of the next input chunk.
     print(save_path)
-    print(np.sum(mask), startpoint, np.unique(bad_frames))
+    print(np.sum(mask), startpoint, bad_frames_any[:, 0])
     n_iteration = 0
     while np.sum(mask) > 0 and np.max(startpoint[mask]) > - input_length:
         # if first missing value before input_length, then pad before with first value
@@ -336,8 +336,9 @@ def predict_single_pass(model_path, data_file, dataset_path, pass_direction, *,
     if pass_direction == 'reverse':
         markers = data['processed_X'][:, ::-1, :]
         ground_truth = data['processed_ground_truth'][:, ::-1, :] if data['processed_ground_truth'] is not None else None
+        print(bad_frames[:, -1, 0])
         bad_frames = bad_frames[:, ::-1, :]
-        print(markers.shape, bad_frames.shape)
+        print(bad_frames[:, 0, 0])
     else:
         markers = data['processed_X']
         ground_truth = data['processed_ground_truth'] if data['processed_ground_truth'] is not None else None
