@@ -9,8 +9,6 @@ from functools import partial
 import logging
 import matplotlib.pyplot as plt
 import argparse
-import matplotlib
-matplotlib.use('TkAgg')
 import seaborn as sns
 
 import matplotlib
