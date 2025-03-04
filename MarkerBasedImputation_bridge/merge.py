@@ -179,17 +179,16 @@ def merge(save_path, pred_path, dataset_path):
                 weightR = sigmoid(np.arange(length_CC), x_0, k)[:, np.newaxis]
                 where_predsR_is_nan = np.any(get_mask(predsR[sample, time_ids, kp * divider: kp * divider + divider], exclude_value), axis=-1)[:, np.newaxis]
                 where_predsF_is_nan = np.any(get_mask(predsF[sample, time_ids, kp * divider: kp * divider + divider], exclude_value), axis=-1)[:, np.newaxis]
-                print(np.sum(where_predsR_is_nan), np.sum(where_predsF_is_nan))
                 weightR[where_predsR_is_nan] = 0
                 weightF = 1 - weightR
-                print(weightF)
+                logging.info(f'MERGE, SUM WEIGHTS R: {np.sum(where_predsR_is_nan)}, SUM WEIGHTS F: {np.sum(where_predsF_is_nan)}, UNIQUE WEIGHTS F: {np.unique(weightF)}')
                 preds[sample, time_ids, kp * divider: kp * divider + divider] = predsF[sample, time_ids, kp * divider: kp * divider + divider] * weightF + predsR[sample, time_ids, kp * divider: kp * divider + divider] * weightR
                 member_stds[sample, time_ids, kp * divider: kp * divider + divider] = np.sqrt(member_stdsF[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightF + member_stdsR[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightR)
     elapsed = datetime.datetime.now() - start
     logging.info(f'Computing average took: {elapsed} seconds')
 
     for item in items:
-        fig, axes = plt.subplots(preds.shape[-1]//divider, divider, figsize=(10, 10), sharey='col')
+        fig, axes = plt.subplots(preds.shape[-1]//divider, divider, figsize=(10, 10), sharey='col', sharex='all')
         axes = axes.flatten()
         for i in range(preds.shape[-1]):
             x = markers[item, :, i]
