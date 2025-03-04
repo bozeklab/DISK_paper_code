@@ -242,13 +242,14 @@ def predict_markers(model, dict_model, X, bad_frames, keypoints, divider, ground
 
         bad_frames = get_mask(preds, exclude_value)
         bad_frames_any = np.any(bad_frames, axis=2)  # axis=2 is the keypoint axis
-        logging.info(f'Progress {n_iteration}: remaining missing values = {np.sum(bad_frames_any)}')
         startpoint = np.argmax(bad_frames_any, axis=1)  # returns the first point of missing = next_frame_id
         next_frame_id = startpoint
         startpoint = np.clip(startpoint - input_length, a_min=-input_length - 1, a_max=X.shape[1] - 1)
         mask = next_frame_id > 0
 
         n_iteration += 1
+
+    logging.info(f'Progress {n_iteration}: remaining missing values = {np.sum(bad_frames_any)}')
 
     if ground_truth is not None:
         rmse = np.sqrt((preds - ground_truth) ** 2)

@@ -117,6 +117,34 @@ def merge(save_path, pred_path, dataset_path):
 
     items = np.random.choice(predsF.shape[0], 10)
 
+    for item in items:
+        fig, axes = plt.subplots(predsF.shape[-1]//divider, divider, figsize=(10, 10), sharey='col', sharex='all')
+        axes = axes.flatten()
+        for i in range(predsF.shape[-1]):
+            x = markers[item, :, i]
+            x[get_mask(x, exclude_value)] = np.nan
+            t = np.arange(markers.shape[1])
+            axes[i].plot(x, 'o-')
+            axes[i].plot(t, predsF[item, :, i], 'x')
+            axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
+            if i%divider == 0:
+                axes[i].set_ylabel(marker_names[i//divider])
+        plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}_before_unprocess.png'))
+        plt.close()
+
+        fig, axes = plt.subplots(predsR.shape[-1]//divider, divider, figsize=(10, 10), sharey='col', sharex='all')
+        axes = axes.flatten()
+        for i in range(predsR.shape[-1]):
+            x = markers[item, :, i]
+            x[get_mask(x, exclude_value)] = np.nan
+            t = np.arange(markers.shape[1])
+            axes[i].plot(x, 'o-')
+            axes[i].plot(t[bad_framesR[item, :, i].astype(bool)], predsR[item, bad_framesR[item, :, i].astype(bool), i], 'x')
+            if i%divider == 0:
+                axes[i].set_ylabel(marker_names[i//divider])
+        plt.savefig(os.path.join(save_path, f'single_predR_pred_item-{item}_before_unprocess.png'))
+        plt.close()
+
     # markers are already saved before processing, no need to unprocess them
     # markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
     logging.info(f'BEFORE UNPROCESS, {exclude_value}, {np.unique(predsF)[:10]}, {np.unique(predsR)[:10]}')
@@ -182,7 +210,7 @@ def merge(save_path, pred_path, dataset_path):
                 where_predsF_is_nan = np.any(get_mask(predsF[sample, time_ids, kp * divider: kp * divider + divider], exclude_value), axis=-1)[:, np.newaxis]
                 weightR[where_predsR_is_nan] = 0
                 weightF = 1 - weightR
-                logging.info(f'MERGE, SUM WEIGHTS R: {np.sum(weightR)}, SUM WEIGHTS F: {weightF}, UNIQUE WEIGHTS F: {np.unique(weightF)}')
+                logging.info(f'MERGE, SUM WEIGHTS R: {np.sum(weightR)}, SUM WEIGHTS F: {np.sum(weightF)}, UNIQUE WEIGHTS F: {np.unique(weightF)}')
                 preds[sample, time_ids, kp * divider: kp * divider + divider] = predsF[sample, time_ids, kp * divider: kp * divider + divider] * weightF + predsR[sample, time_ids, kp * divider: kp * divider + divider] * weightR
                 member_stds[sample, time_ids, kp * divider: kp * divider + divider] = np.sqrt(member_stdsF[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightF + member_stdsR[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightR)
     elapsed = datetime.datetime.now() - start
