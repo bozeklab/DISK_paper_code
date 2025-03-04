@@ -155,23 +155,24 @@ def fill_nan_forward(arr):
 
 def unprocess_data(X, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value):
     # undo the z-score
+    logging.info(f'UNPROCESS DATA, markers: {np.unique(marker_means)[:2]} {exclude_value}')
+    logging.info(f'UNPROCESS DATA, stds: {np.unique(marker_stds)[:2]}')
+    logging.info(f'UNPROCESS DATA, rot_angle: {np.unique(rot_angle)[:2]}')
+    logging.info(f'UNPROCESS DATA, mean_position: {np.unique(mean_position)[:2]}')
+
     if np.any(get_mask(marker_means, exclude_value)):
-        logging.info(f'UNPROCESS DATA: {np.unique(marker_means)[:2]}')
         # marker_means[get_mask(marker_means, exclude_value)] = np.nan
         marker_means = fill_nan_forward(marker_means)
 
     if np.any(get_mask(marker_stds, exclude_value)):
-        logging.info(f'UNPROCESS DATA: {np.unique(marker_stds)[:2]}')
         # marker_stds[get_mask(marker_stds, exclude_value)] = np.nan
         marker_stds = fill_nan_forward(marker_stds)
 
     if np.any(get_mask(rot_angle, exclude_value)):
-        logging.info(f'UNPROCESS DATA: {np.unique(rot_angle)[:2]}')
         # rot_angle[get_mask(rot_angle, exclude_value)] = np.nan
         rot_angle = fill_nan_forward(rot_angle)
 
     if np.any(get_mask(mean_position, exclude_value)):
-        logging.info(f'UNPROCESS DATA: {np.unique(mean_position)[:2]}')
         # mean_position[get_mask(mean_position, exclude_value)] = np.nan
         mean_position = fill_nan_forward(mean_position)
 
