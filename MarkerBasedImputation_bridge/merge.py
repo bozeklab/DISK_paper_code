@@ -178,7 +178,7 @@ def merge(save_path, pred_path, dataset_path):
                 x_0 = np.round(length_CC / 2)
                 weightR = sigmoid(np.arange(length_CC), x_0, k)[:, np.newaxis]
                 print(weightR.shape, get_mask(predsR[sample, time_ids, kp * divider: kp * divider + divider], exclude_value).shape, np.any(get_mask(predsR[sample, time_ids, kp * divider: kp * divider + divider], exclude_value), axis=-1).shape)
-                weightR[get_mask(predsR[sample, time_ids, kp * divider: kp * divider + divider], exclude_value)] = 0
+                weightR[get_mask(predsR[sample, time_ids, kp * divider: kp * divider + divider], exclude_value)[:, np.newaxis]] = 0
                 weightF = 1 - weightR
                 preds[sample, time_ids, kp * divider: kp * divider + divider] = predsF[sample, time_ids, kp * divider: kp * divider + divider] * weightF + predsR[sample, time_ids, kp * divider: kp * divider + divider] * weightR
                 member_stds[sample, time_ids, kp * divider: kp * divider + divider] = np.sqrt(member_stdsF[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightF + member_stdsR[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightR)
