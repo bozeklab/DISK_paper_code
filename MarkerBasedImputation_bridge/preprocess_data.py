@@ -6,7 +6,7 @@ https://github.com/jessedmarshall/CAPTURE_demo/blob/b85581c796237634c50f71554951
 import numpy as np
 from scipy.signal import medfilt
 from utils import get_mask
-
+import logging
 
 def get_ref_point(X, marker_names, point, divider):
     if type(point) == list:
@@ -156,18 +156,22 @@ def fill_nan_forward(arr):
 def unprocess_data(X, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value):
     # undo the z-score
     if np.any(get_mask(marker_means, exclude_value)):
+        logging.info(f'UNPROCESS DATA: {np.unique(marker_means)[:2]}')
         # marker_means[get_mask(marker_means, exclude_value)] = np.nan
         marker_means = fill_nan_forward(marker_means)
 
     if np.any(get_mask(marker_stds, exclude_value)):
+        logging.info(f'UNPROCESS DATA: {np.unique(marker_stds)[:2]}')
         # marker_stds[get_mask(marker_stds, exclude_value)] = np.nan
         marker_stds = fill_nan_forward(marker_stds)
 
     if np.any(get_mask(rot_angle, exclude_value)):
+        logging.info(f'UNPROCESS DATA: {np.unique(rot_angle)[:2]}')
         # rot_angle[get_mask(rot_angle, exclude_value)] = np.nan
         rot_angle = fill_nan_forward(rot_angle)
 
     if np.any(get_mask(mean_position, exclude_value)):
+        logging.info(f'UNPROCESS DATA: {np.unique(mean_position)[:2]}')
         # mean_position[get_mask(mean_position, exclude_value)] = np.nan
         mean_position = fill_nan_forward(mean_position)
 
