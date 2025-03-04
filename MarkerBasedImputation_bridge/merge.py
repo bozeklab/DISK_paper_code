@@ -124,7 +124,7 @@ def merge(save_path, pred_path, dataset_path):
     predsR = unprocess_data(predsR, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
 
     for item in items:
-        fig, axes = plt.subplots(predsF.shape[-1]//divider, divider, figsize=(10, 10), sharey='col')
+        fig, axes = plt.subplots(predsF.shape[-1]//divider, divider, figsize=(10, 10), sharey='col', sharex='all')
         axes = axes.flatten()
         for i in range(predsF.shape[-1]):
             x = markers[item, :, i]
@@ -137,7 +137,7 @@ def merge(save_path, pred_path, dataset_path):
         plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}_after_unprocess.png'))
         plt.close()
 
-        fig, axes = plt.subplots(predsR.shape[-1]//divider, divider, figsize=(10, 10), sharey='col')
+        fig, axes = plt.subplots(predsR.shape[-1]//divider, divider, figsize=(10, 10), sharey='col', sharex='all')
         axes = axes.flatten()
         for i in range(predsR.shape[-1]):
             x = markers[item, :, i]
@@ -177,6 +177,7 @@ def merge(save_path, pred_path, dataset_path):
                 length_CC = len(time_ids)
                 x_0 = np.round(length_CC / 2)
                 weightR = sigmoid(np.arange(length_CC), x_0, k)[:, np.newaxis]
+                weightR[get_mask(predsR, exclude_value)] = 0
                 weightF = 1 - weightR
                 preds[sample, time_ids, kp * divider: kp * divider + divider] = predsF[sample, time_ids, kp * divider: kp * divider + divider] * weightF + predsR[sample, time_ids, kp * divider: kp * divider + divider] * weightR
                 member_stds[sample, time_ids, kp * divider: kp * divider + divider] = np.sqrt(member_stdsF[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightF + member_stdsR[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightR)
