@@ -205,10 +205,8 @@ def merge(save_path, pred_path, dataset_path):
                 x_0 = np.round(length_CC / 2)
                 weightR = sigmoid(np.arange(length_CC), x_0, k)[:, np.newaxis]
                 where_predsR_is_nan = np.any(get_mask(predsR[sample, time_ids, kp * divider: kp * divider + divider], exclude_value), axis=-1)[:, np.newaxis]
-                where_predsF_is_nan = np.any(get_mask(predsF[sample, time_ids, kp * divider: kp * divider + divider], exclude_value), axis=-1)[:, np.newaxis]
                 weightR[where_predsR_is_nan] = 0
                 weightF = 1 - weightR
-                logging.info(f'MERGE, SUM WEIGHTS R: {np.sum(weightR)}, SUM WEIGHTS F: {np.sum(weightF)}, UNIQUE WEIGHTS F: {np.unique(weightF)}')
                 preds[sample, time_ids, kp * divider: kp * divider + divider] = predsF[sample, time_ids, kp * divider: kp * divider + divider] * weightF + predsR[sample, time_ids, kp * divider: kp * divider + divider] * weightR
                 member_stds[sample, time_ids, kp * divider: kp * divider + divider] = np.sqrt(member_stdsF[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightF + member_stdsR[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightR)
     elapsed = datetime.datetime.now() - start
