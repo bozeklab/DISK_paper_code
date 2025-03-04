@@ -177,6 +177,7 @@ def merge(save_path, pred_path, dataset_path):
                 length_CC = len(time_ids)
                 x_0 = np.round(length_CC / 2)
                 weightR = sigmoid(np.arange(length_CC), x_0, k)[:, np.newaxis]
+                print(weightR.shape, get_mask(predsR, exclude_value).shape)
                 weightR[get_mask(predsR, exclude_value)] = 0
                 weightF = 1 - weightR
                 preds[sample, time_ids, kp * divider: kp * divider + divider] = predsF[sample, time_ids, kp * divider: kp * divider + divider] * weightF + predsR[sample, time_ids, kp * divider: kp * divider + divider] * weightR
