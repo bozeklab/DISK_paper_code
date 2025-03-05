@@ -214,10 +214,10 @@ def merge(save_path, pred_path, dataset_path):
                 time_ids = np.where(CC == j + 1)[0]
                 length_CC = len(time_ids)
                 x_0 = np.round(length_CC / 2)
-                weightR = sigmoid(np.arange(length_CC), x_0, k)[:, np.newaxis]
-                logging.info(f'[where0] {predsF[sample, time_ids, i]}')
+                weightR = sigmoid(np.arange(length_CC), x_0, k)#[:, np.newaxis]
+                logging.info(f'[where0] {predsF[sample, time_ids, i]} {predsF[sample, time_ids, i].shape}')
                 print(get_mask(predsR[sample, time_ids, i], exclude_value), get_mask(predsR[sample, time_ids, i], np.nan))
-                where_predsR_is_nan = (get_mask(predsR[sample, time_ids, i], exclude_value) + get_mask(predsR[sample, time_ids, i], np.nan))[:, np.newaxis]
+                where_predsR_is_nan = (get_mask(predsR[sample, time_ids, i], exclude_value) + get_mask(predsR[sample, time_ids, i], np.nan))#[:, np.newaxis]
                 print(where_predsR_is_nan.shape, weightR.shape, )
                 weightR[where_predsR_is_nan] = 0
                 weightF = 1 - weightR
