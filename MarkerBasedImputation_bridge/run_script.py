@@ -82,8 +82,8 @@ if __name__ == '__main__':
         front_point = ['left_coord', 'right_coord']
         middle_point = ['left_hip', 'right_hip']
         TRAINSTRIDE = 1 #5 # FL2 is a smaller dataset than they had (25 million frames for training)
-        data_file = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
-        # short_seq_datafile =
+
+        short_seq_datafile = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_repeat-0.csv')
         long_seq_datafile_pattern = os.path.join(basedir, 'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file*.csv')
 
     elif args.dataset == 'DANNCE':
