@@ -219,7 +219,7 @@ def merge(save_path, pred_path, dataset_path):
                 weightR = sigmoid(np.arange(length_CC), x_0, k)#[:, np.newaxis]
                 logging.info(f'[where0] {predsF[sample, time_ids, i]} {predsF[sample, time_ids, i].shape}')
                 # print(get_mask(predsR[sample, time_ids, i], exclude_value), get_mask(predsR[sample, time_ids, i], np.nan))
-                where_predsR_is_nan = get_mask(predsR[sample, time_ids, i], exclude_value)#[:, np.newaxis]
+                where_predsR_is_nan = get_mask(predsR[sample, time_ids, i], optipose_exclude_value)#[:, np.newaxis]
                 # print(where_predsR_is_nan.shape, weightR.shape, )
                 weightR[where_predsR_is_nan] = 0
                 weightF = 1 - weightR
