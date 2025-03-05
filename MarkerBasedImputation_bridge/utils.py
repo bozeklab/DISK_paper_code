@@ -7,6 +7,14 @@ import torch
 
 
 def get_mask(X, value):
+    """
+
+    :param X:
+    :type X:
+    :param value:
+    :type value:
+    :return: boolean array
+    """
     if value is np.nan:
         return np.isnan(X)
     else:

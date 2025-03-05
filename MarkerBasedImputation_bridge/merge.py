@@ -193,7 +193,7 @@ def merge(save_path, pred_path, dataset_path):
     # # 3 because 3D?
     # for i in range(bad_frames.shape[2]):
     #     bad_frames[..., i] = np.any(bad_framesF[..., i * divider: i * divider + divider] & bad_framesR[..., i * divider: i * divider + divider], axis=2)
-    bad_frames = get_mask(markers, exclude_value)
+    bad_frames = get_mask(markers, exclude_value) + get_mask(markers, np.nan)
 
     # Compute the weighted average of the forward and reverse predictions using a logistic function
     logging.info('Computing weighted average')
@@ -231,6 +231,7 @@ def merge(save_path, pred_path, dataset_path):
             x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
+            axes[i].plot(t, preds[item, :, i], 'x')
             axes[i].plot(t[mask_x], preds[item, mask_x, i], 'x')
             if i%divider == 0:
                 axes[i].set_ylabel(marker_names[i//divider])
