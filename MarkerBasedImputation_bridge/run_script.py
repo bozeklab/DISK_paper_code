@@ -247,24 +247,24 @@ if __name__ == '__main__':
 
     # ON SHORT SEQUENCES WITH GROUND TRUTH
 
-    logging.info(f'datafile = {short_seq_datafile}')
-
-    for pass_direction in ['reverse', 'forward']:
-        predict_single_pass(model_ensemble_path, short_seq_datafile, DATASETPATH, pass_direction,
-                            save_path=save_path, stride=impute_stride,
-                            model=None, front_point=front_point, middle_point=middle_point)
-
-    t_after_predict = time()
-    logging.info(f'Time predict: {t_after_predict - t_after_training}')
-
-    pred_paths = glob(os.path.join(save_path, 'test_repeat-0*.mat'))
-    save_path = os.path.join(save_path, f'{os.path.basename(short_seq_datafile).split(".")[0]}_merged')
-    if not os.path.exists(save_path):
-        os.mkdir(save_path)
-    merge(save_path, pred_paths, DATASETPATH)
-
-    t_after_merge = time()
-    logging.info(f'Time predict: {t_after_merge - t_after_predict}')
+    # logging.info(f'datafile = {short_seq_datafile}')
+    #
+    # for pass_direction in ['reverse', 'forward']:
+    #     predict_single_pass(model_ensemble_path, short_seq_datafile, DATASETPATH, pass_direction,
+    #                         save_path=save_path, stride=impute_stride,
+    #                         model=None, front_point=front_point, middle_point=middle_point)
+    #
+    # t_after_predict = time()
+    # logging.info(f'Time predict: {t_after_predict - t_after_training}')
+    #
+    # pred_paths = glob(os.path.join(save_path, 'test_repeat-0*.mat'))
+    # save_path = os.path.join(save_path, f'{os.path.basename(short_seq_datafile).split(".")[0]}_merged')
+    # if not os.path.exists(save_path):
+    #     os.mkdir(save_path)
+    # merge(save_path, pred_paths, DATASETPATH)
+    #
+    # t_after_merge = time()
+    # logging.info(f'Time predict: {t_after_merge - t_after_predict}')
 
 
     # ON ORIGINAL FILES FOR REAL-SCENARIO IMPUTATION

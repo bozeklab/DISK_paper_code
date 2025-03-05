@@ -209,7 +209,7 @@ def merge(save_path, pred_path, dataset_path):
         for i in range(bad_frames.shape[-1]):
             CC = measure.label(is_bad[:, i], background=0)
             num_CC = len(np.unique(CC)) - 1
-            logging.info(f'num_CC: {num_CC}')
+            logging.debug(f'num_CC: {num_CC}')
             # initialize to forward prediction
             # preds[sample, ..., divider * kp: divider * kp + divider] = markers[sample, ..., divider * kp: divider * kp + divider]
             for j in range(num_CC):
@@ -217,15 +217,15 @@ def merge(save_path, pred_path, dataset_path):
                 length_CC = len(time_ids)
                 x_0 = np.round(length_CC / 2)
                 weightR = sigmoid(np.arange(length_CC), x_0, k)#[:, np.newaxis]
-                logging.debug(f'[where0] {predsF[sample, time_ids, i]} {predsF[sample, time_ids, i].shape}')
+                logging.info(f'[where0] {predsF[sample, time_ids, i]} {predsF[sample, time_ids, i].shape}')
                 # print(get_mask(predsR[sample, time_ids, i], exclude_value), get_mask(predsR[sample, time_ids, i], np.nan))
                 where_predsR_is_nan = get_mask(predsR[sample, time_ids, i], exclude_value)#[:, np.newaxis]
                 # print(where_predsR_is_nan.shape, weightR.shape, )
                 weightR[where_predsR_is_nan] = 0
                 weightF = 1 - weightR
-                logging.debug(f'[where1] {weightF}')
+                logging.info(f'[where1] {weightF}')
                 preds[sample, time_ids, i] = predsF[sample, time_ids, i] * weightF + predsR[sample, time_ids, i] * weightR
-                logging.debug(f'[where2] {preds[sample, time_ids, i]}')
+                logging.info(f'[where2] {preds[sample, time_ids, i]}')
                 member_stds[sample, time_ids, i] = np.sqrt(member_stdsF[sample, time_ids, i] ** 2 * weightF + member_stdsR[sample, time_ids, i] ** 2 * weightR)
     elapsed = datetime.datetime.now() - start
     logging.info(f'Computing average took: {elapsed} seconds')
