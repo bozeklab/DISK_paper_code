@@ -165,7 +165,7 @@ def merge(save_path, pred_path, dataset_path):
             x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
-            # axes[i].plot(t, predsF[item, :, i], 'x')
+            axes[i].plot(t, predsF[item, :, i], 'x')
             axes[i].plot(t[mask_x], predsF[item, mask_x, i], 'x')
             if i%divider == 0:
                 axes[i].set_ylabel(marker_names[i//divider])
