@@ -149,6 +149,8 @@ def merge(save_path, pred_path, dataset_path):
     predsF = unprocess_data(predsF, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
     predsR = unprocess_data(predsR, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
 
+    logging.info(f'AFTER UNPROCESS, {exclude_value}, {np.unique(predsF)[:10]}, {np.unique(predsR)[:10]}')
+
     for item in items:
         fig, axes = plt.subplots(predsF.shape[-1]//divider, divider, figsize=(10, 10), sharey='col', sharex='all')
         axes = axes.flatten()

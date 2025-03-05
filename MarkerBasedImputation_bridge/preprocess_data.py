@@ -173,6 +173,7 @@ def unprocess_data(X, divider, rot_angle, mean_position, marker_means, marker_st
         # mean_position[get_mask(mean_position, exclude_value)] = np.nan
         mean_position = fill_nan_forward(mean_position)
 
+
     logging.info(f'UNPROCESS DATA, stds: {np.unique(marker_stds)[:2]}')
     logging.info(f'UNPROCESS DATA, rot_angle: {np.unique(rot_angle)[:2]}')
     logging.info(f'UNPROCESS DATA, mean_position: {np.unique(mean_position)[:2]}')
