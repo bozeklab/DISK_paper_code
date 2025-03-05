@@ -204,21 +204,22 @@ def merge(save_path, pred_path, dataset_path):
     for sample in range(len(predsF)):
         # for i in range(bad_frames.shape[2] * 3): # *3
         is_bad = bad_frames[sample].astype(int) #bad_frames[..., np.floor(i / 3).astype('int32')]
-        for kp in range(bad_frames.shape[-1]):
-            CC = measure.label(is_bad[:, kp], background=0)
+        logging.info(f'[is_bad] {is_bad}')
+        for i in range(bad_frames.shape[-1]):
+            CC = measure.label(is_bad[:, i], background=0)
             num_CC = len(np.unique(CC)) - 1
             # initialize to forward prediction
-            preds[sample, ..., divider * kp: divider * kp + divider] = markers[sample, ..., divider * kp: divider * kp + divider]
+            # preds[sample, ..., divider * kp: divider * kp + divider] = markers[sample, ..., divider * kp: divider * kp + divider]
             for j in range(num_CC):
                 time_ids = np.where(CC == j + 1)[0]
                 length_CC = len(time_ids)
                 x_0 = np.round(length_CC / 2)
                 weightR = sigmoid(np.arange(length_CC), x_0, k)[:, np.newaxis]
-                where_predsR_is_nan = np.any(get_mask(predsR[sample, time_ids, kp * divider: kp * divider + divider], exclude_value), axis=-1)[:, np.newaxis]
+                where_predsR_is_nan = np.any(get_mask(predsR[sample, time_ids, i], exclude_value), axis=-1)[:, np.newaxis]
                 weightR[where_predsR_is_nan] = 0
                 weightF = 1 - weightR
-                preds[sample, time_ids, kp * divider: kp * divider + divider] = predsF[sample, time_ids, kp * divider: kp * divider + divider] * weightF + predsR[sample, time_ids, kp * divider: kp * divider + divider] * weightR
-                member_stds[sample, time_ids, kp * divider: kp * divider + divider] = np.sqrt(member_stdsF[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightF + member_stdsR[sample, time_ids, kp * divider: kp * divider + divider]**2 * weightR)
+                preds[sample, time_ids, i] = predsF[sample, time_ids, i] * weightF + predsR[sample, time_ids, i] * weightR
+                member_stds[sample, time_ids, i] = np.sqrt(member_stdsF[sample, time_ids, i]**2 * weightF + member_stdsR[sample, time_ids, i]**2 * weightR)
     elapsed = datetime.datetime.now() - start
     logging.info(f'Computing average took: {elapsed} seconds')
 
