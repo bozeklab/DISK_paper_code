@@ -165,7 +165,7 @@ def unprocess_data(X, divider, rot_angle, mean_position, marker_means, marker_st
         # marker_stds[get_mask(marker_stds, exclude_value)] = np.nan
         marker_stds = fill_nan_forward(marker_stds)
 
-    if np.any(get_mask(rot_angle, exclude_value)):
+    if np.any(get_mask(rot_angle, np.nan)):
         # rot_angle[get_mask(rot_angle, exclude_value)] = np.nan
         rot_angle = fill_nan_forward(rot_angle)
 
