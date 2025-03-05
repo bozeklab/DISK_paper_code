@@ -145,11 +145,13 @@ def merge(save_path, pred_path, dataset_path):
 
     # markers are already saved before processing, no need to unprocess them
     # markers = unprocess_data(markers, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
-    logging.info(f'BEFORE UNPROCESS, {exclude_value}, {np.unique(predsF)[:10]}, {np.unique(predsR)[:10]}')
+    logging.info(f'BEFORE UNPROCESS, {exclude_value}, F: {np.unique(predsF)[0]}, {np.unique(predsF)[-1]}, \n'
+                 f'R: {np.unique(predsR)[0]} {np.unique(predsR)[-1]}')
     predsF = unprocess_data(predsF, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
     predsR = unprocess_data(predsR, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value)
 
-    logging.info(f'AFTER UNPROCESS, {exclude_value}, {np.unique(predsF)[:10]}, {np.unique(predsR)[:10]}')
+    logging.info(f'AFTER UNPROCESS, {exclude_value}, F: {np.unique(predsF)[0]}, {np.unique(predsF)[-1]}, \n'
+                 f'R: {np.unique(predsR)[0]} {np.unique(predsR)[-1]}')
 
     for item in items:
         fig, axes = plt.subplots(predsF.shape[-1]//divider, divider, figsize=(10, 10), sharey='col', sharex='all')
@@ -160,6 +162,7 @@ def merge(save_path, pred_path, dataset_path):
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
             axes[i].plot(t, predsF[item, :, i], 'x')
+            logging.info(f'{np.any(np.isnan(predsF))}')
             axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
             if i%divider == 0:
                 axes[i].set_ylabel(marker_names[i//divider])

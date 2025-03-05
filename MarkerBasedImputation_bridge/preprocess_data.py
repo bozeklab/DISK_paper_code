@@ -155,7 +155,7 @@ def fill_nan_forward(arr):
 
 def unprocess_data(X, divider, rot_angle, mean_position, marker_means, marker_stds, marker_names, exclude_value):
     # undo the z-score
-    logging.info(f'UNPROCESS DATA, markers: {np.unique(X)[:2]} {exclude_value}')
+    logging.info(f'[IN UNPROCESS_DATA], markers: {np.unique(X)[:2]} {exclude_value}')
 
     if np.any(get_mask(marker_means, exclude_value)):
         # marker_means[get_mask(marker_means, exclude_value)] = np.nan
@@ -174,9 +174,9 @@ def unprocess_data(X, divider, rot_angle, mean_position, marker_means, marker_st
         mean_position = fill_nan_forward(mean_position)
 
 
-    logging.info(f'UNPROCESS DATA, stds: {np.unique(marker_stds)[:2]}')
-    logging.info(f'UNPROCESS DATA, rot_angle: {np.unique(rot_angle)[:2]}')
-    logging.info(f'UNPROCESS DATA, mean_position: {np.unique(mean_position)[:2]}')
+    logging.info(f'[IN UNPROCESS_DATA], stds: {np.unique(marker_stds)[:2]}')
+    logging.info(f'[IN UNPROCESS_DATA], rot_angle: {np.unique(rot_angle)[:2]}')
+    logging.info(f'[IN UNPROCESS_DATA], mean_position: {np.unique(mean_position)[:2]}')
 
     # undo the z-scoring
     unz_X = X * marker_stds + marker_means
@@ -190,6 +190,7 @@ def unprocess_data(X, divider, rot_angle, mean_position, marker_means, marker_st
 
     # undo the centering
     unproc_X = (unrot_X + mean_position[:, :, np.newaxis]).reshape(X.shape)
+    logging.info(f'[IN UNPROCESS_DATA], {np.sum(get_mask(X, exclude_value))}')
     unproc_X[get_mask(X, exclude_value)] = exclude_value
 
     return unproc_X
