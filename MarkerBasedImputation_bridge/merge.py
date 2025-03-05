@@ -122,7 +122,7 @@ def merge(save_path, pred_path, dataset_path):
         axes = axes.flatten()
         for i in range(predsF.shape[-1]):
             x = markers[item, :, i]
-            mask_x = get_mask(x, exclude_value)
+            mask_x = get_mask(x, exclude_value) + get_mask(x, np.nan)
             x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(t, predsF[item, :, i], 'x')
@@ -136,7 +136,7 @@ def merge(save_path, pred_path, dataset_path):
         axes = axes.flatten()
         for i in range(predsR.shape[-1]):
             x = markers[item, :, i]
-            mask_x = get_mask(x, exclude_value)
+            mask_x = get_mask(x, exclude_value) + get_mask(x, np.nan)
             x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
@@ -161,7 +161,7 @@ def merge(save_path, pred_path, dataset_path):
         axes = axes.flatten()
         for i in range(predsF.shape[-1]):
             x = markers[item, :, i]
-            mask_x = get_mask(x, exclude_value)
+            mask_x = get_mask(x, exclude_value) + get_mask(x, np.nan)
             x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
@@ -176,8 +176,7 @@ def merge(save_path, pred_path, dataset_path):
         axes = axes.flatten()
         for i in range(predsR.shape[-1]):
             x = markers[item, :, i]
-            mask_x = get_mask(x, exclude_value)
-            logging.info(f'{mask_x}')
+            mask_x = get_mask(x, exclude_value) + get_mask(x, np.nan)
             x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
@@ -228,7 +227,7 @@ def merge(save_path, pred_path, dataset_path):
         axes = axes.flatten()
         for i in range(preds.shape[-1]):
             x = markers[item, :, i]
-            mask_x = get_mask(x, exclude_value)
+            mask_x = get_mask(x, exclude_value) + get_mask(x, np.nan)
             x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
