@@ -203,12 +203,12 @@ def merge(save_path, pred_path, dataset_path):
     start = datetime.datetime.now()
     for sample in range(len(predsF)):
         # for i in range(bad_frames.shape[2] * 3): # *3
-        is_bad = bad_frames[sample] #bad_frames[..., np.floor(i / 3).astype('int32')]
+        is_bad = bad_frames[sample].astype(int) #bad_frames[..., np.floor(i / 3).astype('int32')]
         for kp in range(bad_frames.shape[-1]):
             CC = measure.label(is_bad[:, kp], background=0)
             num_CC = len(np.unique(CC)) - 1
             # initialize to forward prediction
-            preds[sample, ..., divider * kp: divider * kp + divider] = markers[sample, ..., divider * kp: divider * kp +divider]
+            preds[sample, ..., divider * kp: divider * kp + divider] = markers[sample, ..., divider * kp: divider * kp + divider]
             for j in range(num_CC):
                 time_ids = np.where(CC == j + 1)[0]
                 length_CC = len(time_ids)
