@@ -197,7 +197,7 @@ def merge(save_path, pred_path, dataset_path):
 
     # Compute the weighted average of the forward and reverse predictions using a logistic function
     logging.info('Computing weighted average')
-    preds = np.zeros(predsF.shape)
+    preds = np.array(predsF)
     member_stds = np.zeros(member_stdsF.shape)
     k = 1 # sigmoid exponent
     start = datetime.datetime.now()
