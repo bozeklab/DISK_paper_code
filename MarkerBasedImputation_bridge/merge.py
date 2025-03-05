@@ -23,7 +23,7 @@ else:
 from preprocess_data import unprocess_data
 from utils import get_mask
 from DISK.utils.utils import read_constant_file
-
+optipose_exclude_value = -4668
 
 def sigmoid(x, x_0, k):
     """Sigmoid function.
@@ -194,6 +194,8 @@ def merge(save_path, pred_path, dataset_path):
     # for i in range(bad_frames.shape[2]):
     #     bad_frames[..., i] = np.any(bad_framesF[..., i * divider: i * divider + divider] & bad_framesR[..., i * divider: i * divider + divider], axis=2)
     bad_frames = get_mask(markers, exclude_value) + get_mask(markers, np.nan)
+    predsF[get_mask(predsF, np.nan)] = optipose_exclude_value
+    predsR[get_mask(predsR, np.nan)] = optipose_exclude_value
 
     # Compute the weighted average of the forward and reverse predictions using a logistic function
     logging.info('Computing weighted average')
@@ -215,15 +217,15 @@ def merge(save_path, pred_path, dataset_path):
                 length_CC = len(time_ids)
                 x_0 = np.round(length_CC / 2)
                 weightR = sigmoid(np.arange(length_CC), x_0, k)#[:, np.newaxis]
-                logging.info(f'[where0] {predsF[sample, time_ids, i]} {predsF[sample, time_ids, i].shape}')
-                print(get_mask(predsR[sample, time_ids, i], exclude_value), get_mask(predsR[sample, time_ids, i], np.nan))
-                where_predsR_is_nan = (get_mask(predsR[sample, time_ids, i], exclude_value) + get_mask(predsR[sample, time_ids, i], np.nan))#[:, np.newaxis]
-                print(where_predsR_is_nan.shape, weightR.shape, )
+                logging.debug(f'[where0] {predsF[sample, time_ids, i]} {predsF[sample, time_ids, i].shape}')
+                # print(get_mask(predsR[sample, time_ids, i], exclude_value), get_mask(predsR[sample, time_ids, i], np.nan))
+                where_predsR_is_nan = get_mask(predsR[sample, time_ids, i], exclude_value)#[:, np.newaxis]
+                # print(where_predsR_is_nan.shape, weightR.shape, )
                 weightR[where_predsR_is_nan] = 0
                 weightF = 1 - weightR
-                logging.info(f'[where1] {weightF}')
+                logging.debug(f'[where1] {weightF}')
                 preds[sample, time_ids, i] = predsF[sample, time_ids, i] * weightF + predsR[sample, time_ids, i] * weightR
-                logging.info(f'[where2] {preds[sample, time_ids, i]}')
+                logging.debug(f'[where2] {preds[sample, time_ids, i]}')
                 member_stds[sample, time_ids, i] = np.sqrt(member_stdsF[sample, time_ids, i] ** 2 * weightF + member_stdsR[sample, time_ids, i] ** 2 * weightR)
     elapsed = datetime.datetime.now() - start
     logging.info(f'Computing average took: {elapsed} seconds')
