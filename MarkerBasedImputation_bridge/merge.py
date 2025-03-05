@@ -204,10 +204,11 @@ def merge(save_path, pred_path, dataset_path):
     for sample in range(len(predsF)):
         # for i in range(bad_frames.shape[2] * 3): # *3
         is_bad = bad_frames[sample].astype(int) #bad_frames[..., np.floor(i / 3).astype('int32')]
-        logging.info(f'[is_bad] {is_bad}')
         for i in range(bad_frames.shape[-1]):
+            logging.info(f'[is_bad] {is_bad} {bad_frames.shape}')
             CC = measure.label(is_bad[:, i], background=0)
             num_CC = len(np.unique(CC)) - 1
+            logging.info(f'num_CC: {num_CC}')
             # initialize to forward prediction
             # preds[sample, ..., divider * kp: divider * kp + divider] = markers[sample, ..., divider * kp: divider * kp + divider]
             for j in range(num_CC):
@@ -215,6 +216,7 @@ def merge(save_path, pred_path, dataset_path):
                 length_CC = len(time_ids)
                 x_0 = np.round(length_CC / 2)
                 weightR = sigmoid(np.arange(length_CC), x_0, k)[:, np.newaxis]
+                logging.info(f'[where] {predsR[sample, time_ids, i]}')
                 where_predsR_is_nan = np.any(get_mask(predsR[sample, time_ids, i], exclude_value) + get_mask(predsR[sample, time_ids, i], np.nan), axis=-1)[:, np.newaxis]
                 weightR[where_predsR_is_nan] = 0
                 weightF = 1 - weightR
