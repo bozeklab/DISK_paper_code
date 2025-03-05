@@ -122,10 +122,11 @@ def merge(save_path, pred_path, dataset_path):
         axes = axes.flatten()
         for i in range(predsF.shape[-1]):
             x = markers[item, :, i]
-            x[get_mask(x, exclude_value)] = np.nan
+            mask_x = get_mask(x, exclude_value)
+            x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(t, predsF[item, :, i], 'x')
-            axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
+            axes[i].plot(t[mask_x], predsF[item, mask_x, i], 'x')
             if i%divider == 0:
                 axes[i].set_ylabel(marker_names[i//divider])
         plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}_before_unprocess.png'))
@@ -134,10 +135,12 @@ def merge(save_path, pred_path, dataset_path):
         fig, axes = plt.subplots(predsR.shape[-1]//divider, divider, figsize=(10, 10), sharey='col', sharex='all')
         axes = axes.flatten()
         for i in range(predsR.shape[-1]):
-            x[get_mask(x, exclude_value)] = np.nan
+            x = markers[item, :, i]
+            mask_x = get_mask(x, exclude_value)
+            x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
-            axes[i].plot(t[bad_framesR[item, :, i].astype(bool)], predsR[item, bad_framesR[item, :, i].astype(bool), i], 'x')
+            axes[i].plot(t[mask_x], predsR[item, mask_x, i], 'x')
             if i%divider == 0:
                 axes[i].set_ylabel(marker_names[i//divider])
         plt.savefig(os.path.join(save_path, f'single_predR_pred_item-{item}_before_unprocess.png'))
@@ -158,11 +161,12 @@ def merge(save_path, pred_path, dataset_path):
         axes = axes.flatten()
         for i in range(predsF.shape[-1]):
             x = markers[item, :, i]
-            x[get_mask(x, exclude_value)] = np.nan
+            mask_x = get_mask(x, exclude_value)
+            x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
             # axes[i].plot(t, predsF[item, :, i], 'x')
-            axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], predsF[item, bad_framesF[item, :, i].astype(bool), i], 'x')
+            axes[i].plot(t[mask_x], predsF[item, mask_x, i], 'x')
             if i%divider == 0:
                 axes[i].set_ylabel(marker_names[i//divider])
         plt.savefig(os.path.join(save_path, f'single_predF_pred_item-{item}_after_unprocess.png'))
@@ -172,10 +176,11 @@ def merge(save_path, pred_path, dataset_path):
         axes = axes.flatten()
         for i in range(predsR.shape[-1]):
             x = markers[item, :, i]
-            x[get_mask(x, exclude_value)] = np.nan
+            mask_x = get_mask(x, exclude_value)
+            x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
-            axes[i].plot(t[bad_framesR[item, :, i].astype(bool)], predsR[item, bad_framesR[item, :, i].astype(bool), i], 'x')
+            axes[i].plot(t[mask_x], predsR[item, mask_x, i], 'x')
             if i%divider == 0:
                 axes[i].set_ylabel(marker_names[i//divider])
         plt.savefig(os.path.join(save_path, f'single_predR_pred_item-{item}_after_unprocess.png'))
@@ -184,10 +189,11 @@ def merge(save_path, pred_path, dataset_path):
     # This is not necessarily all the error frames from
     # multiple_predict_recording_with_replacement, but if they overlap,
     # we would just take the weighted average.
-    bad_frames = np.zeros((bad_framesF.shape[0], bad_framesF.shape[1], np.round(bad_framesF.shape[2] / divider).astype('int32')))
-    # 3 because 3D?
-    for i in range(bad_frames.shape[2]):
-        bad_frames[..., i] = np.any(bad_framesF[..., i * divider: i * divider + divider] & bad_framesR[..., i * divider: i * divider + divider], axis=2)
+    # bad_frames = np.zeros((bad_framesF.shape[0], bad_framesF.shape[1], np.round(bad_framesF.shape[2] / divider).astype('int32')))
+    # # 3 because 3D?
+    # for i in range(bad_frames.shape[2]):
+    #     bad_frames[..., i] = np.any(bad_framesF[..., i * divider: i * divider + divider] & bad_framesR[..., i * divider: i * divider + divider], axis=2)
+    bad_frames = get_mask(markers, exclude_value)
 
     # Compute the weighted average of the forward and reverse predictions using a logistic function
     logging.info('Computing weighted average')
@@ -202,7 +208,7 @@ def merge(save_path, pred_path, dataset_path):
             CC = measure.label(is_bad[:, kp], background=0)
             num_CC = len(np.unique(CC)) - 1
             # initialize to forward prediction
-            preds[sample, ..., divider * kp: divider * kp + divider] = predsF[sample, ..., divider * kp: divider * kp +divider]
+            preds[sample, ..., divider * kp: divider * kp + divider] = markers[sample, ..., divider * kp: divider * kp +divider]
             for j in range(num_CC):
                 time_ids = np.where(CC == j + 1)[0]
                 length_CC = len(time_ids)
@@ -221,10 +227,11 @@ def merge(save_path, pred_path, dataset_path):
         axes = axes.flatten()
         for i in range(preds.shape[-1]):
             x = markers[item, :, i]
-            x[get_mask(x, exclude_value)] = np.nan
+            mask_x = get_mask(x, exclude_value)
+            x[mask_x] = np.nan
             t = np.arange(markers.shape[1])
             axes[i].plot(x, 'o-')
-            axes[i].plot(t[bad_framesF[item, :, i].astype(bool)], preds[item, bad_framesF[item, :, i].astype(bool), i], 'x')
+            axes[i].plot(t[mask_x], preds[item, mask_x, i], 'x')
             if i%divider == 0:
                 axes[i].set_ylabel(marker_names[i//divider])
         plt.savefig(os.path.join(save_path, f'single_predMerged_pred_item-{item}_after_unprocess.png'))
