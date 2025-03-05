@@ -183,6 +183,7 @@ def unprocess_data(X, divider, rot_angle, mean_position, marker_means, marker_st
     unrot_X = np.copy(unz_X)
     unrot_X[..., 0] = unz_X[..., 0] * np.cos(rot_angle[..., np.newaxis]) + unz_X[..., 1] * np.sin(rot_angle[..., np.newaxis])
     unrot_X[..., 1] = - unz_X[..., 0] * np.sin(rot_angle[..., np.newaxis]) + unz_X[..., 1] * np.cos(rot_angle[..., np.newaxis])
+    logging.info(f'[IN UNPROCESS_DATA], rot_angle: {np.unique(rot_angle)[0]} {np.unique(rot_angle)[-1]} {exclude_value}')
     logging.info(f'[IN UNPROCESS_DATA], unrot_X: {np.unique(unrot_X)[0]} {np.unique(unrot_X)[-1]} {exclude_value}')
 
     # undo the centering
