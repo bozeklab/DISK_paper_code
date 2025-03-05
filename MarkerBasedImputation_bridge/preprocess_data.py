@@ -188,6 +188,7 @@ def unprocess_data(X, divider, rot_angle, mean_position, marker_means, marker_st
 
     # undo the centering
     unproc_X = (unrot_X + mean_position[:, :, np.newaxis]).reshape(X.shape)
+    logging.info(f'[IN UNPROCESS_DATA], mean_position: {np.unique(mean_position)[0]} {np.unique(mean_position)[-1]} {exclude_value}')
     logging.info(f'[IN UNPROCESS_DATA], unproc_X: {np.unique(unproc_X)[0]} {np.unique(unproc_X)[-1]} {exclude_value}')
     unproc_X[get_mask(X, exclude_value)] = exclude_value
     logging.info(f'[IN UNPROCESS_DATA], final: {np.unique(unproc_X)[0]} {np.unique(unproc_X)[-1]} {exclude_value}')
