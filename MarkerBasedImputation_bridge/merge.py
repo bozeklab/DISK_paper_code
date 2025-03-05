@@ -218,8 +218,8 @@ def merge(save_path, pred_path, dataset_path):
                 logging.info(f'[where0] {predsF[sample, time_ids, i]}')
                 print(get_mask(predsR[sample, time_ids, i], exclude_value), get_mask(predsR[sample, time_ids, i], np.nan))
                 where_predsR_is_nan = (get_mask(predsR[sample, time_ids, i], exclude_value) + get_mask(predsR[sample, time_ids, i], np.nan))[:, np.newaxis]
-                print(where_predsR_is_nan.shape)
-                weightR[weightR.shape, where_predsR_is_nan] = 0
+                print(where_predsR_is_nan.shape, weightR.shape, )
+                weightR[where_predsR_is_nan] = 0
                 weightF = 1 - weightR
                 logging.info(f'[where1] {weightF}')
                 preds[sample, time_ids, i] = predsF[sample, time_ids, i] * weightF + predsR[sample, time_ids, i] * weightR
