@@ -50,7 +50,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
     id_sample = 0
     while True:
         try:
-            files = [glob(os.path.join(input_folders[m], f'test_repeat-0_sample{id_sample}*.csv'))[0] for m in methods]
+            files = [glob(os.path.join(input_folders[m], f'test_repeat-0_sample{id_sample}.csv'))[0] for m in methods]
         except IndexError:
             print(f'No sample found with id {id_sample}. Stopping the iteration')
             break
