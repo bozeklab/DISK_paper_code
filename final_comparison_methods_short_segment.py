@@ -73,7 +73,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
                 axes = axes.flatten()
                 for i in range(len(columns)):
                     axes[i].plot(orig_values[:, i], 'o-')
-                    mask = orig_values_with_gap != -4668
+                    mask = orig_values_with_gap[:, i] != -4668
                     for i_method in range(len(methods)):
                         values = np.array(list_df[i_method].loc[:, columns[i]].values)
                         values[mask] = np.nan
