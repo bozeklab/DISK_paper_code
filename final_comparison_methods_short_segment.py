@@ -55,7 +55,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
             print(f'No sample found with id {id_sample}. Stopping the iteration')
             break
 
-        original_file = os.path.join(input_folders['original'], f'test_repeat-0_sample{id_sample}.csv')
+        # original_file = os.path.join(input_folders['original'], f'test_repeat-0_sample{id_sample}.csv')
 
         list_df = [pd.read_csv(f, sep=',') for f in files]
         # df_original = pd.read_csv(original_file, sep=',')
@@ -110,7 +110,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
         values = [df.loc[:, columns].values.reshape(-1, len(keypoints), dataset_constants.DIVIDER) for df in list_df]
 
         full_data_np = np.array(eval(big_df.loc[id_sample, 'label']))
-        mask_holes_np = np.isnan(data_with_holes_np).astype(int)  #np.ones(data_with_holes_np.shape, dtype=int)#np.isnan(data_with_holes_np).astype(int)  # 1 is gap, 0 is non missing
+        mask_holes_np = (data_with_holes_np == -4668).astype(int)  #np.ones(data_with_holes_np.shape, dtype=int)#np.isnan(data_with_holes_np).astype(int)  # 1 is gap, 0 is non missing
         n_missing = np.sum(mask_holes_np[..., 0])
 
         list_rmse = [np.sum(((val - full_data_np) ** 2) * mask_holes_np,
