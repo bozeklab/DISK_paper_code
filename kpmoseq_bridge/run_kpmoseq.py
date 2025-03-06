@@ -89,7 +89,7 @@ if __name__ == '__main__':
         input_dir = os.path.join(basedir, 'results_behavior/datasets/DANNCE_seq_keypoints_60_stride30_fill10_new')
         anterior_bodyparts = ['SpineF']
         posterior_bodyparts = ['SpineM']
-        test_dir = os.path.join(basedir, 'results_behavior/outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/')
+        test_dir = os.path.join(basedir, 'results_behavior/outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/')
         _2D = False
 
     ## CLB
@@ -218,6 +218,7 @@ if __name__ == '__main__':
             parallel_message_passing=False)[0]
     else:
         model_name_list = glob(os.path.join(project_dir, '2025_*'))
+        print(project_dir, model_name_list)
         model_name = os.path.basename(max(model_name_list, key=os.path.getctime))
         ## load model checkpoint
         model, data, metadata, current_iter = kpms.load_checkpoint(
@@ -322,7 +323,7 @@ if __name__ == '__main__':
 
 
     for k in list(coordinates_est.keys()):
-        print(coordinates_est[k].reshape(-1, len(dataset_constants.KEYPOINTS) * dataset_constants.DIVIDER))
+        print(coordinates_est[k].reshape(-1, len(dataset_constants.KEYPOINTS) * dataset_constants.DIVIDER).shape)
         to_save = pd.DataFrame(data=coordinates_est[k].reshape(-1, len(dataset_constants.KEYPOINTS) * dataset_constants.DIVIDER), columns=to_save_columns)
         to_save.to_csv(os.path.join(output_dir, f'test_repeat-0_sample{k.split("track")[1]}_kpmoseq.csv'),
                        index=False)
