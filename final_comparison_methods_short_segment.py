@@ -44,8 +44,12 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
     max_n_plots = 10
     n_plots = 0
 
-    methods = ['optipose', 'kpmoseq', 'DISK', 'MBI']
-    colors = ['limegreen', 'purple', 'orangered', 'gold']
+    if 'optipose' not in input_folders.keys():
+        methods = ['kpmoseq', 'DISK', 'MBI']
+        colors = ['purple', 'orangered', 'gold']
+    else:
+        methods = ['optipose', 'kpmoseq', 'DISK', 'MBI']
+        colors = ['limegreen', 'purple', 'orangered', 'gold']
     # for i_repeat in range(1):
     i_repeat = 0
     total_rmse = pd.DataFrame(columns=['id_sample', 'id_hole', 'keypoint', 'method',
@@ -337,6 +341,19 @@ if __name__ == '__main__':
         output_folder = os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
         dataset_name = 'Mocap_keypoints_60_stride30_new'
         pck = 0.3907520187466515 # @0.01 in meters
+
+
+    elif args.dataset == 'MABe':
+        ## Mocap
+        input_folders = {'original': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0'),
+                 'DISK': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
+                 'MBI': os.path.join(basedir, 'MarkerBasedImputation_MABe/model_ensemble/test_repeat-0_merged/'),
+                 'kpmoseq': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+        }
+        output_folder = os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison')
+        dataset_name = 'MABE_task1_60stride60'
+        pck = 0.5684496550222218 # @0.01
+
 
     else:
         sys.exit(1)
