@@ -88,7 +88,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
                 axes = axes.flatten()
                 for i in range(len(columns)):
                     axes[i].plot(orig_values[:, i], 'o-')
-                    for i_method in range(len(methods[:2])):
+                    for i_method in range(len(methods)):
                         values = np.array(list_df[i_method].loc[:, columns[i]].values)
                         axes[i].plot(values, 'o-', c=colors[i_method], label=methods[i_method], ms=4)
 
