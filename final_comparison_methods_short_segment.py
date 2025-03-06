@@ -35,7 +35,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
 
     pck_name = 'PCK@0.01'
 
-    max_n_plots = 10000000
+    max_n_plots = 10
     n_plots = 0
 
     methods = ['optipose', 'kpmoseq', 'DISK', 'MBI']
