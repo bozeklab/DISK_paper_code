@@ -22,6 +22,12 @@ else:
 from DISK.utils.utils import read_constant_file, find_holes
 
 
+def find_file(input_folder, id_sample):
+    try:
+        return glob(os.path.join(input_folder, f'test_repeat-0_sample{id_sample}.csv'))[0]
+    except IndexError:
+        return glob(os.path.join(input_folder, f'test_repeat-0_sample{id_sample}_*.csv'))[0]
+
 def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_threshold):
 
     if not os.path.exists(output_folder):
@@ -50,7 +56,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
     id_sample = 0
     while True:
         try:
-            files = [glob(os.path.join(input_folders[m], f'test_repeat-0_sample{id_sample}.csv'))[0] for m in methods]
+            files = [find_file(input_folders[m], id_sample) for m in methods]
         except IndexError:
             print(f'No sample found with id {id_sample}. Stopping the iteration')
             break
