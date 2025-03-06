@@ -315,7 +315,7 @@ if __name__ == '__main__':
         pck = 0.5684496550222218 # @0.01
 
     elif args.dataset == 'DANNCE':
-        ## CLB
+        ## DANNCE
         input_folders = {'original': os.path.join(basedir, 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0'),
                  'DISK': os.path.join(basedir, 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/DISK_pred'),
                  'MBI': os.path.join(basedir, 'MarkerBasedImputation_DANNCE/model_ensemble/test_repeat-0_merged/'),
@@ -325,6 +325,18 @@ if __name__ == '__main__':
         output_folder = os.path.join(basedir, 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison')
         dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
         pck = 2.8703325891261375 # @0.01
+
+    elif args.dataset == 'Mocap':
+        ## Mocap
+        input_folders = {'original': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0'),
+                 'DISK': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
+                 'MBI': os.path.join(basedir, 'MarkerBasedImputation_Mocap/model_ensemble/test_repeat-0_merged/'),
+                 'optipose': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
+                 'kpmoseq': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+        }
+        output_folder = os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
+        dataset_name = 'Mocap_keypoints_60_stride30_new'
+        pck = 0.3907520187466515 # @0.01 in meters
 
     else:
         sys.exit(1)
