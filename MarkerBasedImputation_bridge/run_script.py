@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
     if args.dataset == 'FL2':
         # FL2
-        BASEFOLDER = os.path.join('/home/france/Documents', "MarkerBasedImputation_FL2")
+        BASEFOLDER = os.path.join(basedir, "MarkerBasedImputation_FL2")
         DATASETPATH = os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new')
         front_point = ['left_coord', 'right_coord']
         middle_point = ['left_hip', 'right_hip']
