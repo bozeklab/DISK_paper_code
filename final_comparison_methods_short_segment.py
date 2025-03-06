@@ -58,21 +58,22 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
         original_file = os.path.join(input_folders['original'], f'test_repeat-0_sample{id_sample}.csv')
 
         list_df = [pd.read_csv(f, sep=',') for f in files]
-        df_original = pd.read_csv(original_file, sep=',')
+        # df_original = pd.read_csv(original_file, sep=',')
 
         columns = [c for c in list_df[0].columns if c != 'behaviour']
         keypoints = [c.split('_')[0] for c in columns if c[-2:] == '_1']
         num_dims = len(columns) // len(keypoints)
         if n_plots < max_n_plots:
             orig_values = np.array(eval(big_df.loc[id_sample, 'label'])).reshape(-1, len(columns))
+            orig_values_with_gap = np.array(eval(big_df.loc[id_sample, 'input'])).reshape(-1, len(columns))
             std_ = np.sum(np.std(np.sqrt(np.sum(np.diff(orig_values, axis=0)**2, axis=-1))))
-            sum_mask = np.sum(np.isnan(df_original.loc[:, columns].values)) / 3
+            sum_mask = np.sum(orig_values_with_gap == -4668) / 3
             if std_ > 1 and sum_mask > 10:
                 fig, axes = plt.subplots(len(keypoints), num_dims, figsize=(12, 9), sharex='all', sharey='col')
                 axes = axes.flatten()
                 for i in range(len(columns)):
                     axes[i].plot(orig_values[:, i], 'o-')
-                    mask = ~np.isnan(df_original.loc[:, columns[i]].values)
+                    mask = orig_values_with_gap != -4668
                     for i_method in range(len(methods)):
                         values = np.array(list_df[i_method].loc[:, columns[i]].values)
                         values[mask] = np.nan
@@ -105,7 +106,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
 
                 n_plots += 1
 
-        data_with_holes_np = df_original.loc[:, columns].values.reshape(-1, len(keypoints), dataset_constants.DIVIDER)
+        data_with_holes_np = np.array(eval(big_df.loc[id_sample, 'input']))
         values = [df.loc[:, columns].values.reshape(-1, len(keypoints), dataset_constants.DIVIDER) for df in list_df]
 
         full_data_np = np.array(eval(big_df.loc[id_sample, 'label']))
