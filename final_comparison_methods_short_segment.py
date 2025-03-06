@@ -55,16 +55,14 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
         sep='|')
     id_sample = 0
     while True:
+        print(f"-- index_sample = {id_sample}")
         try:
             files = [find_file(input_folders[m], id_sample) for m in methods]
         except IndexError:
             print(f'No sample found with id {id_sample}. Stopping the iteration')
             break
 
-        # original_file = os.path.join(input_folders['original'], f'test_repeat-0_sample{id_sample}.csv')
-
         list_df = [pd.read_csv(f, sep=',') for f in files]
-        # df_original = pd.read_csv(original_file, sep=',')
 
         columns = [c for c in list_df[0].columns if c != 'behaviour']
         keypoints = [c.split('_')[0] for c in columns if c[-2:] == '_1']
@@ -119,11 +117,11 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
         mask_holes_np = (data_with_holes_np == -4668).astype(int)  #np.ones(data_with_holes_np.shape, dtype=int)#np.isnan(data_with_holes_np).astype(int)  # 1 is gap, 0 is non missing
         n_missing = np.sum(mask_holes_np[..., 0])
 
-        list_rmse = [np.sum(((val - full_data_np) ** 2) * mask_holes_np,
+        list_rmse = [np.nansum(((val - full_data_np) ** 2) * mask_holes_np,
                                     axis=2) for val in values] # sum on the XYZ dimension, output shape (batch, time, keypoint)
-        list_mae = [np.sum(np.abs((val - full_data_np) * mask_holes_np),
+        list_mae = [np.nansum(np.abs((val - full_data_np) * mask_holes_np),
                                     axis=2)  for val in values]# sum on the XYZ dimension, output shape (batch, time, keypoint)
-        list_euclidean_distance = [np.sqrt(np.sum(((val - full_data_np) ** 2) * mask_holes_np,
+        list_euclidean_distance = [np.sqrt(np.nansum(((val - full_data_np) ** 2) * mask_holes_np,
                                                           axis=2)) for val in values] # sum on the XYZ dimension, output shape (batch, time, keypoint)
         list_pck = [dist_ <= pck_final_threshold for dist_ in list_euclidean_distance]
 
