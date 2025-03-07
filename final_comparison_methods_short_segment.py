@@ -26,7 +26,11 @@ def find_file(input_folder, id_sample):
     try:
         return glob(os.path.join(input_folder, f'test_repeat-0_sample{id_sample}.csv'))[0]
     except IndexError:
-        return glob(os.path.join(input_folder, f'test_repeat-0_sample{id_sample}_*.csv'))[0]
+        try:
+            return glob(os.path.join(input_folder, f'test_repeat-0_sample{id_sample}_*.csv'))[0]
+        except IndexError:
+            print(f'Not found `test_repeat-0_sample{id_sample}`')
+            raise IndexError
 
 def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_threshold):
 
@@ -381,6 +385,6 @@ if __name__ == '__main__':
     else:
         sys.exit(1)
 
-    evaluate_and_plots(dataset_name, output_folder, input_folders, pck)
+    # evaluate_and_plots(dataset_name, output_folder, input_folders, pck)
     plot_average(output_folder)
     plot_against_time(output_folder)
