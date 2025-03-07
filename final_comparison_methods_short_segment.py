@@ -41,7 +41,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
 
     pck_name = 'PCK@0.01'
 
-    max_n_plots = 10
+    max_n_plots = 100
     n_plots = 0
 
     if 'optipose' not in input_folders.keys():
@@ -93,7 +93,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
                 plt.savefig(os.path.join(output_folder, 'plots', f'test_repeat-0_sample{id_sample}.svg'))
                 plt.close()
 
-                fig, axes = plt.subplots(len(keypoints), num_dims, figsize=(12, 9), sharex='all', sharey='col')
+                fig, axes = plt.subplots(len(keypoints), num_dims, figsize=(12, 9), sharex='all')#, sharey='col')
                 axes = axes.flatten()
                 for i in range(len(columns)):
                     axes[i].plot(orig_values[:, i], 'o-')
@@ -302,7 +302,7 @@ if __name__ == '__main__':
                  'optipose': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose'),
                  'kpmoseq': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
         }
-        output_folder = os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
+        output_folder = os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison_for_plots')
         dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
         pck = 0.5684496550222218 # @0.01
 
