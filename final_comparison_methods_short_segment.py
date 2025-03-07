@@ -385,6 +385,6 @@ if __name__ == '__main__':
     else:
         sys.exit(1)
 
-    # evaluate_and_plots(dataset_name, output_folder, input_folders, pck)
+    evaluate_and_plots(dataset_name, output_folder, input_folders, pck)
     plot_average(output_folder)
     plot_against_time(output_folder)
