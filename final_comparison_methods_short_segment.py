@@ -77,7 +77,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
             std_ = np.sum(np.std(np.sqrt(np.sum(np.diff(orig_values, axis=0)**2, axis=-1))))
             sum_mask = np.sum(orig_values_with_gap == -4668) / 3
             if std_ > 1 and sum_mask > 10:
-                fig, axes = plt.subplots(len(keypoints), num_dims, figsize=(12, 9), sharex='all', sharey='col')
+                fig, axes = plt.subplots(len(keypoints), num_dims, figsize=(12, 9), sharex='all')#, sharey='col')
                 axes = axes.flatten()
                 for i in range(len(columns)):
                     axes[i].plot(orig_values[:, i], 'o-')
