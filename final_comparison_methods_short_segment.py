@@ -366,6 +366,17 @@ if __name__ == '__main__':
         dataset_name = 'DF3D_keypoints_60stride5_new'
         pck = 0.171646054776486 # @0.01
 
+    elif args.dataset == 'Fish':
+        ## DF3D
+        input_folders = {'original': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0'),
+                 'DISK': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/DISK_pred'),
+                 'optipose': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/optipose_pred'),
+                 'MBI': os.path.join(basedir, 'MarkerBasedImputation_Fish/model_ensemble/test_repeat-0_merged/'),
+                 'kpmoseq': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/kpmoseq'),
+        }
+        output_folder = os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison')
+        dataset_name = 'DF3D_keypoints_60stride5_new'
+        pck = 0.171646054776486 # @0.01
 
     else:
         sys.exit(1)
