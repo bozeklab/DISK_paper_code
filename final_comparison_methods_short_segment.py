@@ -29,7 +29,7 @@ def find_file(input_folder, id_sample):
         try:
             return glob(os.path.join(input_folder, f'test_repeat-0_sample{id_sample}_*.csv'))[0]
         except IndexError:
-            print(f'Not found `test_repeat-0_sample{id_sample}`', flush=True)
+            print(f'Not found `test_repeat-0_sample{id_sample}` in {input_folder}', flush=True)
             raise IndexError
 
 def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_threshold):
