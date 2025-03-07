@@ -354,6 +354,18 @@ if __name__ == '__main__':
         dataset_name = 'MABE_task1_60stride60'
         pck = 0.5684496550222218 # @0.01
 
+    elif args.dataset == 'DF3D':
+        ## DF3D
+        input_folders = {'original': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0'),
+                 'DISK': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
+                 'optipose': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
+                 'MBI': os.path.join(basedir, 'MarkerBasedImputation_DF3D/model_ensemble/test_repeat-0_merged/'),
+                 'kpmoseq': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+        }
+        output_folder = os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
+        dataset_name = 'DF3D_keypoints_60stride5_new'
+        pck = 0.171646054776486 # @0.01
+
 
     else:
         sys.exit(1)
