@@ -70,6 +70,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
             break
         elif None in files:
             print(f'At least one file is missing for id {id_sample}.')
+            id_sample += 1
             continue
         else:
             print(f'Something wrong at id {id_sample}: {files}')
