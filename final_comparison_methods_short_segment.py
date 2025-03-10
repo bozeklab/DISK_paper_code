@@ -305,7 +305,7 @@ if __name__ == '__main__':
         mean_metrics_files = {
             'FL2': 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
             'CLB': 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-            'DANNCE': 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+            'DANNCE': 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
             'Mocap': 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
             'MABe': 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
             'DF3D': 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
@@ -376,13 +376,13 @@ if __name__ == '__main__':
 
         elif args.dataset == 'DANNCE':
             ## DANNCE
-            input_folders = {'original': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0'),
-                     'DISK': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0/DISK_pred'),
+            input_folders = {'original': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0'),
+                     'DISK': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
                      'MBI': os.path.join(basedir, 'MarkerBasedImputation_DANNCE/model_ensemble/test_repeat-0_merged/'),
-                     'optipose': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0/optipose_pred'),
-                     'kpmoseq': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0/kpmoseq'),
+                     'optipose': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
+                     'kpmoseq': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
             }
-            output_folder = os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison')
+            output_folder = os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
             dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
             pck = 2.8703325891261375 # @0.01
 
