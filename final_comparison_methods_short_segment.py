@@ -293,147 +293,147 @@ if __name__ == '__main__':
     ### CHOOSE DATASET BY SUPPLYING THE COMMANDLINE ARGUMENT
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('dataset', type=str,
-                        help='dataset name', choices=['FL2', 'CLB', 'DANNCE', 'Mocap', 'DF3D', 'Fish', 'MABe'])
+                        help='dataset name', choices=['FL2', 'CLB', 'DANNCE', 'Mocap', 'DF3D', 'Fish', 'MABe', 'compare'])
 
     args = parser.parse_args()
 
     ##########################################################################################################
     ## ARGUMENTS FOR EACH DATASET
 
-    ## FL2
-    if args.dataset == 'FL2':
-        ## FL2
-        input_folders = {'original': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0'),
-                 'DISK': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK'),
-                 'MBI': os.path.join(basedir, 'MarkerBasedImputation_FL2/model_ensemble/test_repeat-0_merged/'),
-                 'optipose': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose'),
-                 'kpmoseq': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
-        }
-        output_folder = os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
-        dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
-        pck = 0.5684496550222218 # @0.01
+    if args.dataset == 'compare':
 
-    elif args.dataset == 'CLB':
-        ## CLB
-        input_folders = {'original': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0'),
-                 'DISK': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
-                 'MBI': os.path.join(basedir, 'MarkerBasedImputation_CLB/model_ensemble/test_repeat-0_merged/'),
-                 'optipose': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
-                 'kpmoseq': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
-        }
-        output_folder = os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
-        dataset_name = 'INH_CLB_keypoints_1_60_stride0.5'
-        pck = 0.5684496550222218 # @0.01
+        mean_metrics_files = {
+            'FL2': 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+            'CLB': 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+            'DANNCE': 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+            'Mocap': 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+            'MABe': 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+            'DF3D': 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+            'Fish': 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv'}
 
-    elif args.dataset == 'DANNCE':
-        ## DANNCE
-        input_folders = {'original': os.path.join(basedir, 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0'),
-                 'DISK': os.path.join(basedir, 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/DISK_pred'),
-                 'MBI': os.path.join(basedir, 'MarkerBasedImputation_DANNCE/model_ensemble/test_repeat-0_merged/'),
-                 'optipose': os.path.join(basedir, 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/optipose_pred'),
-                 'kpmoseq': os.path.join(basedir, 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/kpmoseq'),
-        }
-        output_folder = os.path.join(basedir, 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison')
-        dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
-        pck = 2.8703325891261375 # @0.01
+        df = []
+        for dataset, path_ in mean_metrics_files.items():
+            if os.path.exists(os.path.join(basedir, path_)):
+                small_df = pd.read_csv(os.path.join(basedir, path_))
+                print(dataset, small_df.shape)
+                if small_df.shape[0] == 0:
+                    continue
+                small_df.loc[:, 'Dataset'] = dataset
+                if 'RMSE' not in small_df.columns:
+                    small_df = pd.pivot(small_df, columns='metric_type', values='metric_value',
+                                        index=['method', 'repeat', 'Dataset', 'dataset']).reset_index()
+                df.append(small_df)
+        df = pd.concat(df)
 
-    elif args.dataset == 'Mocap':
-        ## Mocap
-        input_folders = {'original': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0'),
-                 'DISK': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
-                 'MBI': os.path.join(basedir, 'MarkerBasedImputation_Mocap/model_ensemble/test_repeat-0_merged/'),
-                 'optipose': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
-                 'kpmoseq': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
-        }
-        output_folder = os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
-        dataset_name = 'Mocap_keypoints_60_stride30_new'
-        pck = 0.3907520187466515 # @0.01 in meters
+        for metric in ['RMSE', 'MPJPE', 'PCK@0.01']:
+            # print("% of improvement in terms of test RMSE between DISK and linear interpolation per dataset:\n",
+            #       df.loc[df['Model'].isin(['linear interpolation', 'DISK'])].groupby(['dataset', 'repeat']) \
+            #       .apply(lambda x: (x.loc[x['Model'] == 'linear interpolation', metric].values[0] - \
+            #                         x.loc[x['Model'] == 'DISK', 'RMSE'].values[0]) /
+            #                        x.loc[x['Model'] == 'linear interpolation', metric].values[0] * 100) \
+            #       .groupby(['dataset']).agg(['mean', 'std']))
+            fig, axes = plt.subplots(1, 7, figsize=(18, 6.6))
+            for i_dataset, dataset in enumerate(df['Dataset'].unique()):
+                sns.barplot(data=df.loc[df['Dataset'] == dataset], x='Dataset', y=metric,
+                            hue='method',
+                            ax=axes[i_dataset], hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
+                            palette=['orangered', 'gold', 'purple', 'limegreen'])
 
-
-    elif args.dataset == 'MABe':
-        ## Mocap
-        input_folders = {'original': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0'),
-                 'DISK': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
-                 'MBI': os.path.join(basedir, 'MarkerBasedImputation_MABe/model_ensemble/test_repeat-0_merged/'),
-                 'kpmoseq': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
-        }
-        output_folder = os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison')
-        dataset_name = 'MABE_task1_60stride60'
-        pck = 9.99527056927927 # @0.01
-
-    elif args.dataset == 'DF3D':
-        ## DF3D
-        input_folders = {'original': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0'),
-                 'DISK': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
-                 'optipose': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
-                 'MBI': os.path.join(basedir, 'MarkerBasedImputation_DF3D/model_ensemble/test_repeat-0_merged/'),
-                 'kpmoseq': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
-        }
-        output_folder = os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
-        dataset_name = 'DF3D_keypoints_60stride5_new'
-        pck = 0.171646054776486 # @0.01
-
-    elif args.dataset == 'Fish':
-        ## DF3D
-        input_folders = {'original': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0'),
-                 'DISK': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/DISK_pred'),
-                 'optipose': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/optipose_pred'),
-                 'MBI': os.path.join(basedir, 'MarkerBasedImputation_Fish/model_ensemble/test_repeat-0_merged/'),
-                 'kpmoseq': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/kpmoseq'),
-        }
-        output_folder = os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison')
-        dataset_name = 'DF3D_keypoints_60stride5_new'
-        pck = 0.171646054776486 # @0.01
-
+            plt.figure()
+            sns.barplot(data=df, x='Dataset', hue='method', y=metric,
+                        hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
+                        palette=['orangered', 'gold', 'purple', 'limegreen'])
+            f = plt.gcf()
+            f.set_figwidth(18)
+            f.set_figheight(6.6)
+            plt.savefig(
+                f'/home/france/Dropbox/Dropbox/2021_Koeln/bogna/fig_comparison_other_methods_202502/barplot_comparison_{metric}_202503.svg')
     else:
-        sys.exit(1)
+        ## FL2
+        if args.dataset == 'FL2':
+            ## FL2
+            input_folders = {'original': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0'),
+                     'DISK': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK'),
+                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_FL2/model_ensemble/test_repeat-0_merged/'),
+                     'optipose': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose'),
+                     'kpmoseq': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+            }
+            output_folder = os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
+            dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
+            pck = 0.5684496550222218 # @0.01
 
-    evaluate_and_plots(dataset_name, output_folder, input_folders, pck)
-    plot_average(output_folder)
-    plot_against_time(output_folder)
-    #
-    # mean_metrics_files = {'FL2': 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'CLB': 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'DANNCE': 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'Mocap': 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'MABe': 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'DF3D': 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'Fish': 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv'}
-    #
-    # df = []
-    # for dataset, path_ in mean_metrics_files.items():
-    #     if os.path.exists(os.path.join(basedir, path_)):
-    #         small_df = pd.read_csv(os.path.join(basedir, path_))
-    #         print(dataset, small_df.shape)
-    #         if small_df.shape[0] == 0:
-    #             continue
-    #         small_df.loc[:, 'Dataset'] = dataset
-    #         if 'RMSE' not in small_df.columns:
-    #             small_df = pd.pivot(small_df, columns='metric_type', values='metric_value',
-    #                                 index=['method', 'repeat', 'Dataset', 'dataset']).reset_index()
-    #         df.append(small_df)
-    # df = pd.concat(df)
-    #
-    # for metric in ['RMSE', 'MPJPE', 'PCK@0.01']:
-    #     # print("% of improvement in terms of test RMSE between DISK and linear interpolation per dataset:\n",
-    #     #       df.loc[df['Model'].isin(['linear interpolation', 'DISK'])].groupby(['dataset', 'repeat']) \
-    #     #       .apply(lambda x: (x.loc[x['Model'] == 'linear interpolation', metric].values[0] - \
-    #     #                         x.loc[x['Model'] == 'DISK', 'RMSE'].values[0]) /
-    #     #                        x.loc[x['Model'] == 'linear interpolation', metric].values[0] * 100) \
-    #     #       .groupby(['dataset']).agg(['mean', 'std']))
-    #     fig, axes = plt.subplots(1, 7, figsize=(18, 6.6))
-    #     for i_dataset, dataset in enumerate(df['Dataset'].unique()):
-    #         sns.barplot(data=df.loc[df['Dataset'] == dataset], x='Dataset', y=metric,
-    #                     hue='method',
-    #                     ax=axes[i_dataset], hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
-    #                     palette=['orangered', 'gold', 'purple', 'limegreen'])
-    #
-    #
-    #     plt.figure()
-    #     sns.barplot(data=df, x='Dataset', hue='method', y=metric,
-    #                 hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
-    #                 palette=['orangered', 'gold', 'purple', 'limegreen'])
-    #     f = plt.gcf()
-    #     f.set_figwidth(18)
-    #     f.set_figheight(6.6)
-    #     plt.savefig(f'/home/france/Dropbox/Dropbox/2021_Koeln/bogna/fig_comparison_other_methods_202502/barplot_comparison_{metric}_202503.svg')
+        elif args.dataset == 'CLB':
+            ## CLB
+            input_folders = {'original': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0'),
+                     'DISK': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
+                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_CLB/model_ensemble/test_repeat-0_merged/'),
+                     'optipose': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
+                     'kpmoseq': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+            }
+            output_folder = os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
+            dataset_name = 'INH_CLB_keypoints_1_60_stride0.5'
+            pck = 0.5684496550222218 # @0.01
+
+        elif args.dataset == 'DANNCE':
+            ## DANNCE
+            input_folders = {'original': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0'),
+                     'DISK': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0/DISK_pred'),
+                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_DANNCE/model_ensemble/test_repeat-0_merged/'),
+                     'optipose': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0/optipose_pred'),
+                     'kpmoseq': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0/kpmoseq'),
+            }
+            output_folder = os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison')
+            dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
+            pck = 2.8703325891261375 # @0.01
+
+        elif args.dataset == 'Mocap':
+            ## Mocap
+            input_folders = {'original': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0'),
+                     'DISK': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
+                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_Mocap/model_ensemble/test_repeat-0_merged/'),
+                     'optipose': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
+                     'kpmoseq': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+            }
+            output_folder = os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
+            dataset_name = 'Mocap_keypoints_60_stride30_new'
+            pck = 0.3907520187466515 # @0.01 in meters
+
+
+        elif args.dataset == 'MABe':
+            ## Mocap
+            input_folders = {'original': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0'),
+                     'DISK': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
+                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_MABe/model_ensemble/test_repeat-0_merged/'),
+                     'kpmoseq': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+            }
+            output_folder = os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison')
+            dataset_name = 'MABE_task1_60stride60'
+            pck = 9.99527056927927 # @0.01
+
+        elif args.dataset == 'DF3D':
+            ## DF3D
+            input_folders = {'original': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0'),
+                     'DISK': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
+                     'optipose': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
+                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_DF3D/model_ensemble/test_repeat-0_merged/'),
+                     'kpmoseq': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+            }
+            output_folder = os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
+            dataset_name = 'DF3D_keypoints_60stride5_new'
+            pck = 0.171646054776486 # @0.01
+
+        elif args.dataset == 'Fish':
+            ## DF3D
+            input_folders = {'original': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0'),
+                     'DISK': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/DISK_pred'),
+                     'optipose': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/optipose_pred'),
+                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_Fish/model_ensemble/test_repeat-0_merged/'),
+                     'kpmoseq': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/kpmoseq'),
+            }
+            output_folder = os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison')
+            dataset_name = 'DF3D_keypoints_60stride5_new'
+            pck = 0.171646054776486 # @0.01
+
+        evaluate_and_plots(dataset_name, output_folder, input_folders, pck)
+        plot_average(output_folder)
+        plot_against_time(output_folder)
