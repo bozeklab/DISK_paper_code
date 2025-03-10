@@ -30,7 +30,7 @@ def find_file(input_folder, id_sample):
             return glob(os.path.join(input_folder, f'test_repeat-0_sample{id_sample}_*.csv'))[0]
         except IndexError:
             print(f'Not found `test_repeat-0_sample{id_sample}` in {input_folder}', flush=True)
-            raise IndexError
+            return None
 
 def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_threshold):
 
@@ -64,11 +64,16 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
     id_sample = 0
     while True:
         print(f"-- index_sample = {id_sample}")
-        try:
-            files = [find_file(input_folders[m], id_sample) for m in methods]
-        except IndexError:
+        files = [find_file(input_folders[m], id_sample) for m in methods]
+        if files == [None] * len(methods):
             print(f'No sample found with id {id_sample}. Stopping the iteration')
             break
+        elif None in files:
+            print(f'At least one file is missing for id {id_sample}.')
+            continue
+        else:
+            print(f'Something wrong at id {id_sample}: {files}')
+            sys.exit(1)
 
         list_df = [pd.read_csv(f, sep=',') for f in files]
 
@@ -385,56 +390,52 @@ if __name__ == '__main__':
     else:
         sys.exit(1)
 
-    evaluate_and_plots(dataset_name, output_folder, input_folders, pck)
-    plot_average(output_folder)
-    plot_against_time(output_folder)
-    #
-    # mean_metrics_files = {'FL2': 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'CLB': 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'DANNCE': 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'Mocap': 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'MABe': 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'DF3D': 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-    #                   'Fish': 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv'}
-    #
-    # df = []
-    # for dataset, path_ in mean_metrics_files.items():
-    #     if os.path.exists(os.path.join(basedir, path_)):
-    #         small_df = pd.read_csv(os.path.join(basedir, path_))
-    #         print(dataset, small_df.shape)
-    #         if small_df.shape[0] == 0:
-    #             continue
-    #         small_df.loc[:, 'Dataset'] = dataset
-    #         if 'RMSE' not in small_df.columns:
-    #             small_df = pd.pivot(small_df, columns='metric_type', values='metric_value',
-    #                                 index=['method', 'repeat', 'Dataset', 'dataset']).reset_index()
-    #         df.append(small_df)
-    # df = pd.concat(df)
-    # # dict_ = {'type-GRU_mu_sigma-False': 'GRU',
-    # #          'type-GRU_mu_sigma-True': 'GRU proba',
-    # #          'type-STS_GCN_mu_sigma-False': 'STS-GCN',
-    # #          'type-ST_GCN_mu_sigma-False': 'ST-GCN',
-    # #          'type-TCN_mu_sigma-False': 'TCN',
-    # #          'linear_interp': 'linear interpolation',
-    # #          'type-transformer_mu_sigma-False': 'DISK',
-    # #          'type-transformer_mu_sigma-True': 'DISK proba'
-    # #          }
-    # # df['Model'] = df['method_param'].apply(lambda x: dict_[x])
-    #
-    # for metric in ['RMSE', 'MPJPE', 'PCK@0.01']:
-    #     # print("% of improvement in terms of test RMSE between DISK and linear interpolation per dataset:\n",
-    #     #       df.loc[df['Model'].isin(['linear interpolation', 'DISK'])].groupby(['dataset', 'repeat']) \
-    #     #       .apply(lambda x: (x.loc[x['Model'] == 'linear interpolation', metric].values[0] - \
-    #     #                         x.loc[x['Model'] == 'DISK', 'RMSE'].values[0]) /
-    #     #                        x.loc[x['Model'] == 'linear interpolation', metric].values[0] * 100) \
-    #     #       .groupby(['dataset']).agg(['mean', 'std']))
-    #
-    #     plt.figure()
-    #     sns.barplot(data=df, x='Dataset', hue='method', y=metric,
-    #                 hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose', 'ST-GCN',
-    #                            'TCN'],
-    #                 palette=['orangered', 'gold', 'purple', 'limegreen'])
-    #     f = plt.gcf()
-    #     f.set_figwidth(18)
-    #     f.set_figheight(6.6)
-    #     plt.savefig(f'/home/france/Dropbox/Dropbox/2021_Koeln/bogna/fig_comparison_other_methods_202502/barplot_comparison_{metric}_202503.svg')
+    # evaluate_and_plots(dataset_name, output_folder, input_folders, pck)
+    # plot_average(output_folder)
+    # plot_against_time(output_folder)
+
+    mean_metrics_files = {'FL2': 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+                      'CLB': 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+                      'DANNCE': 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+                      'Mocap': 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+                      'MABe': 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+                      'DF3D': 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+                      'Fish': 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv'}
+
+    df = []
+    for dataset, path_ in mean_metrics_files.items():
+        if os.path.exists(os.path.join(basedir, path_)):
+            small_df = pd.read_csv(os.path.join(basedir, path_))
+            print(dataset, small_df.shape)
+            if small_df.shape[0] == 0:
+                continue
+            small_df.loc[:, 'Dataset'] = dataset
+            if 'RMSE' not in small_df.columns:
+                small_df = pd.pivot(small_df, columns='metric_type', values='metric_value',
+                                    index=['method', 'repeat', 'Dataset', 'dataset']).reset_index()
+            df.append(small_df)
+    df = pd.concat(df)
+
+    for metric in ['RMSE', 'MPJPE', 'PCK@0.01']:
+        # print("% of improvement in terms of test RMSE between DISK and linear interpolation per dataset:\n",
+        #       df.loc[df['Model'].isin(['linear interpolation', 'DISK'])].groupby(['dataset', 'repeat']) \
+        #       .apply(lambda x: (x.loc[x['Model'] == 'linear interpolation', metric].values[0] - \
+        #                         x.loc[x['Model'] == 'DISK', 'RMSE'].values[0]) /
+        #                        x.loc[x['Model'] == 'linear interpolation', metric].values[0] * 100) \
+        #       .groupby(['dataset']).agg(['mean', 'std']))
+        fig, axes = plt.subplots(1, 7, figsize=(18, 6.6))
+        for i_dataset, dataset in enumerate(df['Dataset'].unique()):
+            sns.barplot(data=df.loc[df['Dataset'] == dataset], x='Dataset', y=metric,
+                        hue='method',
+                        ax=axes[i_dataset], hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
+                        palette=['orangered', 'gold', 'purple', 'limegreen'])
+
+
+        plt.figure()
+        sns.barplot(data=df, x='Dataset', hue='method', y=metric,
+                    hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
+                    palette=['orangered', 'gold', 'purple', 'limegreen'])
+        f = plt.gcf()
+        f.set_figwidth(18)
+        f.set_figheight(6.6)
+        plt.savefig(f'/home/france/Dropbox/Dropbox/2021_Koeln/bogna/fig_comparison_other_methods_202502/barplot_comparison_{metric}_202503.svg')
