@@ -390,52 +390,52 @@ if __name__ == '__main__':
     else:
         sys.exit(1)
 
-    # evaluate_and_plots(dataset_name, output_folder, input_folders, pck)
-    # plot_average(output_folder)
-    # plot_against_time(output_folder)
-
-    mean_metrics_files = {'FL2': 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-                      'CLB': 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-                      'DANNCE': 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-                      'Mocap': 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-                      'MABe': 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-                      'DF3D': 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-                      'Fish': 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv'}
-
-    df = []
-    for dataset, path_ in mean_metrics_files.items():
-        if os.path.exists(os.path.join(basedir, path_)):
-            small_df = pd.read_csv(os.path.join(basedir, path_))
-            print(dataset, small_df.shape)
-            if small_df.shape[0] == 0:
-                continue
-            small_df.loc[:, 'Dataset'] = dataset
-            if 'RMSE' not in small_df.columns:
-                small_df = pd.pivot(small_df, columns='metric_type', values='metric_value',
-                                    index=['method', 'repeat', 'Dataset', 'dataset']).reset_index()
-            df.append(small_df)
-    df = pd.concat(df)
-
-    for metric in ['RMSE', 'MPJPE', 'PCK@0.01']:
-        # print("% of improvement in terms of test RMSE between DISK and linear interpolation per dataset:\n",
-        #       df.loc[df['Model'].isin(['linear interpolation', 'DISK'])].groupby(['dataset', 'repeat']) \
-        #       .apply(lambda x: (x.loc[x['Model'] == 'linear interpolation', metric].values[0] - \
-        #                         x.loc[x['Model'] == 'DISK', 'RMSE'].values[0]) /
-        #                        x.loc[x['Model'] == 'linear interpolation', metric].values[0] * 100) \
-        #       .groupby(['dataset']).agg(['mean', 'std']))
-        fig, axes = plt.subplots(1, 7, figsize=(18, 6.6))
-        for i_dataset, dataset in enumerate(df['Dataset'].unique()):
-            sns.barplot(data=df.loc[df['Dataset'] == dataset], x='Dataset', y=metric,
-                        hue='method',
-                        ax=axes[i_dataset], hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
-                        palette=['orangered', 'gold', 'purple', 'limegreen'])
-
-
-        plt.figure()
-        sns.barplot(data=df, x='Dataset', hue='method', y=metric,
-                    hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
-                    palette=['orangered', 'gold', 'purple', 'limegreen'])
-        f = plt.gcf()
-        f.set_figwidth(18)
-        f.set_figheight(6.6)
-        plt.savefig(f'/home/france/Dropbox/Dropbox/2021_Koeln/bogna/fig_comparison_other_methods_202502/barplot_comparison_{metric}_202503.svg')
+    evaluate_and_plots(dataset_name, output_folder, input_folders, pck)
+    plot_average(output_folder)
+    plot_against_time(output_folder)
+    #
+    # mean_metrics_files = {'FL2': 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+    #                   'CLB': 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+    #                   'DANNCE': 'outputs/2023-12-05_DANNCE_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+    #                   'Mocap': 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+    #                   'MABe': 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+    #                   'DF3D': 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
+    #                   'Fish': 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv'}
+    #
+    # df = []
+    # for dataset, path_ in mean_metrics_files.items():
+    #     if os.path.exists(os.path.join(basedir, path_)):
+    #         small_df = pd.read_csv(os.path.join(basedir, path_))
+    #         print(dataset, small_df.shape)
+    #         if small_df.shape[0] == 0:
+    #             continue
+    #         small_df.loc[:, 'Dataset'] = dataset
+    #         if 'RMSE' not in small_df.columns:
+    #             small_df = pd.pivot(small_df, columns='metric_type', values='metric_value',
+    #                                 index=['method', 'repeat', 'Dataset', 'dataset']).reset_index()
+    #         df.append(small_df)
+    # df = pd.concat(df)
+    #
+    # for metric in ['RMSE', 'MPJPE', 'PCK@0.01']:
+    #     # print("% of improvement in terms of test RMSE between DISK and linear interpolation per dataset:\n",
+    #     #       df.loc[df['Model'].isin(['linear interpolation', 'DISK'])].groupby(['dataset', 'repeat']) \
+    #     #       .apply(lambda x: (x.loc[x['Model'] == 'linear interpolation', metric].values[0] - \
+    #     #                         x.loc[x['Model'] == 'DISK', 'RMSE'].values[0]) /
+    #     #                        x.loc[x['Model'] == 'linear interpolation', metric].values[0] * 100) \
+    #     #       .groupby(['dataset']).agg(['mean', 'std']))
+    #     fig, axes = plt.subplots(1, 7, figsize=(18, 6.6))
+    #     for i_dataset, dataset in enumerate(df['Dataset'].unique()):
+    #         sns.barplot(data=df.loc[df['Dataset'] == dataset], x='Dataset', y=metric,
+    #                     hue='method',
+    #                     ax=axes[i_dataset], hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
+    #                     palette=['orangered', 'gold', 'purple', 'limegreen'])
+    #
+    #
+    #     plt.figure()
+    #     sns.barplot(data=df, x='Dataset', hue='method', y=metric,
+    #                 hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
+    #                 palette=['orangered', 'gold', 'purple', 'limegreen'])
+    #     f = plt.gcf()
+    #     f.set_figwidth(18)
+    #     f.set_figheight(6.6)
+    #     plt.savefig(f'/home/france/Dropbox/Dropbox/2021_Koeln/bogna/fig_comparison_other_methods_202502/barplot_comparison_{metric}_202503.svg')
