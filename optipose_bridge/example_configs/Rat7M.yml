@@ -7,8 +7,11 @@ body_parts: [ "HeadF","HeadB","HeadL","SpineF","SpineM","SpineL","Offset1","Offs
 skeleton: [ [ 'HeadF', 'HeadB' ], [ 'HeadB', 'SpineF' ], [ 'SpineF', 'SpineM' ], [ 'SpineM', 'SpineL' ], [ 'SpineL', 'HipL' ], [ 'SpineL', 'HipR' ], [ 'SpineF', 'ShoulderL' ], [ 'SpineF', 'ShoulderR' ] ]
 
 OptiPose:
-  framerate: 60
+  framerate: 30
   reconstruction_algorithm: auto_subset
   scale: 1000
   skip: 0
   threshold: 0.9
+
+Reconstruction:
+  framerate: 30
