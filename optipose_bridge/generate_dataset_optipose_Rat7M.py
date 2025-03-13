@@ -13,6 +13,9 @@ import matplotlib
 if os.uname().nodename == 'france-XPS':
     matplotlib.use('TkAgg')
     basedir = '/home/france/Mounted_dir'
+elif 'ada' in os.uname().nodename:
+    matplotlib.use('Agg')
+    basedir = '/data/frose1/'
 else:
     matplotlib.use('Agg')
     basedir = '/projects/ag-bozek/france'

@@ -11,6 +11,9 @@ import matplotlib
 if os.uname().nodename == 'france-XPS':
     matplotlib.use('TkAgg')
     basedir = '/home/france/Mounted_dir'
+elif 'ada' in os.uname().nodename:
+    matplotlib.use('Agg')
+    basedir = '/data/frose1/'
 else:
     matplotlib.use('Agg')
     basedir = '/projects/ag-bozek/france'
@@ -22,14 +25,17 @@ if __name__ == '__main__':
     dataset_dir = os.path.join(basedir, 'results_behavior/datasets', name_folder)
     constant_file_path = os.path.join(dataset_dir, 'constants.py')
 
-    for suffix in ['train', 'val']:
-        input_file = '.csv'
+    for suffix in ['val', 'train']:
+        print(os.path.join(dataset_dir, f'*{suffix}*.csv'))
+        print(glob(os.path.join(dataset_dir, f'*{suffix}*.csv')))
+        input_file = glob(os.path.join(dataset_dir, f'*{suffix}*.csv'))[0]
 
         df = pd.read_csv(input_file, sep='|')
 
         # create the npz file
-        input_data = df['input'].values
-        gt_data = df['label'].values
+        input_data = np.stack([eval(v) for v in df['input'].values])
+        gt_data = np.stack([eval(v) for v in df['label'].values])
+        print(input_data.shape, type(input_data[0]), gt_data.shape)
         lengths = [input_data.shape[1]] * input_data.shape[0]
 
         outputfile = os.path.join(dataset_dir, f'{suffix}_dataset_w-0-nans')

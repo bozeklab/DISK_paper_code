@@ -2,7 +2,7 @@ name: Rat7M_OptiPose
 
 output_folder: ./
 
-body_parts: [ "HeadF","HeadB","HeadL","SpineF","SpineM","SpineL","Offset1","Offset2","HipL","HipR","ShoulderL","ShoulderR","KneeR","KneeL","ShinL","ShinR" ]
+body_parts: [ "HeadF", "HeadB", "HeadL", "SpineF", "SpineM", "SpineL", "Offset1", "Offset2", "HipL","HipR","ShoulderL","ShoulderR","KneeR","KneeL","ShinL","ShinR" ]
 
 skeleton: [ [ 'HeadF', 'HeadB' ], [ 'HeadB', 'SpineF' ], [ 'SpineF', 'SpineM' ], [ 'SpineM', 'SpineL' ], [ 'SpineL', 'HipL' ], [ 'SpineL', 'HipR' ], [ 'SpineF', 'ShoulderL' ], [ 'SpineF', 'ShoulderR' ] ]
 
@@ -15,3 +15,7 @@ OptiPose:
 
 Reconstruction:
   framerate: 30
+
+train_file: ''
+val_file: ''
+val_path: ''

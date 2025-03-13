@@ -339,10 +339,10 @@ if __name__ == '__main__':
                             ax=axes[i_dataset], hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
                             palette=['orangered', 'gold', 'purple', 'limegreen'])
 
-            plt.figure()
-            sns.barplot(data=df, x='Dataset', hue='method', y=metric,
-                        hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
-                        palette=['orangered', 'gold', 'purple', 'limegreen'])
+            # plt.figure()
+            # sns.barplot(data=df, x='Dataset', hue='method', y=metric,
+            #             hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
+            #             palette=['orangered', 'gold', 'purple', 'limegreen'])
             f = plt.gcf()
             f.set_figwidth(18)
             f.set_figheight(6.6)
@@ -431,7 +431,7 @@ if __name__ == '__main__':
                      'kpmoseq': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/kpmoseq'),
             }
             output_folder = os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison')
-            dataset_name = 'DF3D_keypoints_60stride5_new'
+            dataset_name = 'Fish_v3_60stride120'
             pck = 0.171646054776486 # @0.01
 
         evaluate_and_plots(dataset_name, output_folder, input_folders, pck)

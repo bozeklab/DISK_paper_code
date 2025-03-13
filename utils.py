@@ -299,3 +299,96 @@ class GradualWarmupScheduler(_LRScheduler):
             return super(GradualWarmupScheduler, self).step(epoch)
 
 
+def check_data_skeleton_compatibility(dataset_folder):
+    data = np.load(os.path.join(dataset_folder, 'test_dataset_w-0-nans.npz'))
+    spec = importlib.util.spec_from_file_location("module.name", os.path.join(dataset_folder, 'skeleton.py'))
+    skeleton_inputs = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(skeleton_inputs)
+
+    n_kp = skeleton_inputs.num_keypoints
+    keypoints = skeleton_inputs.keypoints
+    keypoints_drawn = {k: False for k in keypoints}
+    neighbor_links = skeleton_inputs.neighbor_links
+
+    x = data['X'][0][0]
+    x = x.reshape(n_kp, -1)[..., :3]
+    print(x.shape, n_kp, keypoints)
+
+    if x.shape[-1] == 3:
+        # 3D
+        ax = plt.figure(figsize=(10, 10)).add_subplot(projection='3d')
+        for list_ in neighbor_links:
+            if type(list_[0]) == int:
+                if not keypoints_drawn[keypoints[list_[0]]]:
+                    plt.plot(x[list_[0], 0], x[list_[0], 1], x[list_[0], 2], 'o', label=f'{list_[0]} {keypoints[list_[0]]}')
+                    keypoints_drawn[keypoints[list_[0]]] = True
+                if not keypoints_drawn[keypoints[list_[1]]]:
+                    plt.plot(x[list_[1], 0], x[list_[1], 1], x[list_[1], 2], 'o', label=f'{list_[1]} {keypoints[list_[1]]}')
+                    keypoints_drawn[keypoints[list_[1]]] = True
+                plt.plot([x[list_[0], 0], x[list_[1], 0]],
+                               [x[list_[0], 1], x[list_[1], 1]],
+                               [x[list_[0], 2], x[list_[1], 2]],
+                         'k')
+            else:
+                for pair in list_:
+                    if not keypoints_drawn[keypoints[pair[0]]]:
+                        plt.plot(x[pair[0], 0], x[pair[0], 1], x[pair[0], 2], 'o', label=f'{pair[0]} {keypoints[pair[0]]}')
+                        keypoints_drawn[keypoints[pair[0]]] = True
+                    if not keypoints_drawn[keypoints[pair[1]]]:
+                        plt.plot(x[pair[1], 0], x[pair[1], 1], x[pair[1], 2], 'o', label=f'{pair[1]} {keypoints[pair[1]]}')
+                        keypoints_drawn[keypoints[pair[1]]] = True
+                    plt.plot([x[pair[0], 0], x[pair[1], 0]],
+                                   [x[pair[0], 1], x[pair[1], 1]],
+                                   [x[pair[0], 2], x[pair[1], 2]], 'k')
+    else:
+        # 2D
+        plt.figure(figsize=(10, 10))
+        for list_ in neighbor_links:
+            if type(list_[0]) == int:
+                if not keypoints_drawn[keypoints[list_[0]]]:
+                    plt.plot(x[list_[0], 0], x[list_[0], 1], 'o', label=f'{list_[0]} {keypoints[list_[0]]}')
+                    keypoints_drawn[keypoints[list_[0]]] = True
+                if not keypoints_drawn[keypoints[list_[1]]]:
+                    plt.plot(x[list_[1], 0], x[list_[1], 1], 'o', label=f'{list_[1]} {keypoints[list_[1]]}')
+                    keypoints_drawn[keypoints[list_[0]]] = True
+                plt.plot([x[list_[0], 0], x[list_[1], 0]],
+                               [x[list_[0], 1], x[list_[1], 1]], 'k')
+            else:
+                for pair in list_:
+                    if not keypoints_drawn[keypoints[pair[0]]]:
+                        plt.plot(x[pair[0], 0], x[pair[0], 1], 'o', label=f'{pair[0]} {keypoints[pair[0]]}')
+                        keypoints_drawn[keypoints[pair[0]]] = True
+                    if not keypoints_drawn[keypoints[pair[1]]]:
+                        plt.plot(x[pair[1], 0], x[pair[1], 1], 'o', label=f'{pair[1]} {keypoints[pair[1]]}')
+                        keypoints_drawn[keypoints[pair[1]]] = True
+                    plt.plot([x[pair[0], 0], x[pair[1], 0]],
+                                   [x[pair[0], 1], x[pair[1], 1]], 'k')
+    plt.legend()
+    plt.suptitle(os.path.basename(dataset_folder))
+    plt.savefig(os.path.join(dataset_folder, f'skeleton_plot_w_kp_names.png'))
+
+
+if __name__ == '__main__':
+    import matplotlib
+    if os.uname().nodename == 'france-XPS':
+        matplotlib.use('TkAgg')
+        basedir = '/home/france/Mounted_dir'
+    else:
+        matplotlib.use('Agg')
+        basedir = '/projects/ag-bozek/france'
+
+    dataset_names = [
+        'MABE_task1_60stride60',
+                     'INH_FL2_keypoints_1_60_wresiduals_stride0.5',
+                     'INH_CLB_keypoints_1_60_wresiduals_stride0.5',
+                     'DANNCE_seq_keypoints_60_stride30_fill10',
+                     'Mocap_keypoints_60_stride30',
+                     'DF3D_keypoints_60_stride5',
+                     'Fish_v3_60stride120'
+                     ]
+
+    for dataset_name in dataset_names:
+        check_data_skeleton_compatibility(os.path.join(basedir, 'results_behavior/datasets', dataset_name))
+
+    print('stop')
+
