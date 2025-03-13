@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     elif args.dataset == 'DANNCE': ## MISSING
         dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-10_test_compare_DANNCE_SWAP')
+        input_dir = os.path.join(basedir, 'outputs/2025-03-13_test_compare_DF3D_SWAP')
 
     elif args.dataset == 'Mocap':
         dataset_name = 'Mocap_keypoints_60_stride30'
