@@ -8,86 +8,6 @@ import importlib.util
 
 from utils import plot_save
 
-###########################################################################
-### RMSE VS LENGTH MOCAP
-
-# outputdir = '/home/france/Mounted_dir/results_behavior/outputs/2023-09-27_Fishv3_newnewmissing/compare_models_stride120'
-# outputdir = '/home/france/Mounted_dir/results_behavior/outputs/2023-12-07_Mocap_newnewmissing/compare_models'
-outputdir = '/home/france/Mounted_dir/results_behavior/outputs/2023-12-05_DANNCE_newnewmissing/compare_models_transformer_GRU'
-outputdir = '/home/france/Mounted_dir/results_behavior/outputs/2024-02-19_MABe_task1_newnewmissing/compare_all_goodone'
-dataset = '2-Mice-2D'  # 'DANNCE'
-total_rmse = pd.read_csv(os.path.join(outputdir, 'total_RMSE_repeat-0.csv'))
-rename_dict = {'type-GRU_mu_sigma-False': 'GRU',
-               'type-GRU_mu_sigma-True': 'GRU_NLL',
-               'type-TCN_mu_sigma-False': 'TCN',
-               'type-ST_GCN_mu_sigma-False': 'STGCN',
-               'type-STS_GCN_mu_sigma-False': 'STSGCN',
-               'type-transformer_mu_sigma-False': 'transformer_baseline',
-               'type-transformer_mu_sigma-True': 'transformer_NLL',
-               'linear_interp': 'linear_interp'}
-total_rmse.loc[:, 'method_param'] = total_rmse['method_param'].apply(lambda x: rename_dict[x])
-
-
-def lineplot_all_length():
-    total_rmse.loc[:, 'length_hole'] = total_rmse.loc[:, 'length_hole'].astype('float')
-    mask = (total_rmse['type_RMSE'] == '3D')
-    sns.lineplot(data=total_rmse.loc[mask * (total_rmse['keypoint'] == 'all'), :], x='length_hole', y='RMSE',
-                 hue='method_param',
-                 hue_order=['linear_interp', 'GRU', 'GRU_NLL', 'transformer_baseline', 'transformer_NLL'],
-                 palette=['gray', 'gold', 'goldenrod', 'orangered', 'firebrick', ])
-    plt.tight_layout()
-
-
-plot_save(lineplot_all_length,
-          title=f'comparison_length_hole_all_vs_RMSE_{dataset}', only_png=False,
-          outputdir=outputdir)
-
-
-def lineplot_all_length():
-    total_rmse.loc[:, 'length_hole'] = total_rmse.loc[:, 'length_hole'].astype('float')
-    mask = (total_rmse['type_RMSE'] == '3D')
-    sns.lineplot(data=total_rmse.loc[mask * (total_rmse['keypoint'] == 'all'), :], x='length_hole', y='RMSE',
-                 hue='method_param',
-                 hue_order=['linear_interp', 'transformer_baseline', 'transformer_NLL'],
-                 palette=['gray', 'orangered', 'firebrick', ])
-    plt.tight_layout()
-
-
-plot_save(lineplot_all_length,
-          title=f'comparison_length_hole_all_vs_RMSE_transformer_{dataset}', only_png=False,
-          outputdir=outputdir)
-
-########################################################################################################
-### TRAINING TIMES SUBSAMPLING XP
-
-csv_path = '/home/france/Documents/research_journal/behavior/training_times_subsmapling_xp_fish_202312.csv'
-df = pd.read_csv('/home/france/Documents/research_journal/behavior/training_times_subsmapling_xp_fish_202312.csv')
-
-
-def lineplot_training_times():
-    sns.lineplot(data=df.loc[df['Batch size'] == 32, :], x='Dataset size', y='Training time (min)', hue='Model',
-                 hue_order=['transformer', 'GRU'],
-                 palette=['gold', 'orangered'], marker='o')
-    plt.xscale('log')
-    plt.xlim(0.9 * df['Dataset size'].min(), 1e5)
-
-
-plot_save(lineplot_training_times,
-          title=f'lineplot_training_times_fish_subsampling', only_png=False,
-          outputdir='/home/france/Documents/research_journal/behavior/')
-
-########################################################################################################
-### ERROR VS NMISSING IN MULTIKP TRAINING
-
-df = pd.read_csv(
-    '/home/france/Mounted_dir/results_behavior/outputs/2024-01-09_FL2_multikp/compare_models/total_RMSE_repeat-0.csv')
-
-nb_kp_per_hole = df[df['keypoint'] != 'all']['keypoint'].apply(lambda x: len(x.split(' ')))
-
-df.loc[df['keypoint'] != 'all', 'nb_kp_per_hole'] = nb_kp_per_hole.values
-
-sns.lineplot(df[df['nb_kp_per_hole'] < 8], x='nb_kp_per_hole', y='RMSE', hue='method',
-             hue_order=['linear_interp', 'GRU', 'transformer'], palette=['gray', 'gold', 'orangered'])
 
 ########################################################################################################
 ### ERROR VS NMISSING IN MULTIKP TRAINING - FISH
@@ -188,3 +108,39 @@ for folder, ylim, suffix in enumerate_on:
 # mask = (df['keypoint'] != 'all') * (df['type_RMSE'] == '3D')
 # sns.violinplot(data=df[mask], y='length_hole', x='missing_scheme')
 # sns.lineplot(df[mask], x='length_hole', y='RMSE', hue='missing_scheme')#,
+
+
+###############################################################################################
+### TABLE 1FISH vs 2FISH COMPARISON
+
+
+fish1_df = pd.read_csv(
+    '/home/france/Mounted_dir/results_behavior/outputs/2024-02-21_Fish_v3_singlefish_newnewmissing/compare_1fish_2fish_testfish1/mean_RMSE.csv')
+
+mean_fish1 = fish1_df.groupby('method_param')['RMSE'].agg('mean').reset_index()
+mean_fish1.loc[:, 'method_param'] = mean_fish1['method_param'].apply(lambda x: {'linear_interp': 'linear interpolation',
+                                                                                'type-GRU_mu_sigma-False_name-Fish_v3_60stride120': 'GRU 2fish',
+                                                                                'type-GRU_mu_sigma-False_name-Fish_v3_60stride120_fish1': 'GRU fish1',
+                                                                                'type-GRU_mu_sigma-True_name-Fish_v3_60stride120': 'GRU proba 2fish',
+                                                                                'type-GRU_mu_sigma-True_name-Fish_v3_60stride120_fish1': 'GRU proba fish1',
+                                                                                'type-transformer_mu_sigma-False_name-Fish_v3_60stride120': 'DISK 2fish',
+                                                                                'type-transformer_mu_sigma-False_name-Fish_v3_60stride120_fish1': 'DISK fish1',
+                                                                                'type-transformer_mu_sigma-True_name-Fish_v3_60stride120': 'DISK proba 2fish',
+                                                                                'type-transformer_mu_sigma-True_name-Fish_v3_60stride120_fish1': 'DISK proba fish1'}[
+    x])
+
+fish2_df = pd.read_csv(
+    '/home/france/Mounted_dir/results_behavior/outputs/2024-02-21_Fish_v3_singlefish_newnewmissing/compare_all_fish2/mean_RMSE.csv')
+
+mean_fish2 = fish2_df.groupby('method_param')['RMSE'].agg('mean').reset_index()
+mean_fish2.loc[:, 'method_param'] = mean_fish2['method_param'].apply(lambda x: {'linear_interp': 'linear interpolation',
+                                                                                'type-GRU_mu_sigma-False_name-Fish_v3_60stride120': 'GRU 2fish',
+                                                                                'type-GRU_mu_sigma-False_name-Fish_v3_60stride120_fish2': 'GRU fish2',
+                                                                                'type-GRU_mu_sigma-True_name-Fish_v3_60stride120': 'GRU proba 2fish',
+                                                                                'type-GRU_mu_sigma-True_name-Fish_v3_60stride120_fish2': 'GRU proba fish2',
+                                                                                'type-transformer_mu_sigma-False_name-Fish_v3_60stride120': 'DISK 2fish',
+                                                                                'type-transformer_mu_sigma-False_name-Fish_v3_60stride120_fish2': 'DISK fish2',
+                                                                                'type-transformer_mu_sigma-True_name-Fish_v3_60stride120': 'DISK proba 2fish',
+                                                                                'type-transformer_mu_sigma-True_name-Fish_v3_60stride120_fish2': 'DISK proba fish2'}[
+    x])
+

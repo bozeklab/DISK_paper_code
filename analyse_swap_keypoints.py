@@ -19,9 +19,7 @@ else:
     basedir = '/projects/ag-bozek/france/results_behavior'
 
 
-def plot_average(output_dir, input_dir, dataset_name):
-    df_mean = pd.read_csv(os.path.join(input_dir, 'mean_metrics.csv'))
-    print(df_mean.loc[:, 'method_param'].unique())
+def plot_average(output_dir, df, dataset_name):
 
     renamemethods_dict = {'linear_interp': 'linear interpolation',
                           # 'mask-False_swap-0.1_2': 'DISK Swap woMask',
@@ -33,56 +31,64 @@ def plot_average(output_dir, input_dir, dataset_name):
                           'mask-True_swap-0.1_1': 'DISK Swap',
                           'mask-True_swap-0_0': 'DISK woSwap',
                           'mask-True_swap-0_1': 'DISK woSwap'}
-    methods_order = ['linear_interp', 'DISK woSwap', 'DISK Swap']
-    palette = ['grey', 'red', 'orangered']
+    methods_order = ['linear interpolation', 'DISK woSwap', 'DISK Swap']
+    palette = ['gray', 'gold', 'orangered']
 
-    df_mean.loc[:, 'method'] = df_mean['method_param'].apply(lambda x: renamemethods_dict[x])
+    df.loc[:, 'method'] = df['method_param'].apply(lambda x: renamemethods_dict[x])
 
-    fig, axes = plt.subplots(1, 3, sharey='col', figsize=(12, 6))
-    sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'RMSE'], x='metric_type', y='metric_value', hue='method',
+    print(df.groupby(['metric_type', 'swap', 'method'])['metric_value'].mean())
+
+    fig, axes = plt.subplots(1, 3, sharey='col', figsize=(8, 4))
+    sns.barplot(data=df.loc[df['metric_type'] == 'RMSE'], x='swap', y='metric_value', hue='method',
                 hue_order=methods_order,
                 palette=palette, ax=axes[0])
-    sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'PCK@0.01'], x='metric_type', y='metric_value',
+    sns.barplot(data=df.loc[df['metric_type'] == 'PCK@0.01'], x='swap', y='metric_value',
                 hue='method',
                 hue_order=methods_order,
                 palette=palette, ax=axes[1])
     axes[1].set_ylim(0, 1.)
     plt.legend([])
-    sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'MPJPE'], x='metric_type', y='metric_value',
+    sns.barplot(data=df.loc[df['metric_type'] == 'MPJPE'], x='swap', y='metric_value',
                 hue='method',
                 hue_order=methods_order,
                 palette=palette, ax=axes[2])
     plt.legend([])
+    plt.tight_layout()
     plt.savefig(
         os.path.join(output_dir, f'barplot_swap_{dataset_name}_origccords.svg'))
     plt.savefig(
         os.path.join(output_dir, f'barplot_swap_{dataset_name}_origccords.png'))
 
-    # df_mean = pd.read_csv(os.path.join(input_dir, 'mean_metrics.csv'))
+    # df = pd.read_csv(os.path.join(input_dir, 'mean_metrics.csv'))
     # print(df_mean.loc[:, 'method_param'].unique())
     # df_mean.loc[:, 'method'] = df_mean['method_param'].apply(lambda x: renamemethods_dict[x])
 
-    fig, axes = plt.subplots(1, 3, sharey='col', figsize=(12, 6))
-    sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'RMSE'], x='metric_type', y='metric_value', hue='method',
-                hue_order=methods_order,
-                palette=palette, ax=axes[0])
-    sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'PCK@0.01'], x='metric_type', y='metric_value',
-                hue='method',
-                hue_order=methods_order,
-                palette=palette, ax=axes[1])
-    axes[1].set_ylim(0, 1.)
-    plt.legend([])
-    sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'MPJPE'], x='metric_type', y='metric_value',
-                hue='method',
-                hue_order=methods_order,
-                palette=palette, ax=axes[2])
-    plt.legend([])
-    plt.savefig(os.path.join(output_dir, f'barplot_swap_{dataset_name}.svg'))
-    plt.savefig(os.path.join(output_dir, f'barplot_swap_{dataset_name}.png'))
+    # fig, axes = plt.subplots(1, 3, sharey='col', figsize=(12, 6))
+    # sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'RMSE'], x='metric_type', y='metric_value', hue='method',
+    #             hue_order=methods_order,
+    #             palette=palette, ax=axes[0])
+    # sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'PCK@0.01'], x='metric_type', y='metric_value',
+    #             hue='method',
+    #             hue_order=methods_order,
+    #             palette=palette, ax=axes[1])
+    # axes[1].set_ylim(0, 1.)
+    # plt.legend([])
+    # sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'MPJPE'], x='metric_type', y='metric_value',
+    #             hue='method',
+    #             hue_order=methods_order,
+    #             palette=palette, ax=axes[2])
+    # plt.legend([])
+    # plt.savefig(os.path.join(output_dir, f'barplot_swap_{dataset_name}.svg'))
+    # plt.savefig(os.path.join(output_dir, f'barplot_swap_{dataset_name}.png'))
 
-def bin_length(x, max_, min_, bin_width):
+def bin_length(x, max_, min_, bin_width=None, n_bins=None):
+    if n_bins is None and bin_width is None:
+        return ValueError(f'[bin_length function] One of the two parameters `bin_width` or `n_bins` should not be None.')
     # bins = np.array([0, 5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 125, 150, 200, 250])
-    bins = np.arange(min_, max_, bin_width)
+    if bin_width is not None:
+        bins = np.arange(min_, max_, bin_width)
+    else:
+        bins = np.arange(min_, max_, (max_ - min_) / n_bins)
     middle_bins = (bins[:-1] + bins[1:]) / 2
     return middle_bins[np.argmax(x <= bins[1:])]
 
@@ -102,36 +108,46 @@ if __name__ == '__main__':
 
     if args.dataset == 'MABe':
         dataset_name = 'MABE_task1_60stride60'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-07_test_compare_MABe_SWAP_debug')
+        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_MABe_SWAP0.5')
 
     elif args.dataset == 'FL2':
         dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_stride0.5'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-07_test_compare_FL2_SWAP')
+        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_CLB_SWAP0.5')
 
     elif args.dataset == 'CLB':
         dataset_name = 'INH_CLB_keypoints_1_60_wresiduals_stride0.5'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-07_test_compare_CLB_SWAP')
+        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_FL2_SWAP0.5')
 
     elif args.dataset == 'DANNCE': ## MISSING
         dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-13_test_compare_DF3D_SWAP')
+        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_DANNCE_SWAP0.5')
 
     elif args.dataset == 'Mocap':
         dataset_name = 'Mocap_keypoints_60_stride30'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-10_test_compare_Mocap_SWAP')
+        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_Mocap_SWAP0.5')
 
     elif args.dataset == 'DF3D': ## MISSING
         dataset_name = 'DF3D_keypoints_60_stride5'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-10_test_compare_DF3D_SWAP')
+        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_DF3D_SWAP0.5')
 
     elif args.dataset == 'Fish':
         dataset_name = 'Fish_v3_60stride120'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-10_test_compare_Fish_SWAP')
+        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_Fish_SWAP0.5')
 
     output_dir = os.path.join(output_dir, args.dataset)
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
-    plot_average(output_dir, input_dir, args.dataset)
+
+    df = pd.read_csv(os.path.join(input_dir, 'total_metrics_repeat-0.csv'))
+    print(df.loc[:, 'method_param'].unique())
+
+    list_no_swap = ['(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)', '(0, 1, 2, 3, 4, 5, 6, 7)',
+                    '(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)',
+                    '(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37)',
+                    '(0, 1, 2, 3, 4, 5)']
+    df.loc[:, 'swap'] = df['swap_kp_id'].apply(lambda x: False if x in list_no_swap  else True)
+
+    plot_average(output_dir, df, args.dataset)
 
     skeleton_file = os.path.join(basedir, f'datasets/{dataset_name}/skeleton.py')
     spec = importlib.util.spec_from_file_location("module.name", skeleton_file)
@@ -139,15 +155,25 @@ if __name__ == '__main__':
     spec.loader.exec_module(skeleton_inputs)
     keypoints = skeleton_inputs.keypoints
 
-    total_metrics_file = os.path.join(input_dir, 'total_metrics_repeat-0.csv')
-    df_swap = pd.read_csv(os.path.join(basedir, total_metrics_file))
+    # mean_metrics_file = os.path.join(input_dir, 'mean_metrics.csv')
+    # df_mean = pd.read_csv(os.path.join(basedir, mean_metrics_file))
+    #
+    # fig, axes = plt.subplots(1, 3)
+    # for ax, metric in zip(axes, ['RMSE', 'MPJPE', 'PCK@0.01']):
+    #     sns.barplot()
+
+    df_swap = df.loc[df['swap'] == True, :]
+    #pd.read_csv(os.path.join(basedir, total_metrics_file))
 
     df_swap.loc[:, 'swap_kp_id'] = df_swap['swap_kp_id'].apply(eval)
     df_swap.loc[:, 'swap_kp_id0'] = df_swap['swap_kp_id'].apply(lambda x: keypoints[x[0]])
     df_swap.loc[:, 'swap_kp_id1'] = df_swap['swap_kp_id'].apply(lambda x: keypoints[x[1]])
     df_swap.loc[:, 'length_hole_binned'] = df_swap['length_hole'].apply(partial(bin_length, max_=df_swap['length_hole'].max(), min_=0, bin_width=5))
     df_swap.loc[:, 'swap_length_binned'] = df_swap['swap_length'].apply(partial(bin_length, max_=df_swap['swap_length'].max(), min_=0, bin_width=5))
-    df_swap.loc[:, 'average_dist_bw_swap_kp_binned'] = df_swap['average_dist_bw_swap_kp'].apply(partial(bin_length, max_=df_swap['average_dist_bw_swap_kp'].max(), min_=df_swap['average_dist_bw_swap_kp'].min(), bin_width=0.2))
+    df_swap.loc[:, 'average_dist_bw_swap_kp_binned'] = df_swap['average_dist_bw_swap_kp'].apply(partial(bin_length,
+                                                                                                        max_=df_swap['average_dist_bw_swap_kp'].max(),
+                                                                                                        min_=df_swap['average_dist_bw_swap_kp'].min(),
+                                                                                                        n_bins=30))
 
     plt.close('all')
 
