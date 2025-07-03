@@ -365,7 +365,7 @@ if __name__ == '__main__':
                      'kpmoseq': 'comparison_methods_files/DANNCE/kpmoseq',
             }
             output_folder = 'comparison_methods_files/DANNCE/comparison'
-            dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
+            dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10'
             pck = 2.8703325891261375 # @0.01
 
         elif args.dataset == 'Mocap':
