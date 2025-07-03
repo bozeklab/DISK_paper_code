@@ -3,32 +3,22 @@ import pandas as pd
 import os
 
 import matplotlib
-if os.uname().nodename == 'france-XPS':
-    matplotlib.use('TkAgg')
-    basedir = '/home/france/Mounted_dir'
-else:
-    matplotlib.use('Agg')
-    basedir = '/projects/ag-bozek/france'
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import os
 
 if __name__ == '__main__':
-    imputed = np.load(
-       os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new/test_fulllength_dataset_imputed.npz'))
-    orig_npz = np.load(
-       os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new/test_fulllength_dataset_w-all-nans.npz'))
+    imputed = np.load('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_fulllength_dataset_imputed.npz')
+    orig_npz = np.load('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_fulllength_dataset_w-all-nans.npz')
     i_file = 7
 
-    optipose = pd.read_csv(
-        os.path.join(basedir, f'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file{i_file}_model_10_5_1.csv'))
-    kpmoseq = pd.read_csv(
-        os.path.join(basedir, f'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq/test_repeat-0_file{i_file}_kpmoseq.csv'))
-    mbi = pd.read_csv(
-        os.path.join(basedir, f'results_behavior/MarkerBasedImputation_FL2/model_ensemble/test_w-all-nans_file{i_file}_merged/test_w-all-nans_file{i_file}_sample0_MBI.csv'))
+    optipose = pd.read_csv('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_w-all-nans_file7_model_10_5_1.csv')
+    kpmoseq = pd.read_csv('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_repeat-0_file7_kpmoseq.csv')
+    mbi = pd.read_csv('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_w-all-nans_file7_sample0_MBI.csv')
     n_methods = 4
-    orig = pd.read_csv(
-        os.path.join(basedir, f'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file{i_file}.csv'))
-    output_folder = '/home/france/Dropbox/Dropbox/2021_Koeln/bogna/fig_comparison_other_methods_202502/'
+    orig = pd.read_csv('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_w-all-nans_file7.csv')
+    output_folder = 'comparison_methods_files/comparison_full_file'
 
     t = np.arange(3600) / 60
     x = orig_npz['X'][i_file]
@@ -124,10 +114,8 @@ if __name__ == '__main__':
 
     ######################################################################################################################################################
 
-    imputed = np.load(
-       os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new/test_fulllength_dataset_imputed.npz'))
-    orig_npz = np.load(
-       os.path.join(basedir, 'results_behavior/datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new/test_fulllength_dataset_w-all-nans.npz'))
+    imputed = np.load('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_fulllength_dataset_imputed.npz')
+    orig_npz = np.load('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_fulllength_dataset_w-all-nans.npz')
     i_file = 7
 
     x = orig_npz['X'][i_file]
@@ -144,23 +132,16 @@ if __name__ == '__main__':
             for b, e in zip(begins, ends):
                 axes[i, j].axvspan(xmin=b, xmax=e + 1, alpha=0.2)
                 axes[i, j].plot(np.arange(b, e + 2), disk[b:e + 2, i * 3 + j], '+--', c='red')
-            # begins, ends = ends, begins
-            # begins = np.insert(begins, 0, 0)
-            # if ends[0] == 0:
-            #     ends = ends[1:]
-            # ends = np.insert(ends, len(ends) - 1, len(disk) - 1)
-            # for b, e in zip(begins, ends):
-            #     axes[i, j].plot(np.arange(b, e + 1), disk[b:e + 1, i * 3 + j], '+', alpha=0.1, c='orange')
+
     axes[0, 0].set_title('X')
     axes[0, 1].set_title('Y')
     axes[0, 2].set_title('Z')
     plt.savefig(os.path.join(output_folder, f'test_w-all-nans_file{i_file}_DISK_holes_shaded.png'))
 
     plt.close('all')
-    optipose = pd.read_csv(
-        os.path.join(basedir, f'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file{i_file}_model_10_5_1.csv'))
-    orig = pd.read_csv(
-        os.path.join(basedir, f'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file{i_file}.csv'))
+    
+    optipose = pd.read_csv('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_w-all-nans_file7_model_10_5_1.csv')
+    orig = pd.read_csv('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_w-all-nans_file7.csv')
     fig, axes = plt.subplots(8, 3, figsize=(50, 8 * 3), sharex='all', sharey='none')
     for i in range(8):
         for j in range(3):
@@ -173,23 +154,15 @@ if __name__ == '__main__':
             for b, e in zip(begins, ends):
                 axes[i, j].axvspan(xmin=b, xmax=e + 1, alpha=0.2)
                 axes[i, j].plot(np.arange(b, e + 2), optipose.loc[b:e + 1, f'{i}_{j + 1}'].values, '+--', c='red')
-            # begins, ends = ends, begins
-            # begins = np.insert(begins, 0, 0)
-            # if ends[0] == 0:
-            #     ends = ends[1:]
-            # ends = np.insert(ends, len(ends) - 1, len(disk) - 1)
-            # for b, e in zip(begins, ends):
-            #     axes[i, j].plot(np.arange(b, e + 1), disk[b:e + 1, i * 3 + j], '+', alpha=0.1, c='orange')
+
     axes[0, 0].set_title('X')
     axes[0, 1].set_title('Y')
     axes[0, 2].set_title('Z')
     plt.savefig(os.path.join(output_folder, f'test_w-all-nans_file{i_file}_OPTIPOSE_model_10_5_1_holes_shaded.png'))
 
     plt.close('all')
-    optipose = pd.read_csv(
-        os.path.join(basedir, f'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq/test_repeat-0_file{i_file}_kpmoseq.csv'))
-    orig = pd.read_csv(
-        os.path.join(basedir, f'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file{i_file}.csv'))
+    optipose = pd.read_csv('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_repeat-0_file7_kpmoseq.csv')
+    orig = pd.read_csv('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_w-all-nans_file7.csv')
     fig, axes = plt.subplots(8, 3, figsize=(50, 8 * 3), sharex='all', sharey='none')
     for i in range(8):
         for j in range(3):
@@ -202,23 +175,15 @@ if __name__ == '__main__':
             for b, e in zip(begins, ends):
                 axes[i, j].axvspan(xmin=b, xmax=e + 1, alpha=0.2)
                 axes[i, j].plot(np.arange(b, e + 2), optipose.loc[b:e + 1, f'{i}_{j + 1}'].values, '+--', c='red')
-            # begins, ends = ends, begins
-            # begins = np.insert(begins, 0, 0)
-            # if ends[0] == 0:
-            #     ends = ends[1:]
-            # ends = np.insert(ends, len(ends) - 1, len(y) - 1)
-            # for b, e in zip(begins, ends):
-            #     axes[i, j].plot(np.arange(b, e + 1), y[b:e + 1, i * 3 + j], '+', alpha=0.1, c='orange')
+
     axes[0, 0].set_title('X')
     axes[0, 1].set_title('Y')
     axes[0, 2].set_title('Z')
     plt.savefig(os.path.join(output_folder, f'test_w-all-nans_file{i_file}_KPMOSEQ_holes_shaded.png'))
     plt.close()
 
-    mbi = pd.read_csv(
-        os.path.join(basedir, f'results_behavior/MarkerBasedImputation_FL2/model_ensemble/test_w-all-nans_file{i_file}_merged/test_w-all-nans_file{i_file}_sample0_MBI.csv'))
-    orig = pd.read_csv(
-        os.path.join(basedir, f'results_behavior/outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/test_w-all-nans_file{i_file}.csv'))
+    mbi = pd.read_csv('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_w-all-nans_file7_sample0_MBI.csv')
+    orig = pd.read_csv('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_w-all-nans_file7.csv')
     fig, axes = plt.subplots(8, 3, figsize=(50, 8 * 3), sharex='all', sharey='none')
     for i in range(8):
         for j in range(3):
@@ -231,13 +196,7 @@ if __name__ == '__main__':
             for b, e in zip(begins, ends):
                 axes[i, j].axvspan(xmin=b, xmax=e + 1, alpha=0.2)
                 axes[i, j].plot(np.arange(b, e + 2), mbi.loc[b:e + 1, f'{i}_{j + 1}'].values, '+--', c='red')
-            # begins, ends = ends, begins
-            # begins = np.insert(begins, 0, 0)
-            # if ends[0] == 0:
-            #     ends = ends[1:]
-            # ends = np.insert(ends, len(ends) - 1, len(y) - 1)
-            # for b, e in zip(begins, ends):
-            #     axes[i, j].plot(np.arange(b, e + 1), y[b:e + 1, i * 3 + j], '+', alpha=0.1, c='orange')
+
     axes[0, 0].set_title('X')
     axes[0, 1].set_title('Y')
     axes[0, 2].set_title('Z')

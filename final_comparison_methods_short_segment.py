@@ -11,14 +11,6 @@ import matplotlib.pyplot as plt
 import argparse
 import seaborn as sns
 
-import matplotlib
-if os.uname().nodename == 'france-XPS':
-    matplotlib.use('TkAgg')
-    basedir = '/home/france/Mounted_dir/results_behavior/'
-else:
-    matplotlib.use('Agg')
-    basedir = '/projects/ag-bozek/france/results_behavior/'
-
 from DISK.utils.utils import read_constant_file, find_holes
 
 
@@ -39,7 +31,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
     if not os.path.exists(os.path.join(output_folder, 'plots')):
         os.mkdir(os.path.join(output_folder, 'plots'))
 
-    dataset_constants = read_constant_file(os.path.join(basedir, 'datasets', dataset_name, f'constants.py'))
+    dataset_constants = read_constant_file(os.path.join('datasets', dataset_name, f'constants.py'))
 
     mean_RMSE = []
 
@@ -63,7 +55,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
         sep='|')
     id_sample = 0
     while True:
-        print(f"-- index_sample = {id_sample}")
+        # print(f"-- index_sample = {id_sample}")
         files = [find_file(input_folders[m], id_sample) for m in methods]
         if files == [None] * len(methods):
             print(f'No sample found with id {id_sample}. Stopping the iteration')
@@ -185,10 +177,10 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
                                                       n_missing]
         id_sample += 1
 
-    logging.info(f'Finished with iterating the dataset')
+    print(f'Finished with iterating the dataset')
     total_rmse = total_rmse.reset_index().convert_dtypes()
-    logging.info(f'n lines in result df: {total_rmse.shape[0]}')
-    logging.info(f"RMSE per sample averaged: \n"
+    print(f'n lines in result df: {total_rmse.groupby("method")["index"].count()}')
+    print(f"RMSE per sample averaged: \n"
                  f"{total_rmse[(total_rmse['metric_type'].isin([pck_name, 'RMSE', 'MPJPE', 'MAE'])) * (total_rmse['keypoint'] == 'all')].groupby(['metric_type', 'method'])['metric_value'].agg('mean')}")
     tmp = total_rmse[
         (total_rmse['metric_type'].isin([pck_name, 'RMSE', 'MPJPE', 'MAE'])) * (total_rmse['keypoint'] == 'all')].groupby(
@@ -222,8 +214,8 @@ def plot_against_time(folder):
         sns.lineplot(x='length_hole_binned', y='metric_value', hue='method',
                      data=total_rmse.loc[(total_rmse['metric_type'] == metric) * (total_rmse['keypoint'] != 'all')],
                      hue_order=methods, palette=hue)
-        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_binned-5_4methods_202503.svg'))
-        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_binned-5_4methods_202503.png'))
+        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_binned-5_4methods.svg'))
+        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_binned-5_4methods.png'))
         plt.close()
 
         plt.figure()
@@ -231,8 +223,8 @@ def plot_against_time(folder):
         sns.lineplot(x='length_hole', y='metric_value', hue='method',
                      data=total_rmse.loc[(total_rmse['metric_type'] == metric) * (total_rmse['keypoint'] != 'all')],
                      hue_order=methods, palette=hue)
-        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_4methods_202503.svg'))
-        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_4methods_202503.png'))
+        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_4methods.svg'))
+        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_4methods.png'))
         plt.close()
 
         plt.figure()
@@ -240,8 +232,8 @@ def plot_against_time(folder):
         sns.lineplot(x='n_missing_kp', y='metric_value', hue='method',
                      data=total_rmse.loc[(total_rmse['metric_type'] == metric) * (total_rmse['keypoint'] != 'all')],
                      hue_order=methods, palette=hue)
-        plt.savefig(os.path.join(folder, f'{metric}_vs_n_missing_4methods_202503.svg'))
-        plt.savefig(os.path.join(folder, f'{metric}_vs_n_missing_4methods_202503.png'))
+        plt.savefig(os.path.join(folder, f'{metric}_vs_n_missing_4methods.svg'))
+        plt.savefig(os.path.join(folder, f'{metric}_vs_n_missing_4methods.png'))
         plt.close()
 
     methods = ['DISK', 'MBI', 'kpmoseq']
@@ -253,8 +245,8 @@ def plot_against_time(folder):
         sns.lineplot(x='n_missing_kp', y='metric_value', hue='method',
                      data=total_rmse.loc[(total_rmse['metric_type'] == metric) * (total_rmse['keypoint'] != 'all')],
                      hue_order=methods, palette=hue)
-        plt.savefig(os.path.join(folder, f'{metric}_vs_n_missing_3methods_202503.svg'))
-        plt.savefig(os.path.join(folder, f'{metric}_vs_n_missing_3methods_202503.png'))
+        plt.savefig(os.path.join(folder, f'{metric}_vs_n_missing_3methods.svg'))
+        plt.savefig(os.path.join(folder, f'{metric}_vs_n_missing_3methods.png'))
         plt.close()
 
     methods = ['DISK', 'MBI']
@@ -266,8 +258,8 @@ def plot_against_time(folder):
         sns.lineplot(x='length_hole_binned', y='metric_value', hue='method',
                      data=total_rmse.loc[(total_rmse['metric_type'] == metric) * (total_rmse['keypoint'] != 'all')],
                      hue_order=methods, palette=hue)
-        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_binned-5_DISK-MBI_202503.svg'))
-        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_binned-5_DISK-MBI_202503.png'))
+        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_binned-5_DISK-MBI.svg'))
+        plt.savefig(os.path.join(folder, f'{metric}_vs_gaplength_binned-5_DISK-MBI.png'))
         plt.close()
 
 
@@ -283,7 +275,7 @@ def plot_average(folder):
         if 'PCK' in metric:
             axes[i_metric].set_ylim(0, 1)
 
-    plt.savefig(os.path.join(folder, 'mean_barplot_4methods_202503.svg'))
+    plt.savefig(os.path.join(folder, 'mean_barplot_4methods.svg'))
     plt.close()
 
 
@@ -303,18 +295,18 @@ if __name__ == '__main__':
     if args.dataset == 'compare':
 
         mean_metrics_files = {
-            'FL2': 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-            'CLB': 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-            'DANNCE': 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-            'Mocap': 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-            'MABe': 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-            'DF3D': 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv',
-            'Fish': 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison/mean_rmse_comparison.csv'}
+            'FL2': 'comparison_methods_files/FL2_comparison_methods.csv',
+            'CLB': 'comparison_methods_files/CLB_comparison_methods.csv',
+            'DANNCE': 'comparison_methods_files/DANNCE_comparison_methods.csv',
+            'Mocap': 'comparison_methods_files/Human_comparison_methods.csv',
+            'MABe': 'comparison_methods_files/MABe_comparison_methods.csv',
+            'DF3D': 'comparison_methods_files/DF3D_comparison_methods.csv',
+            'Fish': 'comparison_methods_files/Fish_comparison_methods.csv'}
 
         df = []
         for dataset, path_ in mean_metrics_files.items():
-            if os.path.exists(os.path.join(basedir, path_)):
-                small_df = pd.read_csv(os.path.join(basedir, path_))
+            if os.path.exists(path_):
+                small_df = pd.read_csv(path_)
                 print(dataset, small_df.shape)
                 if small_df.shape[0] == 0:
                     continue
@@ -326,12 +318,6 @@ if __name__ == '__main__':
         df = pd.concat(df)
 
         for metric in ['RMSE', 'MPJPE', 'PCK@0.01']:
-            # print("% of improvement in terms of test RMSE between DISK and linear interpolation per dataset:\n",
-            #       df.loc[df['Model'].isin(['linear interpolation', 'DISK'])].groupby(['dataset', 'repeat']) \
-            #       .apply(lambda x: (x.loc[x['Model'] == 'linear interpolation', metric].values[0] - \
-            #                         x.loc[x['Model'] == 'DISK', 'RMSE'].values[0]) /
-            #                        x.loc[x['Model'] == 'linear interpolation', metric].values[0] * 100) \
-            #       .groupby(['dataset']).agg(['mean', 'std']))
             fig, axes = plt.subplots(1, 7, figsize=(18, 6.6))
             for i_dataset, dataset in enumerate(df['Dataset'].unique()):
                 sns.barplot(data=df.loc[df['Dataset'] == dataset], x='Dataset', y=metric,
@@ -339,98 +325,94 @@ if __name__ == '__main__':
                             ax=axes[i_dataset], hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
                             palette=['orangered', 'gold', 'purple', 'limegreen'])
 
-            # plt.figure()
-            # sns.barplot(data=df, x='Dataset', hue='method', y=metric,
-            #             hue_order=['DISK', 'MBI', 'kpmoseq', 'optipose'],
-            #             palette=['orangered', 'gold', 'purple', 'limegreen'])
             f = plt.gcf()
             f.set_figwidth(18)
             f.set_figheight(6.6)
             plt.savefig(
-                f'/home/france/Dropbox/Dropbox/2021_Koeln/bogna/fig_comparison_other_methods_202502/barplot_comparison_{metric}_202503.svg')
+                f'comparison_methods_files/barplot_comparison_{metric}.svg')
     else:
         ## FL2
         if args.dataset == 'FL2':
             ## FL2
-            input_folders = {'original': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0'),
-                     'DISK': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK'),
-                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_FL2/model_ensemble/test_repeat-0_merged/'),
-                     'optipose': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose'),
-                     'kpmoseq': os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+            input_folders = {'original': 'comparison_methods_files/FL2/original',
+                     'DISK': 'comparison_methods_files/FL2/DISK',
+                     'MBI': 'comparison_methods_files/FL2/MBI',
+                     'optipose': 'comparison_methods_files/FL2/optipose',
+                     'kpmoseq': 'comparison_methods_files/FL2/kpmoseq',
             }
-            output_folder = os.path.join(basedir, 'outputs/25-09-24_FL2_new_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
-            dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5_new'
+            output_folder = os.path.join('comparison_methods_files/FL2/comparison')
+            dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5'
             pck = 0.5684496550222218 # @0.01
 
         elif args.dataset == 'CLB':
             ## CLB
-            input_folders = {'original': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0'),
-                     'DISK': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
-                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_CLB/model_ensemble/test_repeat-0_merged/'),
-                     'optipose': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
-                     'kpmoseq': os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+            input_folders = {'original': 'comparison_methods_files/CLB/original',
+                     'DISK': 'comparison_methods_files/CLB/DISK',
+                     'MBI': 'comparison_methods_files/CLB/MBI',
+                     'optipose': 'comparison_methods_files/CLB/optipose',
+                     'kpmoseq': 'comparison_methods_files/CLB/kpmoseq',
             }
-            output_folder = os.path.join(basedir, 'outputs/13-02-25_CLB_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
+            output_folder = 'comparison_methods_files/CLB/comparison'
             dataset_name = 'INH_CLB_keypoints_1_60_stride0.5'
             pck = 0.5684496550222218 # @0.01
 
         elif args.dataset == 'DANNCE':
             ## DANNCE
-            input_folders = {'original': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0'),
-                     'DISK': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
-                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_DANNCE/model_ensemble/test_repeat-0_merged/'),
-                     'optipose': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
-                     'kpmoseq': os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+            input_folders = {'original': 'comparison_methods_files/DANNCE/original',
+                     'DISK': 'comparison_methods_files/DANNCE/DISK',
+                     'MBI': 'comparison_methods_files/DANNCE/MBI',
+                     'optipose': 'comparison_methods_files/DANNCE/optipose',
+                     'kpmoseq': 'comparison_methods_files/DANNCE/kpmoseq',
             }
-            output_folder = os.path.join(basedir, 'outputs/13-02-25_DANNCE_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
+            output_folder = 'comparison_methods_files/DANNCE/comparison'
             dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10_new'
             pck = 2.8703325891261375 # @0.01
 
         elif args.dataset == 'Mocap':
             ## Mocap
-            input_folders = {'original': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0'),
-                     'DISK': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
-                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_Mocap/model_ensemble/test_repeat-0_merged/'),
-                     'optipose': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
-                     'kpmoseq': os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+            input_folders = {'original': 'comparison_methods_files/Human/original',
+                     'DISK': 'comparison_methods_files/Human/DISK',
+                     'MBI': 'comparison_methods_files/Human/MBI',
+                     'optipose': 'comparison_methods_files/Human/optipose',
+                     'kpmoseq': 'comparison_methods_files/Human/kpmoseq',
             }
-            output_folder = os.path.join(basedir, 'outputs/2025-02-24_Mocap_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
-            dataset_name = 'Mocap_keypoints_60_stride30_new'
+            output_folder = 'comparison_methods_files/Human/comparison'
+            dataset_name = 'Mocap_keypoints_60_stride30'
             pck = 0.3907520187466515 # @0.01 in meters
 
 
         elif args.dataset == 'MABe':
             ## Mocap
-            input_folders = {'original': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0'),
-                     'DISK': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
-                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_MABe/model_ensemble/test_repeat-0_merged/'),
-                     'kpmoseq': os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+            input_folders = {'original': 'comparison_methods_files/MABe/original',
+                     'DISK': 'comparison_methods_files/MABe/DISK',
+                     'MBI': 'comparison_methods_files/MABe/MBI',
+                     'kpmoseq': 'comparison_methods_files/MABe/kpmoseq',
             }
-            output_folder = os.path.join(basedir, 'outputs/2024-02-19_MABe_task1_newnewmissing/DISK_test/test_for_optipose_repeat_0/comparison')
+            output_folder = 'comparison_methods_files/MABe/comparison'
             dataset_name = 'MABE_task1_60stride60'
             pck = 9.99527056927927 # @0.01
 
         elif args.dataset == 'DF3D':
             ## DF3D
-            input_folders = {'original': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0'),
-                     'DISK': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/DISK_pred'),
-                     'optipose': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/optipose_pred'),
-                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_DF3D/model_ensemble/test_repeat-0_merged/'),
-                     'kpmoseq': os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/kpmoseq'),
+            input_folders = {'original': 'comparison_methods_files/DF3D/original',
+                     'DISK': 'comparison_methods_files/DF3D/DISK',
+                     'optipose': 'comparison_methods_files/DF3D/optipose',
+                     'MBI': 'comparison_methods_files/DF3D/MBI',
+                     'kpmoseq': 'comparison_methods_files/DF3D/kpmoseq',
             }
-            output_folder = os.path.join(basedir, 'outputs/2025-02-13_DF3D_for_comparison/DISK_test/test_for_optipose_repeat_0/comparison')
-            dataset_name = 'DF3D_keypoints_60stride5_new'
+            output_folder = 'comparison_methods_files/DF3D/comparison'
+            dataset_name = 'DF3D_keypoints_60stride5'
             pck = 0.171646054776486 # @0.01
 
         elif args.dataset == 'Fish':
-            ## DF3D
-            input_folders = {'original': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0'),
-                     'DISK': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/DISK_pred'),
-                     'optipose': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/optipose_pred'),
-                     'MBI': os.path.join(basedir, 'MarkerBasedImputation_Fish/model_ensemble/test_repeat-0_merged/'),
-                     'kpmoseq': os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/kpmoseq'),
+            ## Fish
+            input_folders = {'original': 'comparison_methods_files/Fish/original',
+                     'DISK': 'comparison_methods_files/Fish/DISK',
+                     'optipose': 'comparison_methods_files/Fish/optipose',
+                     'MBI': 'comparison_methods_files/Fish/MBI',
+                     'kpmoseq': 'comparison_methods_files/Fish/kpmoseq',
             }
-            output_folder = os.path.join(basedir, 'outputs/2023-09-27_Fishv3_newnewmissing/DISK_test_for_comparison/test_for_optipose_repeat_0/comparison')
+            output_folder = 'comparison_methods_files/Fish/comparison'
             dataset_name = 'Fish_v3_60stride120'
             pck = 0.171646054776486 # @0.01
 

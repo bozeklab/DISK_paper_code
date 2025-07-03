@@ -1,0 +1,10 @@
+NUM_FEATURES = 60
+KEYPOINTS = ['HeadF', 'HeadB', 'HeadL', 'SpineF', 'SpineM', 'SpineL', 'Offset1', 'Offset2', 'HipL', 'HipR', 'ElbowL', 'ArmL', 'ShoulderL', 'ShoulderR', 'ElbowR', 'ArmR', 'KneeR', 'KneeL', 'ShinL', 'ShinR']
+DIVIDER = 3
+ORIG_FREQ = 1 # 30
+FREQ = 1 # 30
+SEQ_LENGTH = 60
+STRIDE = 30
+W_RESIDUALS = False
+FILE_TYPE = 'mat_dannce'
+DLC_LIKELIHOOD_THRESHOLD = 0.8

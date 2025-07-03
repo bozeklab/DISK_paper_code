@@ -1,0 +1,49 @@
+network:
+  type: transformer
+  input_type: independent
+  encoding: fixed
+  num_layers: 4
+  dim_ff: 128
+  d_model: 128
+  num_heads: 8
+  activation: relu
+  norm_first: true
+  attn_type: standard
+  norm: layer
+  dropout: 0
+dataset:
+  name: Mocap_keypoints_120_stride30_new
+  skeleton_file: Mocap_keypoints_60_stride30_new/skeleton.py
+training:
+  epochs: 1500
+  batch_size: 8
+  learning_rate: 0.001
+  seed: false
+  load: null
+  n_cpus: 8
+  loss:
+    type: l1
+    mask: true
+    factor: 100
+  model_scheduler:
+    type: lambdalr
+    steps_epoch: 500
+    rate: 0.95
+  print_every: 10
+  mu_sigma: false
+  beta_mu_sigma: 0.5
+feed_data:
+  mask: true
+  transforms:
+    add_missing:
+      indep_keypoints: True
+      pad:
+      - 1
+      - 0
+      files:
+      - Mocap_keypoints_120_stride30/proba_missing_uniform.csv
+      - Mocap_keypoints_120_stride30/proba_missing_length_uniform.csv
+    viewinvariant: true
+    normalize: false
+    normalizecube: true
+  verbose: 0

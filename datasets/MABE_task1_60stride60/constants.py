@@ -1,0 +1,10 @@
+N_SAMPLES_PER_CLASS_TRAIN = {'name_seq': [81, 30, 291, 70, 167, 190, 219, 91, 85, 188, 93, 50, 45, 123, 220, 84, 48, 33, 135, 103, 356, 16, 293, 41, 62, 299, 56, 163, 50, 144, 163, 17, 102, 79, 123, 119, 84, 17, 129, 61, 307, 20, 119, 273, 46, 44, 322, 149, 208, 190, 123, 148, 96, 55], 'action': [178, 1972, 402, 4268], }
+NUM_CLASSES = {'name_seq': 70.0, 'action': 4.0, }
+NUM_FEATURES = 28
+KEYPOINTS = ['kp0_animal0', 'kp1_animal0', 'kp2_animal0', 'kp3_animal0','kp4_animal0', 'kp5_animal0', 'kp6_animal0', 'kp0_animal1', 'kp1_animal1', 'kp2_animal1', 'kp3_animal1', 'kp4_animal1', 'kp5_animal1', 'kp6_animal1']
+SEQ_LENGTH = 60
+DIVIDER = 2
+W_RESIDUALS = False
+FREQ = 1
+STRIDE = 60
+METADATA = ['action']

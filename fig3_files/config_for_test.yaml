@@ -1,0 +1,37 @@
+dataset:
+  name: Fish_v3_60stride120
+  stride: 120
+  skeleton_file: Fish_v3_60stride60/skeleton.py
+feed_data:
+  mask: true
+  transforms:
+    add_missing:
+      pad:
+      - 1
+      - 1
+      files:
+      - Fish_v3_60stride60/proba_missing.csv
+      - Fish_v3_60stride60/proba_missing_length.csv
+    viewinvariant: true
+    normalize: false
+    normalizecube: true
+  verbose: 0
+evaluate:
+  n_cpus: 6
+  batch_size: 8
+  checkpoints:
+  - outputs/2023-09-27_Fishv3_newnewmissing/60stride120_models_BASELINE/transformer_NLL_60stride120
+  n_plots: 20
+  azim: 60
+  size: 2.5
+  only_holes: true
+  original_coordinates: false
+  suffix: ''
+  name_items:
+  - - network
+    - type
+  - - training
+    - mu_sigma
+  merge: true
+  merge_sets_file: ''
+  n_repeat: 1

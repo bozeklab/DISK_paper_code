@@ -6,7 +6,9 @@ import os
 ###########################################################################
 ### N MISSING PLOT
 
-df = pd.read_csv('/home/france/Dropbox/Dropbox/2021_Koeln/behavior/fl2_n_missing_results.csv')
+df = pd.read_csv('fig4_files/fl2_n_missing_results.csv')
 sns.lineplot(df, x='n_missing', hue='method', y='test error',
-             hue_order=['linear_interp', 'GRU', 'transformer_baseline'], palette=['gray', 'gold', 'orangered'])
-plt.savefig(f'/home/france/Dropbox/Dropbox/2021_Koeln/bogna/fl2_RMSE_n_missing_plot.svg')
+             hue_order=['linear_interp', 'GRU', 'transformer_baseline'],
+             palette=['gray', 'gold', 'orangered'],
+             errorbar=('sd', 1))
+plt.savefig(f'fig4_files/fl2_RMSE_n_missing_plot.svg')

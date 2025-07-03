@@ -11,18 +11,19 @@ from utils import plot_save
 
 ########################################################################################################
 ### ERROR VS NMISSING IN MULTIKP TRAINING - FISH
+########################################################################################################
 
 enumerate_on = [[
-                    '/home/france/Mounted_dir/results_behavior/outputs/2023-08-29_Fish_newnewmissing/29-01-24_transformer_NLL_allkp_uniformproba/test/',
+                    'fig4_files/29-01-24_transformer_NLL_allkp_uniformproba/test',
                     0.8, '_uniform'],
                 [
-                    '/home/france/Mounted_dir/results_behavior/outputs/2023-08-29_Fish_newnewmissing/29-01-24_transformer_NLL_allkp_uniformproba/test_origcoord',
+                    'fig4_files/29-01-24_transformer_NLL_allkp_uniformproba/test_origcoord',
                     16, '_uniform_origcoord'],
                 [
-                    '/home/france/Mounted_dir/results_behavior/outputs/2023-08-29_Fish_newnewmissing/13-11-23_transformer_NLL_allkp_origcoord',
+                    'fig4_files/13-11-23_transformer_NLL_allkp/test_origcoord',
                     20, '_origcoord'],
                 [
-                    '/home/france/Mounted_dir/results_behavior/outputs/2023-08-29_Fish_newnewmissing/13-11-23_transformer_NLL_allkp_test_debug',
+                    'fig4_files/13-11-23_transformer_NLL_allkp/test',
                     1.6, '']]
 
 for folder, ylim, suffix in enumerate_on:
@@ -60,13 +61,6 @@ for folder, ylim, suffix in enumerate_on:
     df.loc[:, 'binned_length_hole'] = pd.cut(df['length_hole'], bins, labels=mid_bins)
     df['binned_length_hole'] = df['binned_length_hole'].astype('float')
 
-    # fig, axes = plt.subplots(1, 3, sharex='all', sharey='all', figsize=(26, 9))
-    # for i, (min_, max_), in enumerate([[0, 0.4], [0.4, 0.8], [0.8, 1.2]]):
-    #     mask = (df['keypoint'] != 'all') * (df['binned_dist_bw_fishes'] >= min_) *(df['binned_dist_bw_fishes'] < max_) * (df['type_RMSE'] == '3D')
-    #     sns.lineplot(df[mask], x='binned_length_hole', y='RMSE', hue='missing_scheme', ax=axes[i],
-    #         hue_order=['1', '1 + 1', '3', '3 + 1', '3 + 2', '3 + 3'],
-    #         palette=['limegreen', 'seagreen', 'red', 'orange', 'darkorange', 'grey'])
-    #     axes[i].set_title(f'dist_bw_fishes in [{min_}, {max_}]')
 
     sns.set_style('white')
     fig, axes = plt.subplots(1, 2, sharex='all', sharey='all', figsize=(12, 5))
@@ -79,9 +73,9 @@ for folder, ylim, suffix in enumerate_on:
         axes[i].set_title(f'length_hole in [{min_}, {max_}]')
         plt.ylim(0, ylim)
     plt.savefig(
-        f'/home/france/Documents/research_journal/behavior/RMSE_vs_lengthhole_dist_bw_fishes_cases1-3{suffix}.png')
+        f'fig4_files/RMSE_vs_lengthhole_dist_bw_fishes_cases1-3{suffix}.png')
     plt.savefig(
-        f'/home/france/Documents/research_journal/behavior/RMSE_vs_lengthhole_dist_bw_fishes_cases1-3{suffix}.svg')
+        f'fig4_files/RMSE_vs_lengthhole_dist_bw_fishes_cases1-3{suffix}.svg')
 
     fig, axes = plt.subplots(1, 2, sharex='all', sharey='all', figsize=(12, 5))
     for i, (min_, max_), in enumerate([[0, 30], [30, 60]]):
@@ -93,21 +87,9 @@ for folder, ylim, suffix in enumerate_on:
         axes[i].set_title(f'length_hole in [{min_}, {max_}]')
         plt.ylim(0, ylim)
     plt.savefig(
-        f'/home/france/Documents/research_journal/behavior/RMSE_vs_lengthhole_dist_bw_fishes_cases2{suffix}.png')
+        f'fig4_files/RMSE_vs_lengthhole_dist_bw_fishes_cases2{suffix}.png')
     plt.savefig(
-        f'/home/france/Documents/research_journal/behavior/RMSE_vs_lengthhole_dist_bw_fishes_cases2{suffix}.svg')
-
-# plt.figure()
-# mask = (df['keypoint'] != 'all') * df['missing_scheme'].isin(['3 + 1', '3 + 2', '1 + 1', '2 + 1', '2 + 2']) * (df['type_RMSE'] == '3D')
-# sns.lineplot(df[mask], x='binned_dist_bw_fishes', y='RMSE', hue='missing_scheme')#,
-# plt.ylim(0, 1)
-
-# mask = (df['keypoint'] != 'all') * (df['type_RMSE'] == '3D')
-# df.loc[mask].groupby('missing_scheme').count()
-
-# mask = (df['keypoint'] != 'all') * (df['type_RMSE'] == '3D')
-# sns.violinplot(data=df[mask], y='length_hole', x='missing_scheme')
-# sns.lineplot(df[mask], x='length_hole', y='RMSE', hue='missing_scheme')#,
+        f'fig4_files/RMSE_vs_lengthhole_dist_bw_fishes_cases2{suffix}.svg')
 
 
 ###############################################################################################
@@ -115,7 +97,7 @@ for folder, ylim, suffix in enumerate_on:
 
 
 fish1_df = pd.read_csv(
-    '/home/france/Mounted_dir/results_behavior/outputs/2024-02-21_Fish_v3_singlefish_newnewmissing/compare_1fish_2fish_testfish1/mean_RMSE.csv')
+    'fig4_files/compare_1vs2fish/fish1_mean_RMSE.csv')
 
 mean_fish1 = fish1_df.groupby('method_param')['RMSE'].agg('mean').reset_index()
 mean_fish1.loc[:, 'method_param'] = mean_fish1['method_param'].apply(lambda x: {'linear_interp': 'linear interpolation',
@@ -130,7 +112,7 @@ mean_fish1.loc[:, 'method_param'] = mean_fish1['method_param'].apply(lambda x: {
     x])
 
 fish2_df = pd.read_csv(
-    '/home/france/Mounted_dir/results_behavior/outputs/2024-02-21_Fish_v3_singlefish_newnewmissing/compare_all_fish2/mean_RMSE.csv')
+    'fig4_files/compare_1vs2fish/fish2_mean_RMSE.csv')
 
 mean_fish2 = fish2_df.groupby('method_param')['RMSE'].agg('mean').reset_index()
 mean_fish2.loc[:, 'method_param'] = mean_fish2['method_param'].apply(lambda x: {'linear_interp': 'linear interpolation',
@@ -144,3 +126,32 @@ mean_fish2.loc[:, 'method_param'] = mean_fish2['method_param'].apply(lambda x: {
                                                                                 'type-transformer_mu_sigma-True_name-Fish_v3_60stride120_fish2': 'DISK proba fish2'}[
     x])
 
+print(mean_fish1, end='\n\n')
+
+"""
+           method_param      RMSE
+0  linear interpolation  0.082552
+1             GRU 2fish  0.029791
+2             GRU fish1  0.031453
+3       GRU proba 2fish  0.030142
+4       GRU proba fish1  0.032317
+5            DISK 2fish  0.027404
+6            DISK fish1  0.029654
+7      DISK proba 2fish  0.027339
+8      DISK proba fish1  0.029356
+"""
+
+print(mean_fish2)
+
+"""
+           method_param      RMSE
+0  linear interpolation  0.080582
+1             GRU 2fish  0.031903
+2             GRU fish2  0.034525
+3       GRU proba 2fish  0.032301
+4       GRU proba fish2  0.034233
+5            DISK 2fish  0.029530
+6            DISK fish2  0.033632
+7      DISK proba 2fish  0.029441
+8      DISK proba fish2  0.032561
+"""

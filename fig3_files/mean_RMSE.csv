@@ -1,0 +1,3 @@
+method,method_param,RMSE,repeat,dataset
+linear_interp,linear_interp,0.07450418966820187,0,Fish_v3_60stride120
+transformer,type-transformer_mu_sigma-True,0.028336514669453403,0,Fish_v3_60stride120

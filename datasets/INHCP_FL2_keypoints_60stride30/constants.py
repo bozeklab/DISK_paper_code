@@ -1,0 +1,9 @@
+NUM_FEATURES = 24
+MAX_SEQ_LEN = 60
+SEQ_LENGTH = 60
+FREQ = 60
+W_RESIDUALS = False
+DIVIDER = 3
+KEYPOINTS = ['left_hip', 'right_hip', 'left_back', 'right_back', 'left_knee', 'left_ankle', 'right_knee', 'right_ankle']
+STRIDE = 30
+METADATA = ['experiment', 'treatment', 'treatment_detail', 'mouse_id', 'experiment_type']
