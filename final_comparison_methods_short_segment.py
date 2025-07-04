@@ -53,8 +53,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
     big_df = pd.read_csv(
         os.path.join(input_folders['original'], 'test_repeat-0.csv'),
         sep='|')
-    id_sample = 0
-    while True:
+    for id_sample in range(big_df.shape[0]):
         # print(f"-- index_sample = {id_sample}")
         files = [find_file(input_folders[m], id_sample) for m in methods]
         if files == [None] * len(methods):
