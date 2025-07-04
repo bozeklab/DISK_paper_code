@@ -56,11 +56,11 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
     for id_sample in range(big_df.shape[0]):
         files = [find_file(input_folders[m], id_sample) for m in methods]
         if files == [None] * len(methods):
-            print(f'No sample found with id {id_sample}. Stopping the iteration')
+            # print(f'No sample found with id {id_sample}. Stopping the iteration')
             # break
             continue
         elif None in files:
-            print(f'At least one file is missing for id {id_sample}.')
+            # print(f'At least one file is missing for id {id_sample}.')
             # id_sample += 1
             continue
         print(f"-- index_sample = {id_sample}")
