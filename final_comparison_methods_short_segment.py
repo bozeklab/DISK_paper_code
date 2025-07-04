@@ -58,10 +58,10 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
         files = [find_file(input_folders[m], id_sample) for m in methods]
         if files == [None] * len(methods):
             print(f'No sample found with id {id_sample}. Stopping the iteration')
-            break
+            # break
         elif None in files:
             print(f'At least one file is missing for id {id_sample}.')
-            id_sample += 1
+            # id_sample += 1
             continue
 
         list_df = [pd.read_csv(f, sep=',') for f in files]
