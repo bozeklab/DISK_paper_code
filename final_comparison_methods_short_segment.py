@@ -21,7 +21,7 @@ def find_file(input_folder, id_sample):
         try:
             return glob(os.path.join(input_folder, f'test_repeat-0_sample{id_sample}_*.csv'))[0]
         except IndexError:
-            print(f'Not found `test_repeat-0_sample{id_sample}` in {input_folder}', flush=True)
+            # print(f'Not found `test_repeat-0_sample{id_sample}` in {input_folder}', flush=True)
             return None
 
 def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_threshold):
@@ -60,7 +60,7 @@ def evaluate_and_plots(dataset_name, output_folder, input_folders, pck_final_thr
             # break
             continue
         elif None in files:
-            # print(f'At least one file is missing for id {id_sample}.')
+            print(f'At least one file is missing for id {id_sample}.')
             # id_sample += 1
             continue
         print(f"-- index_sample = {id_sample}")
