@@ -25,7 +25,7 @@ if __name__ == '__main__':
     p.add_argument("--batch_size", type=int, default=1)
     p.add_argument("--checkpoint_folder", type=str, required=True)
     p.add_argument("--stride", type=float, required=True, default='in seconds')
-    p.add_argument("--n_seeds", type=int, default=1, description='number of random forests run')
+    p.add_argument("--n_seeds", type=int, default=1, help='number of random forests run')
 
     args = p.parse_args()
 
