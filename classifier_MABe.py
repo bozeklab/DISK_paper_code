@@ -25,6 +25,7 @@ if __name__ == '__main__':
     p.add_argument("--batch_size", type=int, default=1)
     p.add_argument("--checkpoint_folder", type=str, required=True)
     p.add_argument("--stride", type=float, required=True, default='in seconds')
+    p.add_argument("--n_seeds", type=int, default=1, desc='number of random forests run')
 
     args = p.parse_args()
 
@@ -142,8 +143,7 @@ if __name__ == '__main__':
     precision = []
     recall = []
     conf_mat = None
-    n_seeds = 10
-    for seed in np.arange(0, n_seeds, dtype=int):
+    for seed in np.arange(0, args.n_seeds, dtype=int):
         rfc = RandomForestClassifier(random_state=seed)
 
         rfc.fit(X_train, y_train)
