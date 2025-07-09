@@ -18,7 +18,7 @@ import plotly.express as px
 from sklearn.metrics import confusion_matrix, balanced_accuracy_score, f1_score, precision_score, recall_score
 from sklearn.ensemble import RandomForestClassifier
 
-from behaviourrepresentation.test_temporal_clustering_transformer import extract_hidden
+from DISK.utils.embedding_umap import extract_hidden
 from DISK.utils.utils import read_constant_file, load_checkpoint
 from DISK.utils.dataset_utils import load_datasets
 from DISK.utils.transforms import init_transforms
@@ -35,9 +35,7 @@ if __name__ == '__main__':
     p.add_argument("--batch_size", type=int, default=1)
     p.add_argument("--checkpoint_folder", type=str, required=True)
     p.add_argument("--stride", type=float, required=True, default='in seconds')
-    # p.add_argument("--suffix", type=str, default='', help='string suffix added to the save files')
-    # p.add_argument("--k", type=int, default=10,
-    #                help="k for kmeans, number of wanted clusters")
+
     args = p.parse_args()
 
     logging.basicConfig(level=logging.INFO,

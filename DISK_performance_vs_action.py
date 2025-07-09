@@ -9,12 +9,6 @@ import argparse
 import matplotlib.pyplot as plt
 
 import matplotlib
-if os.uname().nodename == 'france-XPS':
-    matplotlib.use('TkAgg')
-    basedir = '/home/france/Mounted_dir'
-else:
-    matplotlib.use('Agg')
-    basedir = '/projects/ag-bozek/france'
 
 def binning(x):
     if x < 10:

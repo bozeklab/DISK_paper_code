@@ -9,6 +9,11 @@ import matplotlib.pyplot as plt
 import os
 
 if __name__ == '__main__':
+    ###################################################################################################################
+    ### To use this script you need to unzip "comparison_methods_files.zip" in the `DISK_paper_code` directory
+    ###################################################################################################################
+
+
     imputed = np.load('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_fulllength_dataset_imputed.npz')
     orig_npz = np.load('datasets/INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5/test_fulllength_dataset_w-all-nans.npz')
     i_file = 7
@@ -64,6 +69,48 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.savefig(
         os.path.join(output_folder, f'test_w-all-nans_file{i_file}_DISK_OPTIPOSE_KPMOSEQ_MBI_kp{i_kp}_holes_shaded.png'))
+
+
+    ### DOWNSAMPLED SVG (BECAUSE TOO BIG OTHERWISE)
+    downsampling_factor = 8
+    fig, axes = plt.subplots(n_methods, 3, figsize=(13, 4), sharex='all', sharey='none')
+    for j in range(3):
+        for i in range(n_methods):
+            axes[i, j].plot(t[::downsampling_factor], x[::downsampling_factor, i_kp * 3 + j], 'o-', ms=1)
+
+        begins = np.where(np.diff(np.isnan(x[::downsampling_factor, i_kp * 3 + j]).astype(int)) > 0)[0]
+        ends = np.where(np.diff(np.isnan(x[::downsampling_factor, i_kp * 3 + j]).astype(int)) < 0)[0]
+        if np.isnan(x[0, i_kp * 3 + j]):
+            begins = np.insert(begins, 0, 0)
+        for b, e in zip(begins, ends):
+            for i in range(n_methods):
+                axes[i, j].axvspan(xmin=t[b], xmax=t[e + 1], alpha=0.2)
+
+            axes[0, j].plot(t[::downsampling_factor][b: e + 2], disk[::downsampling_factor][b:e + 2, i_kp * 3 + j], '+--', c='red')
+            axes[1, j].plot(t[::downsampling_factor][b: e + 2], optipose.loc[:, f'{i_kp}_{j + 1}'].values[::downsampling_factor][b:e + 2], '+--', c='red')
+            axes[2, j].plot(t[::downsampling_factor][b: e + 2], kpmoseq.loc[:, f'{i_kp}_{j + 1}'].values[::downsampling_factor][b:e + 2], '+--', c='red')
+            axes[3, j].plot(t[::downsampling_factor][b: e + 2], mbi.loc[:, f'{i_kp}_{j + 1}'].values[::downsampling_factor][b:e + 2], '+--', c='red')
+        begins, ends = ends, begins
+        begins = np.insert(begins, 0, 0)
+        if ends[0] == 0:
+            ends = ends[1:]
+        ends = np.insert(ends, len(ends) - 1, len(x) - 1)
+        for b, e in zip(begins, ends):
+            axes[0, j].plot(t[::downsampling_factor][b: e + 1], disk[::downsampling_factor][b:e + 1, i_kp * 3 + j], '+', alpha=0.25, c='orange')
+            axes[1, j].plot(t[::downsampling_factor][b: e + 1], optipose.loc[:, f'{i_kp}_{j + 1}'].values[::downsampling_factor][b:e + 1], '+', alpha=0.25, c='orange')
+            axes[2, j].plot(t[::downsampling_factor][b: e + 1], kpmoseq.loc[:, f'{i_kp}_{j + 1}'].values[::downsampling_factor][b:e + 1], '+', alpha=0.25, c='orange')
+            axes[3, j].plot(t[::downsampling_factor][b: e + 1], mbi.loc[:, f'{i_kp}_{j + 1}'].values[::downsampling_factor][b:e + 1], '+', alpha=0.25, c='orange')
+    axes[0, 0].set_title('X')
+    axes[0, 1].set_title('Y')
+    axes[0, 2].set_title('Z')
+    axes[2, 1].set_xlabel('time (sec)')
+    axes[0, 0].set_ylabel('DISK')
+    axes[1, 0].set_ylabel('Optipose')
+    axes[2, 0].set_ylabel('kp-moseq')
+    axes[3, 0].set_ylabel('MBI')
+    plt.tight_layout()
+    plt.savefig(
+        os.path.join(output_folder, f'test_w-all-nans_file{i_file}_DISK_OPTIPOSE_KPMOSEQ_MBI_kp{i_kp}_holes_shaded.svg'))
 
     for t0, t1 in [[int(49.5 * 60), int(52.5 * 60)], [int(33.5 * 60), int(36.5 * 60)]]:
         fig, axes = plt.subplots(n_methods, 3, figsize=(18, 4), sharex='all', sharey='none')

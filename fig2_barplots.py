@@ -237,7 +237,7 @@ for metric in ['PCK@0.01']:
             sns.barplot(data=df.loc[(df['Model'] == 'DISK') * (df['Dataset'] == d)], x='keypoint', y=metric,
                         # hue_order=['linear interpolation', 'DISK', 'DISK proba', 'GRU', 'GRU proba', 'STS-GCN', 'ST-GCN',
                         #            'TCN'],
-                        errorbar=('sd', 1),
+                        # errorbar=('sd', 1),
                         order=dataset2kporder[d],
                         palette='flare', ax=axes[i])
             axes[i].set_xticks(np.arange(len(new_list_kp)), dataset2kporder[d], rotation=90)
