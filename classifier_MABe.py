@@ -8,7 +8,7 @@ import logging
 from sklearn.metrics import confusion_matrix, balanced_accuracy_score, f1_score, precision_score, recall_score
 from sklearn.ensemble import RandomForestClassifier
 
-from DISK.utils.embedding_umap import extract_hidden
+from DISK.embedding_umap import extract_hidden
 from DISK.utils.utils import read_constant_file, load_checkpoint
 from DISK.utils.dataset_utils import load_datasets
 from DISK.utils.transforms import init_transforms

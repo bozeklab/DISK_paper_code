@@ -59,27 +59,6 @@ def plot_average(output_dir, df, dataset_name):
     plt.savefig(
         os.path.join(output_dir, f'barplot_swap_{dataset_name}_origccords.png'))
 
-    # df = pd.read_csv(os.path.join(input_dir, 'mean_metrics.csv'))
-    # print(df_mean.loc[:, 'method_param'].unique())
-    # df_mean.loc[:, 'method'] = df_mean['method_param'].apply(lambda x: renamemethods_dict[x])
-
-    # fig, axes = plt.subplots(1, 3, sharey='col', figsize=(12, 6))
-    # sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'RMSE'], x='metric_type', y='metric_value', hue='method',
-    #             hue_order=methods_order,
-    #             palette=palette, ax=axes[0])
-    # sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'PCK@0.01'], x='metric_type', y='metric_value',
-    #             hue='method',
-    #             hue_order=methods_order,
-    #             palette=palette, ax=axes[1])
-    # axes[1].set_ylim(0, 1.)
-    # plt.legend([])
-    # sns.barplot(data=df_mean.loc[df_mean['metric_type'] == 'MPJPE'], x='metric_type', y='metric_value',
-    #             hue='method',
-    #             hue_order=methods_order,
-    #             palette=palette, ax=axes[2])
-    # plt.legend([])
-    # plt.savefig(os.path.join(output_dir, f'barplot_swap_{dataset_name}.svg'))
-    # plt.savefig(os.path.join(output_dir, f'barplot_swap_{dataset_name}.png'))
 
 def bin_length(x, max_, min_, bin_width=None, n_bins=None):
     if n_bins is None and bin_width is None:
@@ -108,35 +87,31 @@ if __name__ == '__main__':
 
     if args.dataset == 'MABe':
         dataset_name = 'MABE_task1_60stride60'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_MABe_SWAP0.5')
+        input_dir = 'swap_files/2025-03-20_test_compare_MABe_SWAP0.5'
 
     elif args.dataset == 'FL2':
         dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_stride0.5'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_CLB_SWAP0.5')
+        input_dir = 'swap_files/2025-03-20_test_compare_CLB_SWAP0.5'
 
     elif args.dataset == 'CLB':
         dataset_name = 'INH_CLB_keypoints_1_60_wresiduals_stride0.5'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_FL2_SWAP0.5')
+        input_dir = 'swap_files/2025-03-20_test_compare_FL2_SWAP0.5'
 
     elif args.dataset == 'DANNCE': ## MISSING
         dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_DANNCE_SWAP0.5')
+        input_dir = 'swap_files/2025-03-20_test_compare_DANNCE_SWAP0.5'
 
     elif args.dataset == 'Mocap':
         dataset_name = 'Mocap_keypoints_60_stride30'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_Mocap_SWAP0.5')
+        input_dir = 'swap_files/2025-03-20_test_compare_Mocap_SWAP0.5'
 
     elif args.dataset == 'DF3D': ## MISSING
         dataset_name = 'DF3D_keypoints_60_stride5'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_DF3D_SWAP0.5')
+        input_dir = 'swap_files/2025-03-20_test_compare_DF3D_SWAP0.5'
 
     elif args.dataset == 'Fish':
         dataset_name = 'Fish_v3_60stride120'
-        input_dir = os.path.join(basedir, 'outputs/2025-03-20_test_compare_Fish_SWAP0.5')
-
-    output_dir = os.path.join(output_dir, args.dataset)
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+        input_dir = 'swap_files/2025-03-20_test_compare_Fish_SWAP0.5'
 
     df = pd.read_csv(os.path.join(input_dir, 'total_metrics_repeat-0.csv'))
     print(df.loc[:, 'method_param'].unique())
@@ -155,15 +130,7 @@ if __name__ == '__main__':
     spec.loader.exec_module(skeleton_inputs)
     keypoints = skeleton_inputs.keypoints
 
-    # mean_metrics_file = os.path.join(input_dir, 'mean_metrics.csv')
-    # df_mean = pd.read_csv(os.path.join(basedir, mean_metrics_file))
-    #
-    # fig, axes = plt.subplots(1, 3)
-    # for ax, metric in zip(axes, ['RMSE', 'MPJPE', 'PCK@0.01']):
-    #     sns.barplot()
-
     df_swap = df.loc[df['swap'] == True, :]
-    #pd.read_csv(os.path.join(basedir, total_metrics_file))
 
     df_swap.loc[:, 'swap_kp_id'] = df_swap['swap_kp_id'].apply(eval)
     df_swap.loc[:, 'swap_kp_id0'] = df_swap['swap_kp_id'].apply(lambda x: keypoints[x[0]])
@@ -174,7 +141,6 @@ if __name__ == '__main__':
                                                                                                         max_=df_swap['average_dist_bw_swap_kp'].max(),
                                                                                                         min_=df_swap['average_dist_bw_swap_kp'].min(),
                                                                                                         n_bins=30))
-
     plt.close('all')
 
     df_swap_sym = df_swap.copy(deep=True)
@@ -209,15 +175,15 @@ if __name__ == '__main__':
         plt.figure(figsize=(12, 12))
         # sns.barplot(df_swap.loc[(df_swap['metric_type'] == metric) * (df_swap['keypoint'] != 'all')], y='swap_kp_id0', x='metric_value', hue='swap_kp_id1', hue_order=keypoints, order=keypoints, palette='Set2')
         sns.heatmap(mat, square=True, linewidths=.5, cbar_kws={"shrink": .5}, annot=True, fmt=".2f", )
-        plt.savefig(os.path.join(output_dir, f'heatmap_{args.dataset}_swap_kp_id_{metric}.png'))
-        plt.savefig(os.path.join(output_dir, f'heatmap_{args.dataset}_swap_kp_id_{metric}.svg'))
+        plt.savefig(os.path.join(input_dir, f'heatmap_{args.dataset}_swap_kp_id_{metric}.png'))
+        plt.savefig(os.path.join(input_dir, f'heatmap_{args.dataset}_swap_kp_id_{metric}.svg'))
         plt.close('all')
 
         plt.figure(figsize=(12, 12))
         sns.barplot(df_swap.loc[(df_swap['metric_type'] == metric) * (df_swap['keypoint'] != 'all')], y='swap_kp_id0', x='metric_value', hue='swap_kp_id1', hue_order=keypoints, order=keypoints, palette='Set2')
         # sns.heatmap(mat, square=True, linewidths=.5, cbar_kws={"shrink": .5}, annot=True, fmt=".2f", )
-        plt.savefig(os.path.join(output_dir, f'barplot_{args.dataset}_swap_kp_id_{metric}.png'))
-        plt.savefig(os.path.join(output_dir, f'barplot_{args.dataset}_swap_kp_id_{metric}.svg'))
+        plt.savefig(os.path.join(input_dir, f'barplot_{args.dataset}_swap_kp_id_{metric}.png'))
+        plt.savefig(os.path.join(input_dir, f'barplot_{args.dataset}_swap_kp_id_{metric}.svg'))
         plt.close('all')
 
         mean_metric_df = df_swap.loc[(df_swap['metric_type'] == metric) * (df_swap['keypoint'] != 'all'),
@@ -228,11 +194,11 @@ if __name__ == '__main__':
         plt.figure(figsize=(12, 12))
         plt.suptitle(metric)
         sns.heatmap(mat_length, square=True, linewidths=.5, cbar_kws={"shrink": .5}, annot=True, fmt=".2f", )
-        plt.savefig(os.path.join(output_dir, f'heatmap_{args.dataset}_swap_length_{metric}.png'))
-        plt.savefig(os.path.join(output_dir, f'heatmap_{args.dataset}_swap_length_{metric}.svg'))
+        plt.savefig(os.path.join(input_dir, f'heatmap_{args.dataset}_swap_length_{metric}.png'))
+        plt.savefig(os.path.join(input_dir, f'heatmap_{args.dataset}_swap_length_{metric}.svg'))
         plt.close('all')
 
         sns.lineplot(data=df_swap.loc[(df_swap['metric_type'] == metric) * (df_swap['keypoint'] != 'all')],
                      x='average_dist_bw_swap_kp_binned', y='metric_value')
-        plt.savefig(os.path.join(output_dir, f'lineplot_{args.dataset}_swap_dist_bw_kp_{metric}.png'))
-        plt.savefig(os.path.join(output_dir, f'lineplot_{args.dataset}_swap_dist_bw_kp_{metric}.svg'))
+        plt.savefig(os.path.join(input_dir, f'lineplot_{args.dataset}_swap_dist_bw_kp_{metric}.png'))
+        plt.savefig(os.path.join(input_dir, f'lineplot_{args.dataset}_swap_dist_bw_kp_{metric}.svg'))
