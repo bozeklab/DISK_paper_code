@@ -368,27 +368,3 @@ def check_data_skeleton_compatibility(dataset_folder):
     plt.savefig(os.path.join(dataset_folder, f'skeleton_plot_w_kp_names.png'))
 
 
-if __name__ == '__main__':
-    import matplotlib
-    if os.uname().nodename == 'france-XPS':
-        matplotlib.use('TkAgg')
-        basedir = '/home/france/Mounted_dir'
-    else:
-        matplotlib.use('Agg')
-        basedir = '/projects/ag-bozek/france'
-
-    dataset_names = [
-        'MABE_task1_60stride60',
-                     'INH_FL2_keypoints_1_60_wresiduals_stride0.5',
-                     'INH_CLB_keypoints_1_60_wresiduals_stride0.5',
-                     'DANNCE_seq_keypoints_60_stride30_fill10',
-                     'Mocap_keypoints_60_stride30',
-                     'DF3D_keypoints_60_stride5',
-                     'Fish_v3_60stride120'
-                     ]
-
-    for dataset_name in dataset_names:
-        check_data_skeleton_compatibility(os.path.join(basedir, 'results_behavior/datasets', dataset_name))
-
-    print('stop')
-

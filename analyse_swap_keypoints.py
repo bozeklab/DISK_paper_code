@@ -1,22 +1,11 @@
 import os, sys
-import tqdm
-from glob import glob
 import importlib
 from functools import partial
 import argparse
 import numpy as np
 import pandas as pd
-from skimage.io import imread, imsave
 import seaborn as sns
 import matplotlib.pyplot as plt
-
-import matplotlib
-if os.uname().nodename == 'france-XPS':
-    matplotlib.use('TkAgg')
-    basedir = '/home/france/Mounted_dir/results_behavior'
-else:
-    matplotlib.use('Agg')
-    basedir = '/projects/ag-bozek/france/results_behavior'
 
 
 def plot_average(output_dir, df, dataset_name):
@@ -90,12 +79,12 @@ if __name__ == '__main__':
         input_dir = 'swap_files/2025-03-20_test_compare_MABe_SWAP0.5'
 
     elif args.dataset == 'FL2':
-        dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_stride0.5'
-        input_dir = 'swap_files/2025-03-20_test_compare_CLB_SWAP0.5'
+        dataset_name = 'INH_FL2_keypoints_1_60_wresiduals_w1nan_stride0.5'
+        input_dir = 'swap_files/2025-03-20_test_compare_FL2_SWAP0.5'
 
     elif args.dataset == 'CLB':
-        dataset_name = 'INH_CLB_keypoints_1_60_wresiduals_stride0.5'
-        input_dir = 'swap_files/2025-03-20_test_compare_FL2_SWAP0.5'
+        dataset_name = 'INH_CLB_keypoints_1_60_stride0.5'
+        input_dir = 'swap_files/2025-03-20_test_compare_CLB_SWAP0.5'
 
     elif args.dataset == 'DANNCE': ## MISSING
         dataset_name = 'DANNCE_seq_keypoints_60_stride30_fill10'
@@ -106,12 +95,15 @@ if __name__ == '__main__':
         input_dir = 'swap_files/2025-03-20_test_compare_Mocap_SWAP0.5'
 
     elif args.dataset == 'DF3D': ## MISSING
-        dataset_name = 'DF3D_keypoints_60_stride5'
+        dataset_name = 'DF3D_keypoints_60stride5'
         input_dir = 'swap_files/2025-03-20_test_compare_DF3D_SWAP0.5'
 
     elif args.dataset == 'Fish':
         dataset_name = 'Fish_v3_60stride120'
         input_dir = 'swap_files/2025-03-20_test_compare_Fish_SWAP0.5'
+
+    else:
+        sys.exit(1)
 
     df = pd.read_csv(os.path.join(input_dir, 'total_metrics_repeat-0.csv'))
     print(df.loc[:, 'method_param'].unique())
@@ -124,7 +116,7 @@ if __name__ == '__main__':
 
     plot_average(output_dir, df, args.dataset)
 
-    skeleton_file = os.path.join(basedir, f'datasets/{dataset_name}/skeleton.py')
+    skeleton_file = f'datasets/{dataset_name}/skeleton.py'
     spec = importlib.util.spec_from_file_location("module.name", skeleton_file)
     skeleton_inputs = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(skeleton_inputs)
@@ -169,8 +161,6 @@ if __name__ == '__main__':
             if k not in mat.columns:
                 mat[k] = np.nan
         mat = mat[keypoints]
-        # sns.relplot(mean_metric_df, x='swap_kp_id0', y='swap_kp_id1', hue='metric_value', size='std', palette='Reds')
-        # plt.xticks(rotation=90)
 
         plt.figure(figsize=(12, 12))
         # sns.barplot(df_swap.loc[(df_swap['metric_type'] == metric) * (df_swap['keypoint'] != 'all')], y='swap_kp_id0', x='metric_value', hue='swap_kp_id1', hue_order=keypoints, order=keypoints, palette='Set2')

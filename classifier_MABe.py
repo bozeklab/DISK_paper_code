@@ -157,6 +157,12 @@ if __name__ == '__main__':
             conf_mat = confusion_matrix(y_eval, y_eval_predict)
         else:
             conf_mat += confusion_matrix(y_eval, y_eval_predict)
+        logging.info(f'RandomForest results SEED {seed}:\n'
+                     f'Balanced Accuracy: {bal_acc[-1]:.3f}\n'
+                     f'Balanced F1 score: {f1[-1]:.3f}\n'
+                     f'Balanced Precision score: {precision[-1]:.3f}\n'
+                     f'Balanced Recall score: {recall[-1]:.3f}\n'
+                     f'Confusion matrix: {conf_mat}\n')
     logging.info(f'RandomForest results:\n'
                  f'Balanced Accuracy: {np.mean(bal_acc):.3f} +/- {np.std(bal_acc):.3f}\n'
                  f'Balanced F1 score: {np.mean(f1):.3f} +/- {np.std(f1):.3f}\n'
