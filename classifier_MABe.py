@@ -168,6 +168,6 @@ if __name__ == '__main__':
                  f'Balanced F1 score: {np.mean(f1):.3f} +/- {np.std(f1):.3f}\n'
                  f'Balanced Precision score: {np.mean(precision):.3f} +/- {np.std(precision):.3f}\n'
                  f'Balanced Recall score: {np.mean(recall):.3f} +/- {np.std(recall):.3f}\n'
-                 f'Confusion matrix: {conf_mat / n_seeds}\n')
+                 f'Confusion matrix: {conf_mat / args.n_seeds}\n')
 
 

@@ -63,6 +63,11 @@ def bin_length(x, max_, min_, bin_width=None, n_bins=None):
 
 if __name__ == '__main__':
     ##########################################################################################################
+    ### CODE FOR FIGURES FOR SWAP KEYPOINTS
+    ### unzip swap_files.zip
+    ##########################################################################################################
+
+    ##########################################################################################################
     ### CHOOSE DATASET BY SUPPLYING THE COMMANDLINE ARGUMENT
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('dataset', type=str,
